@@ -18,6 +18,25 @@ export function pkcePair() {
   return { verifier, challenge };
 }
 
+/** Kopfzeilen für jede Trakt-Anfrage: eigener User-Agent (sonst 403 vom Trakt-Schutz) + API-Version/Schlüssel. */
+function traktHeaders(extra = {}) {
+  return {
+    'Content-Type': 'application/json',
+    Accept: 'application/json',
+    'User-Agent': config.trakt.userAgent,
+    'trakt-api-version': '2',
+    'trakt-api-key': config.trakt.clientId,
+    ...extra,
+  };
+}
+
+/** Fehlertext: HTML-Antwort heißt meist „vom Schutz vor Bots geblockt“, nicht „Zugangsdaten falsch“. */
+async function describeError(res) {
+  const text = await res.text().catch(() => '');
+  if (/^\s*</.test(text)) return `HTML-Seite statt JSON (vermutlich Trakt-Bot-Schutz/Cloudflare)${/cloudflare|cf-ray|attention required/i.test(text) ? ', Cloudflare erkannt' : ''}`;
+  return text.slice(0, 300);
+}
+
 export function authorizeUrl(state, challenge) {
   const u = new URL(`${config.trakt.authBase}/oauth/authorize`);
   u.searchParams.set('response_type', 'code');
@@ -34,7 +53,7 @@ export function authorizeUrl(state, challenge) {
 async function tokenRequest(body) {
   const res = await fetch(`${config.trakt.base}/oauth/token`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: traktHeaders(),
     body: JSON.stringify({
       client_id: config.trakt.clientId,
       // Secret nur senden, wenn es eins gibt (PKCE-Apps haben keins)
@@ -45,8 +64,7 @@ async function tokenRequest(body) {
     signal: AbortSignal.timeout(15000),
   });
   if (!res.ok) {
-    const detail = await res.text().catch(() => '');
-    console.error('[trakt] Token-Anfrage abgelehnt', res.status, detail.slice(0, 300));
+    console.error('[trakt] Token-Anfrage abgelehnt', res.status, await describeError(res));
     throw Object.assign(new Error(`Trakt-Token ${res.status}`), { code: 'TRAKT_TOKEN' });
   }
   const j = await res.json();
@@ -57,13 +75,17 @@ async function traktFetch(token, path, { params = {}, allow204 = false } = {}) {
   const u = new URL(`${config.trakt.base}${path}`);
   for (const [k, v] of Object.entries(params)) if (v !== undefined && v !== null) u.searchParams.set(k, String(v));
   const res = await fetch(u, {
-    headers: { 'Content-Type': 'application/json', 'trakt-api-version': '2', 'trakt-api-key': config.trakt.clientId, Authorization: `Bearer ${token}` },
+    headers: traktHeaders({ Authorization: `Bearer ${token}` }),
     signal: AbortSignal.timeout(15000),
   });
   if (res.status === 204 && allow204) return { data: null, res };
   if (res.status === 401) throw Object.assign(new Error('Trakt-Zugriff abgelaufen'), { code: 'TRAKT_AUTH' });
   if (res.status === 429) throw Object.assign(new Error('Trakt-Limit erreicht'), { code: 'TRAKT_LIMIT' });
-  if (!res.ok) throw new Error(`Trakt ${res.status} für ${path}`);
+  if (!res.ok) {
+    const why = await describeError(res);
+    console.error('[trakt] Anfrage abgelehnt', res.status, path, why);
+    throw new Error(`Trakt ${res.status} für ${path}`);
+  }
   return { data: res.status === 204 ? null : await res.json(), res };
 }
 

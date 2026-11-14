@@ -39,6 +39,8 @@ export const config = {
     clientSecret: env('TRAKT_CLIENT_SECRET'),
     base: env('TRAKT_API_BASE', 'https://api.trakt.tv').replace(/\/$/, ''),
     authBase: env('TRAKT_AUTH_BASE', 'https://trakt.tv').replace(/\/$/, ''),
+    // Trakt (Cloudflare) blockt Anfragen ohne aussagekräftigen User-Agent mit 403
+    userAgent: env('TRAKT_USER_AGENT', 'Watchlfy/1.0 (self-hosted watch statistics)'),
     redirectUri: env('TRAKT_REDIRECT_URI', `${externalUrl || `http://127.0.0.1:${port}`}/auth/trakt/callback`),
   },
   allowRegistration: bool('ALLOW_REGISTRATION', true),

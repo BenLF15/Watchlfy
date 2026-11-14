@@ -96,6 +96,10 @@ http.createServer(async (req, res) => {
   if ((m = /^\/t\/p\/\w+\/([pb])-([a-z0-9-]+)\.svg$/.exec(p))) return send(res, 200, svg(m[2].replace(/-/g, ' '), m[1] === 'b'), 'image/svg+xml');
 
   // ---------------- Trakt
+  const ua = String(req.headers['user-agent'] || '');
+  if ((p === '/oauth/token' || p.startsWith('/users/') || p.startsWith('/sync/')) && (!ua || /^node$|undici/i.test(ua))) {
+    return send(res, 403, '<!DOCTYPE html><html><head><title>Attention Required! | Cloudflare</title></head><body>blocked</body></html>', 'text/html');
+  }
   if (p === '/oauth/authorize') {
     const redirect = u.searchParams.get('redirect_uri');
     const ch = u.searchParams.get('code_challenge') || '';
