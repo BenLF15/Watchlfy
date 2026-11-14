@@ -1,0 +1,424 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b0a0d" />
+  <meta name="color-scheme" content="dark" />
+  <meta name="robots" content="noindex, nofollow" />
+  <meta name="view-transition" content="same-origin" />
+  <link rel="manifest" href="/assets/manifest.webmanifest" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Watchlfy" />
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png" />
+  <link rel="icon" href="/assets/icon.svg" type="image/svg+xml" />
+  <link rel="icon" href="/assets/favicon-32.png" type="image/png" sizes="32x32" />
+  <title>Watchlfy</title>
+  <script src="/assets/theme.js?v=20261114a"></script>
+  <script src="/assets/i18n.js?v=20261114a"></script>
+  <link rel="stylesheet" href="/assets/styles.css?v=20261114a" />
+  <link rel="stylesheet" href="/assets/watch.css?v=20261114a" />
+  <script src="/assets/changelog.js?v=20261114a" defer></script>
+  <script src="/vendor/chart.umd.min.js" defer></script>
+  <script src="/app.js?v=20261114a" defer></script>
+  <script src="/assets/extras.js?v=20261114a" defer></script>
+  <script src="/assets/collection.js?v=20261114a" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main" data-i18n="aria.skip">Zum Inhalt</a>
+  <div class="statusbar-bg" aria-hidden="true"></div>
+  <div class="aurora" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <a class="brand" href="/" data-goto="overview" data-i18n-attr="aria-label:aria.toOverview">
+      <span class="brand-logo-wrap"><img src="/assets/logo-animated.svg" alt="" width="38" height="38" class="brand-logo" /></span>
+      <div>
+        <strong>Watchlfy</strong>
+        <span id="user-line" class="muted small"></span>
+      </div>
+    </a>
+    <div class="topbar-actions">
+      <button id="import-open" class="btn btn-ghost btn-xs topbar-import" type="button">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14" /></svg>
+        <span data-i18n="btn.import">Importieren</span>
+      </button>
+      <button id="profile-btn" class="profile-btn" type="button" data-i18n-attr="aria-label:aria.openProfile;title:aria.openProfile">
+        <img id="avatar" alt="" hidden />
+        <span id="avatar-initials" aria-hidden="true"></span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Handy: Leiste unten -->
+  <nav class="bottom-nav" id="bottom-nav" data-i18n-attr="aria-label:nav.main">
+    <button type="button" data-bn="overview"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg><span data-i18n="nav.overview">Übersicht</span></button>
+    <button type="button" data-bn="top"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20V10M12 20V4M19 20v-7"/></svg><span data-i18n="nav.top">Top-Listen</span></button>
+    <button type="button" data-bn="history"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span data-i18n="nav.history">Verlauf</span></button>
+    <button type="button" data-bn="collection"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="5" height="16" rx="1"/><rect x="10" y="4" width="5" height="16" rx="1"/><path d="m17 5 3.5 1-3.5 14"/></svg><span data-i18n="nav.collection">Sammlung</span></button>
+    <button type="button" data-bn="more" aria-haspopup="dialog"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg><span class="bn-more-label" data-i18n="nav.more">Mehr</span></button>
+  </nav>
+  <dialog id="more-sheet" class="dialog more-sheet" aria-labelledby="more-title">
+    <div class="ms-grip" aria-hidden="true"></div>
+    <h2 id="more-title" class="sr-only" data-i18n="nav.more">Mehr</h2>
+    <div class="ms-grid" id="more-grid"></div>
+  </dialog>
+
+  <nav class="subnav">
+    <div class="tabs" id="panel-tabs" role="tablist">
+      <button role="tab" data-panel="overview" data-i18n="nav.overview">Übersicht</button>
+      <button role="tab" data-panel="top" data-i18n="nav.top">Top-Listen</button>
+      <button role="tab" data-panel="times" data-i18n="nav.times">Schauzeiten</button>
+      <button role="tab" data-panel="progress" data-i18n="nav.progress">Fortschritt</button>
+      <button role="tab" data-panel="history" data-i18n="nav.history">Verlauf</button>
+      <button role="tab" data-panel="wrapped" data-i18n="nav.wrapped">Rückblick</button>
+      <button role="tab" data-panel="friends" data-i18n="nav.friends">Freunde</button>
+      <button role="tab" data-panel="collection" data-i18n="nav.collection">Sammlung</button>
+      <button role="tab" data-panel="admin" id="admin-tab" hidden data-i18n="nav.admin">Admin</button>
+    </div>
+  </nav>
+
+  <main class="container" id="main">
+    <section id="privacy-banner" class="notice" hidden>
+      <span class="notice-icon" aria-hidden="true">🔒</span>
+      <div class="notice-text"><strong data-i18n="privacy.bannerTitle"></strong><p class="muted small" data-i18n="privacy.bannerText"></p></div>
+      <div class="notice-actions">
+        <a class="btn btn-ghost btn-xs" href="/datenschutz" target="_blank" rel="noopener" data-i18n="privacy.read"></a>
+        <button class="btn btn-primary btn-xs" type="button" id="privacy-accept" data-i18n="privacy.accept"></button>
+      </div>
+    </section>
+    <section id="tmdb-banner" class="notice" hidden></section>
+    <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+    <div class="now-playing" id="now-playing" hidden></div>
+
+    <!-- ================================================= Noch keine Daten -->
+    <div class="view" id="view-empty" hidden>
+      <section class="card connect-card">
+        <img src="/assets/logo-animated.svg" alt="" width="84" height="84" class="connect-logo" />
+        <h2 data-i18n="empty.title"></h2>
+        <p data-i18n="empty.text"></p>
+        <div class="service-grid" id="empty-services"></div>
+        <p class="hint" data-i18n="empty.hint"></p>
+      </section>
+    </div>
+
+    <div class="view" id="view-stats" hidden>
+      <div class="range-bar" id="range-bar">
+        <div class="segmented small" id="range-control" role="tablist" data-i18n-attr="aria-label:aria.range">
+          <button role="tab" data-range="7d" data-i18n="range.7d"></button>
+          <button role="tab" data-range="30d" data-i18n="range.30d"></button>
+          <button role="tab" data-range="90d" data-i18n="range.90d"></button>
+          <button role="tab" data-range="365d" data-i18n="range.365d"></button>
+          <button role="tab" data-range="all" data-i18n="range.all"></button>
+        </div>
+      </div>
+
+      <!-- ================================================= Übersicht -->
+      <section class="panel" data-panel="overview">
+        <div class="fest-ribbon" id="fest-ribbon" hidden></div>
+        <div class="wrapped-promo" id="wrapped-promo" hidden></div>
+        <div class="kpis">
+          <article class="card kpi kpi-hero">
+            <span class="kpi-label" data-i18n="kpi.watchtime"></span>
+            <strong class="kpi-value" data-kpi="hours">–</strong>
+            <span class="kpi-sub" data-kpi-sub="hours"></span>
+            <svg class="sparkline" id="sparkline" viewBox="0 0 120 32" preserveAspectRatio="none" aria-hidden="true"></svg>
+          </article>
+          <article class="card kpi"><span class="kpi-label" data-i18n="kpi.avg"></span><strong class="kpi-value" data-kpi="avg">–</strong><span class="kpi-sub" data-i18n="kpi.minPerDay"></span></article>
+          <article class="card kpi"><span class="kpi-label" data-i18n="kpi.episodes"></span><strong class="kpi-value" data-kpi="episodes">–</strong><span class="kpi-sub" data-kpi-sub="series"></span></article>
+          <article class="card kpi"><span class="kpi-label" data-i18n="kpi.movies"></span><strong class="kpi-value" data-kpi="movies">–</strong><span class="kpi-sub" data-i18n="kpi.different"></span></article>
+          <article class="card kpi"><span class="kpi-label" data-i18n="kpi.series"></span><strong class="kpi-value" data-kpi="series">–</strong><span class="kpi-sub" data-kpi-sub="activeDays"></span></article>
+        </div>
+        <div class="insights" id="insights"></div>
+
+        <section class="card" id="continue-card" hidden>
+          <header class="card-head"><div><h2 data-i18n="continue.title"></h2><p class="muted small" data-i18n="continue.sub"></p></div><button class="link-btn" data-goto="progress" data-i18n="link.showAll"></button></header>
+          <div class="poster-row" id="continue-row"></div>
+        </section>
+
+        <section class="card">
+          <header class="card-head">
+            <div><h2 data-i18n="kpi.watchtime" data-fest-title></h2><p class="muted small" id="timeline-caption"></p></div>
+          </header>
+          <div class="chart-wrap"><canvas id="timeline-chart" role="img" data-i18n-attr="aria-label:kpi.watchtime"></canvas></div>
+        </section>
+
+        <div class="grid-2">
+          <section class="card">
+            <header class="card-head"><div><h2 data-i18n="services.title"></h2><p class="muted small" data-i18n="services.sub"></p></div></header>
+            <div class="service-split" id="service-split"></div>
+          </section>
+          <section class="card">
+            <header class="card-head"><h2 data-i18n="overview.topSeries"></h2><button class="link-btn" data-goto="top" data-i18n="link.showAll"></button></header>
+            <ol class="rank-bars" id="overview-series"></ol>
+          </section>
+        </div>
+        <section class="card">
+          <header class="card-head"><h2 data-i18n="overview.topMovies"></h2><button class="link-btn" data-goto="top" data-top-kind="movies" data-i18n="link.showAll"></button></header>
+          <div class="poster-row" id="overview-movies"></div>
+        </section>
+        <section class="card" id="collection-teaser" hidden></section>
+      </section>
+
+      <!-- ================================================= Top-Listen -->
+      <section class="panel" data-panel="top" hidden>
+        <section class="card">
+          <header class="card-head wrap">
+            <div><h2 id="top-title"></h2><p class="muted small" id="top-sub"></p></div>
+            <div class="segmented small" id="top-kind" role="tablist">
+              <button role="tab" data-kind="series" data-i18n="top.series"></button>
+              <button role="tab" data-kind="movies" data-i18n="top.movies"></button>
+              <button role="tab" data-kind="genres" data-i18n="top.genres"></button>
+              <button role="tab" data-kind="actors" data-i18n="top.actors"></button>
+              <button role="tab" data-kind="countries" data-i18n="top.countries"></button>
+            </div>
+          </header>
+          <div class="podium" id="podium"></div>
+          <ol class="rank-bars" id="top-list" start="4"></ol>
+        </section>
+      </section>
+
+      <!-- ================================================= Schauzeiten -->
+      <section class="panel" data-panel="times" hidden>
+        <div class="insights" id="time-insights"></div>
+        <section class="card">
+          <header class="card-head"><div><h2 data-i18n="times.title" data-fest-title></h2><p class="muted small" id="times-sub"></p></div></header>
+          <div class="heatmap" id="heatmap" role="grid" data-i18n-attr="aria-label:times.title"></div>
+          <div class="heat-legend"><span class="muted small" data-i18n="times.less"></span><span class="heat-scale"></span><span class="muted small" data-i18n="times.more"></span></div>
+          <div class="heat-tip" id="heat-tip" hidden></div>
+        </section>
+        <div class="grid-2">
+          <section class="card">
+            <header class="card-head"><div><h2 data-i18n="times.byHour"></h2><p class="muted small" data-i18n="times.byHourSub"></p></div></header>
+            <div class="chart-wrap short"><canvas id="hours-chart" role="img" data-i18n-attr="aria-label:times.byHourSub"></canvas></div>
+          </section>
+          <section class="card">
+            <header class="card-head"><div><h2 data-i18n="times.byDay"></h2><p class="muted small" data-i18n="times.byDaySub"></p></div></header>
+            <div class="chart-wrap short"><canvas id="weekday-chart" role="img" data-i18n-attr="aria-label:times.byDaySub"></canvas></div>
+          </section>
+        </div>
+        <section class="card">
+          <header class="card-head"><div><h2 data-i18n="binge.title"></h2><p class="muted small" data-i18n="binge.sub"></p></div></header>
+          <ul class="binge-list" id="binge-list"></ul>
+        </section>
+      </section>
+
+      <!-- ================================================= Fortschritt -->
+      <section class="panel" data-panel="progress" hidden>
+        <section class="card">
+          <header class="card-head"><div><h2 data-i18n="continue.title"></h2><p class="muted small" data-i18n="continue.sub"></p></div></header>
+          <div class="poster-row" id="progress-continue"></div>
+        </section>
+        <section class="card">
+          <header class="card-head wrap">
+            <div><h2 data-i18n="progress.title"></h2><p class="muted small" data-i18n="progress.sub"></p></div>
+            <div class="segmented small" id="progress-filter">
+              <button data-filter="all" data-i18n="progress.all"></button>
+              <button data-filter="open" data-i18n="progress.open"></button>
+              <button data-filter="done" data-i18n="progress.done"></button>
+            </div>
+          </header>
+          <ul class="progress-list" id="progress-list"></ul>
+        </section>
+      </section>
+
+      <!-- ================================================= Verlauf -->
+      <section class="panel" data-panel="history" hidden>
+        <section class="card search-card">
+          <label class="search-box">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /></svg>
+            <input id="search-input" type="search" autocomplete="off" spellcheck="false" maxlength="80" data-i18n-attr="placeholder:search.placeholder;aria-label:search.placeholder" />
+          </label>
+        </section>
+        <div class="history" id="history"></div>
+        <button class="btn btn-ghost history-more" id="history-more" type="button" hidden data-i18n="history.more"></button>
+      </section>
+
+      <!-- ================================================= Rückblick -->
+      <section class="panel" data-panel="wrapped" hidden><div id="wrapped"></div></section>
+
+      <!-- ================================================= Freunde -->
+      <section class="panel" data-panel="friends" hidden>
+        <section class="card">
+          <header class="card-head"><div><h2 data-i18n="friends.title"></h2><p class="muted small" data-i18n="friends.sub"></p></div></header>
+          <form class="friend-add" id="friend-form" novalidate>
+            <input id="friend-input" type="text" autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="24" data-i18n-attr="placeholder:friends.placeholder;aria-label:friends.placeholder" />
+            <button class="btn btn-primary" type="submit" data-i18n="friends.add"></button>
+          </form>
+          <div id="friend-requests"></div>
+          <ul class="friend-list" id="friend-list"></ul>
+        </section>
+        <div id="compare"></div>
+      </section>
+
+      <!-- ================================================= Sammlung -->
+      <section class="panel" data-panel="collection" hidden><div id="collection"></div></section>
+    </div>
+
+    <!-- ================================================= Profil -->
+    <div class="view" id="view-profile" hidden>
+      <section class="card profile-head">
+        <button type="button" class="profile-avatar" id="profile-avatar"></button>
+        <input type="file" id="avatar-file" accept="image/*" hidden />
+        <input type="file" id="avatar-camera" accept="image/*" capture="user" hidden />
+        <div class="profile-who">
+          <h2 id="profile-name"></h2>
+          <p class="muted small" id="profile-sub"></p>
+          <div class="avatar-actions"><button type="button" class="link-btn" id="avatar-change" data-i18n="avatar.change"></button><button type="button" class="link-btn danger" id="avatar-remove" hidden data-i18n="avatar.remove"></button></div>
+        </div>
+      </section>
+
+      <section class="card">
+        <header class="card-head"><div><h2 data-i18n="sources.title"></h2><p class="muted small" data-i18n="sources.sub"></p></div></header>
+        <div class="service-grid" id="profile-services"></div>
+        <ul class="import-history" id="import-history"></ul>
+      </section>
+
+      <section class="card" id="trakt-card">
+        <header class="card-head"><div><h2>Trakt.tv</h2><p class="muted small" data-i18n="trakt.sub"></p></div></header>
+        <div id="trakt-body"></div>
+      </section>
+
+      <section class="card" id="review-card">
+        <header class="card-head"><div><h2 data-i18n="review.title"></h2><p class="muted small" data-i18n="review.sub"></p></div></header>
+        <div id="review-body"></div>
+      </section>
+
+      <section class="card">
+        <header class="card-head"><div><h2 data-i18n="settings.title"></h2><p class="muted small" data-i18n="settings.sub"></p></div></header>
+        <h3 class="settings-label" data-i18n="settings.appearance"></h3>
+        <div class="theme-picker" id="theme-picker" role="radiogroup" data-i18n-attr="aria-label:settings.appearance">
+          <button type="button" role="radio" data-theme-mode="system"><span class="tp-swatch tp-system"></span><span data-i18n="theme.system"></span></button>
+          <button type="button" role="radio" data-theme-mode="light"><span class="tp-swatch tp-light"></span><span data-i18n="theme.light"></span></button>
+          <button type="button" role="radio" data-theme-mode="dark"><span class="tp-swatch tp-dark"></span><span data-i18n="theme.dark"></span></button>
+          <button type="button" role="radio" data-theme-mode="season"><span class="tp-swatch tp-season"></span><span data-i18n="theme.season"></span></button>
+        </div>
+        <p class="muted small theme-hint" id="theme-hint"></p>
+        <div class="settings-row">
+          <div><h3 class="settings-label" data-i18n="settings.glass"></h3><p class="muted small" data-i18n="settings.glassHint"></p></div>
+          <button type="button" class="switch" id="glass-switch" role="switch" aria-checked="false" data-i18n-attr="aria-label:settings.glass"><span class="switch-knob"></span></button>
+        </div>
+        <div class="settings-row">
+          <div><h3 class="settings-label" data-i18n="settings.festive"></h3><p class="muted small" data-i18n="settings.festiveHint"></p><p class="muted small" id="festive-hint"></p></div>
+          <button type="button" class="switch" id="festive-switch" role="switch" aria-checked="true" data-i18n-attr="aria-label:settings.festive"><span class="switch-knob"></span></button>
+        </div>
+        <div class="settings-row">
+          <div><h3 class="settings-label" data-i18n="settings.language"></h3></div>
+          <div class="lang-picker" id="lang-picker" role="radiogroup" data-i18n-attr="aria-label:settings.language"></div>
+        </div>
+      </section>
+
+      <section class="card">
+        <header class="card-head"><div><h2 data-i18n="account.title"></h2><p class="muted small" data-i18n="account.sub"></p></div></header>
+        <dl class="sys-list" id="profile-account"></dl>
+        <div class="birthday-row">
+          <label class="season-date"><span class="muted small" data-i18n="account.birthday"></span><input type="date" id="birthday-input" max="2100-12-31" /></label>
+          <button type="button" class="btn btn-ghost btn-xs" id="birthday-save" data-i18n="btn.save"></button>
+          <button type="button" class="btn btn-ghost btn-xs" id="birthday-clear" data-i18n="btn.remove"></button>
+        </div>
+        <div class="profile-actions">
+          <button class="btn btn-ghost" data-action="password" type="button" data-i18n="btn.password"></button>
+          <a class="btn btn-ghost" href="/api/me/export" download>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14" /></svg>
+            <span data-i18n="btn.export"></span>
+          </a>
+          <button class="btn btn-ghost" type="button" id="news-open" data-i18n="news.open"></button>
+          <form method="post" action="/logout">
+            <button class="btn btn-ghost" type="submit">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 16l-4-4 4-4M6 12h10" /></svg>
+              <span data-i18n="btn.logout"></span>
+            </button>
+          </form>
+          <button class="btn btn-ghost btn-danger" data-action="delete" type="button" data-i18n="btn.deleteAccount"></button>
+        </div>
+      </section>
+    </div>
+
+    <!-- ================================================= Admin -->
+    <div class="view" id="view-admin" hidden>
+      <section class="admin-stats" id="admin-stats"></section>
+      <section class="card">
+        <header class="card-head"><div><h2 data-i18n="admin.tester"></h2><p class="muted small" data-i18n="admin.testerSub"></p></div></header>
+        <div class="season-tester">
+          <label class="season-date"><span class="muted small" data-i18n="admin.date"></span><input type="date" id="season-date" /></label>
+          <div class="season-quick" id="event-quick"></div>
+          <button type="button" class="btn btn-ghost btn-xs" id="season-reset" data-i18n="admin.today"></button>
+        </div>
+        <p class="muted small theme-hint" id="season-status"></p>
+      </section>
+      <section class="card">
+        <header class="card-head">
+          <div><h2 data-i18n="admin.accounts"></h2><p class="muted small" data-i18n="admin.accountsSub"></p></div>
+          <div class="head-controls"><a class="btn btn-ghost" href="/api/admin/accounts.csv" download data-i18n="admin.csv"></a></div>
+        </header>
+        <ul class="user-list" id="admin-users"></ul>
+      </section>
+      <div class="grid-2">
+        <section class="card">
+          <header class="card-head"><div><h2 data-i18n="admin.lastLogins"></h2></div></header>
+          <ul class="login-log" id="admin-logins"></ul>
+        </section>
+        <div class="stack">
+          <section class="card">
+            <header class="card-head"><div><h2 data-i18n="admin.system"></h2></div></header>
+            <dl class="sys-list" id="admin-system"></dl>
+          </section>
+          <section class="card">
+            <header class="card-head"><div><h2 data-i18n="admin.syncErrors"></h2></div></header>
+            <ul class="login-log" id="admin-errors"></ul>
+          </section>
+        </div>
+      </div>
+      <section class="card">
+        <div class="settings-row">
+          <div><h2 data-i18n="shop.freeTitle"></h2><p class="muted small" data-i18n="shop.freeText"></p></div>
+          <button type="button" class="switch" id="free-shop-switch" role="switch" aria-checked="false" data-i18n-attr="aria-label:shop.freeTitle"><span class="switch-knob"></span></button>
+        </div>
+      </section>
+      <section class="card">
+        <header class="card-head"><div><h2 data-i18n="backup.title"></h2><p class="muted small" data-i18n="backup.sub"></p></div></header>
+        <p class="backup-status" id="backup-status"></p>
+        <p class="muted small" data-i18n="backup.warning"></p>
+        <div class="profile-actions">
+          <a class="btn btn-primary" id="backup-download" href="/api/admin/backup" download>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14" /></svg>
+            <span data-i18n="backup.download"></span>
+          </a>
+          <label class="btn btn-ghost">
+            <input type="file" id="restore-file" accept=".gz,.json,application/gzip,application/json" hidden />
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20V9m0 0-4 4m4-4 4 4M5 4h14" /></svg>
+            <span data-i18n="backup.restore"></span>
+          </label>
+        </div>
+        <ul class="import-log" id="restore-log"></ul>
+      </section>
+    </div>
+    <footer class="app-footer">
+      <a href="/datenschutz" target="_blank" rel="noopener" data-i18n="legal.privacy"></a>
+      <span class="muted small" data-i18n="legal.tmdb"></span>
+    </footer>
+  </main>
+
+  <div class="fx-layer" id="fx-layer" aria-hidden="true"></div>
+  <dialog id="import-dialog" class="dialog import-dlg" aria-labelledby="import-title"><div class="dialog-inner" id="import-body"></div></dialog>
+  <dialog id="detail-dialog" class="dialog detail" aria-labelledby="detail-title"><div class="detail-inner" id="detail-body"></div></dialog>
+  <dialog id="correct-dialog" class="dialog" aria-labelledby="correct-title"><div class="dialog-inner" id="correct-body"></div></dialog>
+  <dialog id="avatar-menu" class="dialog avatar-menu" aria-labelledby="avatar-menu-title"><div class="dialog-inner" id="avatar-menu-body"></div></dialog>
+  <dialog id="avatar-dialog" class="dialog avatar-dlg" aria-labelledby="avatar-title">
+    <div class="dialog-inner">
+      <button type="button" class="tour-close" data-close-dialog data-i18n-attr="aria-label:btn.close">✕</button>
+      <h2 id="avatar-title" data-i18n="avatar.title"></h2>
+      <p class="muted small" data-i18n="avatar.hint"></p>
+      <div class="avatar-crop"><canvas id="avatar-canvas" width="560" height="560"></canvas></div>
+      <label class="avatar-zoom"><span aria-hidden="true">−</span><input type="range" id="avatar-zoom" min="1" max="4" step="0.01" value="1" data-i18n-attr="aria-label:avatar.zoom" /><span aria-hidden="true">＋</span></label>
+      <div class="avatar-btns"><button type="button" class="btn btn-ghost" id="avatar-other" data-i18n="avatar.other"></button><button type="button" class="btn btn-primary" id="avatar-save" data-i18n="avatar.save"></button></div>
+    </div>
+  </dialog>
+  <dialog id="news-dialog" class="dialog news" aria-labelledby="news-title"><div class="news-inner" id="news-body"></div></dialog>
+  <dialog id="item-dialog" class="dialog item-dialog" aria-labelledby="item-title"><div class="dialog-inner" id="item-body"></div></dialog>
+  <dialog id="gift-dialog" class="dialog gift-dialog" aria-labelledby="gift-title"><div class="dialog-inner" id="gift-body"></div></dialog>
+  <div class="note-toast" id="note-toast" role="status" aria-live="polite" hidden></div>
+  <dialog id="story" class="story" aria-labelledby="story-title"><div class="story-inner" id="story-body"></div></dialog>
+</body>
+</html>

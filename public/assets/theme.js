@@ -1,0 +1,93 @@
+/* Watchlfy – Darstellung & Zoom-Sperre.
+   Wird synchron im <head> geladen, damit die richtige Farbwelt schon vor dem ersten Zeichnen steht. */
+(() => {
+  'use strict';
+  const root = document.documentElement;
+  const get = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
+  const set = (k, v) => { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch { /* egal */ } };
+
+  // ---------------------------------------------------------------- Jahreszeiten (meteorologisch, Nordhalbkugel)
+  // Frühling ab 1.3., Sommer ab 1.6., Herbst ab 1.9., Winter ab 1.12. – passt besser zum gefühlten Wetter
+  const SEASONS = {
+    spring: { name: 'Frühling', icon: '🌸', start: [3, 1], next: 'summer' },
+    summer: { name: 'Sommer', icon: '☀️', start: [6, 1], next: 'autumn' },
+    autumn: { name: 'Herbst', icon: '🍂', start: [9, 1], next: 'winter' },
+    winter: { name: 'Winter', icon: '❄️', start: [12, 1], next: 'spring' },
+  };
+  function seasonOf(date) {
+    const m = date.getMonth() + 1;
+    if (m === 12 || m < 3) return 'winter';
+    if (m < 6) return 'spring';
+    if (m < 9) return 'summer';
+    return 'autumn';
+  }
+  function seasonEnd(key, date) {
+    const [m, d] = SEASONS[SEASONS[key].next].start;
+    let year = date.getFullYear();
+    if (key === 'winter' && date.getMonth() >= 11) year += 1;
+    return new Date(year, m - 1, d - 1);
+  }
+  // Admins können zum Testen ein Datum vorgeben (nur in diesem Browser)
+  function effectiveDate() {
+    const o = get('seasonDate');
+    const d = o ? new Date(`${o}T12:00:00`) : new Date();
+    return Number.isNaN(d.getTime()) ? new Date() : d;
+  }
+
+  // ---------------------------------------------------------------- Modus → Farbwelt
+  const media = window.matchMedia('(prefers-color-scheme: light)');
+  function resolve(mode) {
+    if (mode === 'light' || mode === 'dark') return mode;
+    if (mode === 'season') return seasonOf(effectiveDate());
+    return media.matches ? 'light' : 'dark'; // system
+  }
+  const THEME_COLOR = { dark: '#0b0a0d', light: '#f6f3f4', spring: '#f7f1f4', summer: '#fff8e8', autumn: '#140d08', winter: '#0b1018' };
+
+  function apply(mode) {
+    const m = mode || get('theme') || 'dark';
+    const theme = resolve(m);
+    root.dataset.mode = m;
+    root.dataset.theme = theme;
+    root.style.colorScheme = ['light', 'spring', 'summer'].includes(theme) ? 'light' : 'dark';
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', THEME_COLOR[theme]);
+    window.dispatchEvent(new CustomEvent('watchlfy:theme', { detail: { mode: m, theme } }));
+    return theme;
+  }
+  // Liquid Glass: durchscheinende Glas-Oberflächen, unabhängig von der Farbwelt
+  function applyGlass(on) {
+    const v = on === undefined ? get('glass') === '1' : Boolean(on);
+    if (v) root.dataset.glass = '1'; else delete root.dataset.glass;
+    return v;
+  }
+  function setGlass(on) { set('glass', on ? '1' : null); return applyGlass(on); }
+  function setMode(mode) {
+    set('theme', mode);
+    return apply(mode);
+  }
+  media.addEventListener?.('change', () => { if ((get('theme') || 'dark') === 'system') apply('system'); });
+
+  window.WatchlfyTheme = {
+    SEASONS, seasonOf, seasonEnd, effectiveDate, apply, setMode, resolve, setGlass,
+    glass: () => get('glass') === '1',
+    mode: () => get('theme') || 'dark',
+    setSeasonDate(iso) { set('seasonDate', iso || null); return apply(); },
+    seasonDate: () => get('seasonDate'),
+  };
+  apply();
+  applyGlass();
+  document.addEventListener('DOMContentLoaded', () => apply());
+
+  // ---------------------------------------------------------------- Zoom sperren (Web-App-Gefühl)
+  // iOS ignoriert user-scalable=no – daher Pinch- und Doppeltipp-Gesten zusätzlich abfangen.
+  const stop = (e) => e.preventDefault();
+  document.addEventListener('gesturestart', stop, { passive: false });
+  document.addEventListener('gesturechange', stop, { passive: false });
+  document.addEventListener('touchmove', (e) => { if (e.touches && e.touches.length > 1) e.preventDefault(); }, { passive: false });
+  // Doppeltipp-Zoom verhindert CSS (touch-action: manipulation), ohne schnelle Taps zu schlucken.
+  // Desktop: Strg/Cmd + Mausrad bzw. +/- abfangen
+  window.addEventListener('wheel', (e) => { if (e.ctrlKey) e.preventDefault(); }, { passive: false });
+  window.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && ['+', '-', '=', '0'].includes(e.key)) e.preventDefault();
+  });
+})();
