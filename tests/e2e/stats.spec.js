@@ -19,7 +19,7 @@ test.describe('Statistik', () => {
     for (const [kind, text] of [['movies', 'Dune'], ['genres', 'Drama'], ['actors', 'Bryan Cranston'], ['countries', 'Vereinigte Staaten']]) {
       await page.click(`#top-kind [data-kind="${kind}"]`);
       await expect(page.locator('#top-title')).not.toBeEmpty();
-      await expect(page.locator('#panel-tabs ~ *, main')).toContainText(text);
+      await expect(page.locator('main')).toContainText(text);
     }
     await shot(page, ti, 'top-countries');
     expect(errors).toEqual([]);
@@ -87,13 +87,14 @@ test('Kino-Ansicht: Hero-Karussell, gläserne Leiste, Poster gleitet ins Detail'
   await page.waitForSelector('body.ready');
   await expect(page.locator('body')).toHaveClass(/on-hero/);
   await expect(page.locator('#hero .hero-slide')).not.toHaveCount(0);
-  // Zeitraum-Wahl schwebt im Hero
-  await expect(page.locator('#hero > #range-bar')).toBeVisible();
+  // Zeitraum-Wahl steht in der Programm-Kopfzeile
+  await expect(page.locator('#page-head #range-bar')).toBeVisible();
+  await expect(page.locator('#page-title')).toHaveText('Übersicht');
   await page.click('#hero .hero-dots [data-hero="1"]');
   await expect(page.locator('#hero .hero-slide[data-i="1"]')).toHaveClass(/on/);
   // Bilder blenden ein
   await expect(page.locator('#overview-series img.poster-img.is-loaded').first()).toBeVisible();
-  // Kopfleiste wird beim Scrollen gläsern
+  // Kopfzeile (Handy) wird beim Scrollen gläsern
   await page.mouse.wheel(0, 600);
   await expect(page.locator('#appbar')).toHaveClass(/scrolled/);
   // Detail öffnet aus dem Poster
@@ -105,5 +106,5 @@ test('Kino-Ansicht: Hero-Karussell, gläserne Leiste, Poster gleitet ins Detail'
   await page.keyboard.press('Escape');
   await goPanel(page, 'history');
   await expect(page.locator('#hero')).toBeHidden();
-  await expect(page.locator('#view-stats > #range-bar')).toHaveCount(1);
+  await expect(page.locator('#page-title')).toHaveText('Verlauf');
 });

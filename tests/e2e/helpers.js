@@ -33,7 +33,7 @@ export function fixture(name) {
 
 /** Import über den Assistenten: Dienst wählen, Datei, (Profile), importieren. */
 export async function importFile(page, service, name, { profiles = null } = {}) {
-  if (!(await page.locator('#import-dialog').evaluate((d) => d.open))) await page.click('#import-open');
+  if (!(await page.locator('#import-dialog').evaluate((d) => d.open))) await openImport(page);
   await page.click(`#import-dialog [data-import="${service}"]`);
   await page.setInputFiles('#import-file', fixture(name));
   await page.waitForSelector('[data-import-commit]');
@@ -85,4 +85,11 @@ export async function goPanel(page, panel) {
 export async function selectByText(page, selector, text) {
   const value = await page.locator(selector).evaluate((s, t) => [...s.options].find((o) => o.textContent.includes(t))?.value, text);
   await page.selectOption(selector, value);
+}
+
+/** Import-Assistent öffnen: Desktop über die Seitenleiste, Handy über den Knopf im Dock. */
+export async function openImport(page) {
+  if (await page.locator('#import-open').isVisible()) await page.click('#import-open');
+  else await page.click('#bottom-nav [data-bn="import"]');
+  await expect(page.locator('#import-dialog')).toHaveAttribute('open', '');
 }

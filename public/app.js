@@ -215,7 +215,7 @@
   function setupChartDefaults() {
     const C = window.Chart;
     if (!C) return;
-    C.defaults.font.family = "'Inter', system-ui, sans-serif";
+    C.defaults.font.family = "'Programm', system-ui, sans-serif";
     C.defaults.font.size = 11;
     C.defaults.locale = LOCALE;
     C.defaults.color = COLORS.tick;
@@ -560,10 +560,6 @@
     const on = state.panel === 'overview' && hasData() && hero.items.length > 0;
     el.hidden = !on;
     document.body.classList.toggle('on-hero', on);
-    const rb = $('#range-bar');
-    if (on && rb.parentElement !== el) el.appendChild(rb);
-    if (!on && rb.parentElement === el) $('#view-stats').prepend(rb);
-    requestAnimationFrame(() => $('#range-control')?.realign?.());
     const notices = $$('#privacy-banner, #tmdb-banner, #now-playing').some((n) => !n.hidden);
     document.body.classList.toggle('hero-flush', on && !notices);
   }
@@ -573,8 +569,6 @@
     const pool = [...d.series.slice(0, 3), ...d.movies.slice(0, 2)].filter((x) => x.backdrop_path || x.poster_path);
     hero.items = pool;
     clearInterval(hero.timer);
-    const rbKeep = $('#range-bar');
-    if (rbKeep.parentElement === el) $('#view-stats').prepend(rbKeep);
     if (!pool.length) { el.innerHTML = ''; placeHeroChrome(); return; }
     el.innerHTML = `<div class="hero-slides">${pool.map((x, i) => {
       const back = tmdbImg(x.backdrop_path, 'w1280') || tmdbImg(x.poster_path, 'w780');
@@ -616,6 +610,11 @@
   function bindHero() {
     const el = $('#hero');
     el.addEventListener('click', (e) => { const b = e.target.closest('[data-hero]'); if (b) { heroGo(Number(b.dataset.hero)); startHero(); } });
+    el.addEventListener('pointermove', (e) => {
+      const r = el.getBoundingClientRect();
+      el.style.setProperty('--mx', `${((e.clientX - r.left) / r.width) * 100}%`);
+      el.style.setProperty('--my', `${((e.clientY - r.top) / r.height) * 100}%`);
+    });
     el.addEventListener('pointerenter', () => { hero.paused = true; });
     el.addEventListener('pointerleave', () => { hero.paused = false; });
     let x0 = null;
@@ -1644,12 +1643,13 @@
   }
   function confetti(container = $('#fx-layer'), n = 36) {
     if (reduceMotion || !container) return;
-    const colors = ['#ff5d8f', '#ffd23f', '#3ec5ff', '#7ae582', '#b892ff', '#ff8c42'];
+    const bits = ['🍿', '🎟️', '⭐', '🍿', '🎬', '✨'];
     const rnd = (a, b) => a + Math.random() * (b - a);
     for (let i = 0; i < n; i++) {
       const p = document.createElement('span');
-      p.className = 'fx-p fx-burst fx-conf';
-      p.style.background = colors[i % colors.length];
+      p.className = 'fx-p fx-burst fx-pop';
+      p.textContent = bits[i % bits.length];
+      p.style.setProperty('--size', `${rnd(16, 28)}px`);
       p.style.setProperty('--x', `${rnd(4, 96)}%`); p.style.setProperty('--dx', `${rnd(-15, 15)}vw`); p.style.setProperty('--dy', `${rnd(-50, -20)}vh`);
       p.style.setProperty('--rot', `${rnd(-300, 300)}deg`); p.style.setProperty('--dur', `${rnd(1.8, 3)}s`); p.style.setProperty('--delay', `${rnd(0, 0.4)}s`);
       p.addEventListener('animationend', () => p.remove());
@@ -1711,9 +1711,9 @@
   }
 
   // ================================================================ Navigation
-  const BN_MAIN = ['overview', 'top', 'history', 'collection'];
+  const BN_MAIN = ['overview', 'top', 'collection'];
   const BN_MORE = [
-    ['times', '⏰', 'nav.times'], ['progress', '📺', 'nav.progress'], ['wrapped', '🎁', 'nav.wrapped'],
+    ['history', '🕰️', 'nav.history'], ['times', '⏰', 'nav.times'], ['progress', '🎞️', 'nav.progress'], ['wrapped', '🎁', 'nav.wrapped'],
     ['friends', '👥', 'nav.friends'], ['profile', '👤', 'nav.profile'], ['admin', '🛠️', 'nav.admin'],
   ];
   function paintBottomNav() {
@@ -1732,6 +1732,7 @@
     nav.addEventListener('click', (e) => {
       const b = e.target.closest('[data-bn]');
       if (!b) return;
+      if (b.dataset.bn === 'import') { openImport(null); return; }
       if (b.dataset.bn === 'more') {
         const items = BN_MORE.filter(([k]) => k !== 'admin' || state.account?.is_admin);
         $('#more-grid').innerHTML = items.map(([k, ico, key], i) => `<button type="button" class="ms-item${k === state.panel ? ' on' : ''}" data-ms="${k}" style="--i:${i}"><span>${ico}</span><b>${esc(t(key))}</b></button>`).join('');
@@ -1764,14 +1765,24 @@
       $$('button', tabs).forEach((b) => b.setAttribute('aria-selected', String(b === btn)));
       if (!btn || btn.hidden) { ink.style.width = '0'; return; }
       ink.style.transition = animate ? '' : 'none';
-      ink.style.width = `${btn.offsetWidth - 16}px`;
-      ink.style.transform = `translateX(${btn.offsetLeft + 8}px)`;
-      tabs.scrollTo({ left: btn.offsetLeft - tabs.clientWidth / 2 + btn.offsetWidth / 2, behavior: animate && !reduceMotion ? 'smooth' : 'auto' });
+      ink.style.height = `${btn.offsetHeight}px`;
+      ink.style.transform = `translateY(${btn.offsetTop}px)`;
     };
     tabs.addEventListener('click', (e) => { const b = e.target.closest('button[data-panel]'); if (b) showPanel(b.dataset.panel); });
     window.addEventListener('resize', () => place(false));
     tabs.place = place;
   }
+  const PANEL_TITLE = { overview: 'nav.overview', top: 'nav.top', times: 'nav.times', progress: 'nav.progress', history: 'nav.history', wrapped: 'nav.wrapped', friends: 'nav.friends', collection: 'nav.collection', admin: 'nav.admin', profile: 'nav.profile' };
+  function greeting() {
+    const h = new Date().getHours();
+    const k = h < 5 ? 'night' : h < 11 ? 'morning' : h < 17 ? 'day' : h < 22 ? 'evening' : 'night';
+    return t(`greet.${k}`, { name: state.account?.username || '' });
+  }
+  function paintPageHead() {
+    $('#page-title').textContent = t(PANEL_TITLE[state.panel] || 'nav.overview');
+    $('#page-kicker').textContent = state.panel === 'overview' ? greeting() : new Intl.DateTimeFormat(LOCALE, { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date());
+  }
+
   function applyView() {
     if (state.panel === 'admin' && state.account && !state.account.is_admin) state.panel = 'overview';
     const isAdmin = state.panel === 'admin';
@@ -1784,7 +1795,8 @@
     $('#view-empty').hidden = special || !empty;
     $('#view-stats').hidden = special || empty;
     $$('#view-stats .panel').forEach((p) => { p.hidden = p.dataset.panel !== state.panel; });
-    $('#range-bar').hidden = !RANGE_PANELS.has(state.panel);
+    $('#range-bar').hidden = !RANGE_PANELS.has(state.panel) || empty;
+    paintPageHead();
     placeHeroChrome();
     $('#panel-tabs').place?.(true);
     paintBottomNav();
@@ -1991,7 +2003,24 @@
     upd();
   }
 
+  function playLeader() {
+    const el = $('#leader');
+    if (!el || reduceMotion || navigator.webdriver || session.get('leader')) return;
+    session.set('leader', '1');
+    el.hidden = false;
+    const num = $('.leader-num', el);
+    let n = 3;
+    const tick = setInterval(() => {
+      n -= 1;
+      if (n > 0) { num.textContent = String(n); num.classList.remove('pop'); void num.offsetWidth; num.classList.add('pop'); return; }
+      clearInterval(tick);
+      el.classList.add('done');
+      setTimeout(() => { el.hidden = true; }, 600);
+    }, 420);
+  }
+
   async function init() {
+    playLeader();
     I.apply();
     bindAppbar();
     bindHero();

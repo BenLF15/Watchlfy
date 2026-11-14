@@ -3,7 +3,7 @@
    Nur wenn das Netz fehlt, wird eine kleine Offline-Seite angezeigt. */
 const OFFLINE_HTML = `<!doctype html><html lang="de"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>Watchlfy – offline</title>
-<style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#0b0a0d;color:#f0f2f0;
+<style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#0b0c12;color:#f0f2f0;
 font:16px system-ui,sans-serif;text-align:center;padding:24px}p{color:#7d877f}</style></head>
 <body><div><h1>Keine Verbindung</h1><p>Watchlfy braucht eine Internetverbindung. Versuche es gleich noch einmal.</p></div></body></html>`;
 

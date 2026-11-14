@@ -63,6 +63,8 @@ Secrets gehören nur in Umgebungsvariablen – niemals ins Repository.
 
 ### Deploy auf Render
 
+**Schritt-für-Schritt-Anleitung mit allen Feldern: [`docs/RENDER.md`](docs/RENDER.md).**
+
 `render.yaml` ist ein Blueprint (Web-Service + Postgres in Frankfurt). Nach dem ersten Deploy `TMDB_API_KEY` und ggf.
 die Trakt-Zugangsdaten unter *Environment* eintragen. Fehlt `DATABASE_URL` oder ist die Datenbank nicht erreichbar,
 zeigt die App statt eines Absturzes eine Setup-Seite mit dem genauen Problem. Trakt-Sync und TMDB-Nachladen laufen im
@@ -85,7 +87,7 @@ Die E2E-Tests brauchen eine Wegwerf-Datenbank (`TEST_DATABASE_URL`, Standard
 src/         server.js (Start/Setup-Seite) · app.js (Routen, CSP, Sessions) · users.js · imports.js
              parse/ (csv, tables, detect, titles) · tmdb.js · trakt.js · stats.js · features.js (Rückblick, Freunde)
              collection.js (Noten, Videothek, Vorführraum) · scheduler.js · backup.js · schema.sql
-public/      index.html · app.js · assets/ (extras.js, collection.js, i18n.js, changelog.js, theme.js, styles.css, watch.css)
+public/      index.html · app.js · assets/ (watchlfy.css = Design-System, extras.js, collection.js, i18n.js, changelog.js, theme.js)
 tests/       unit/ · e2e/ · fixtures.js · mock-server.js · start-test-server.js
 docs/PLAN.md Datenmodell & Import-Formate
 ```

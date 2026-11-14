@@ -7,6 +7,27 @@
    Danach den Cache-Parameter ?v=… in public/*.html hochzählen. */
 window.WatchlfyNews = [
   {
+    id: '2026-11-15a',
+    date: '2026-11-15',
+    items: [
+      {
+        icon: '🎞️', go: 'overview',
+        t: ['Willkommen im Lichtspielhaus', 'Welcome to the picture house', 'Bienvenue au cinéma', 'Bienvenido al cine', 'Benvenuto al cinema', 'Välkommen till biografen', 'Velkommen i biografen'],
+        d: ['Komplett neues Design: Leinwand mit Projektorlicht, Kennzahlen als Eintrittskarten, Reihen auf dem Filmstreifen.', 'A brand-new design: a screen with projector light, stats as tickets, rows on a film strip.', 'Design entièrement nouveau : écran et lumière de projecteur, chiffres en tickets, rangées sur pellicule.', 'Diseño totalmente nuevo: pantalla con luz de proyector, cifras como entradas y filas en película.', 'Design tutto nuovo: schermo con luce del proiettore, numeri come biglietti, file su pellicola.', 'Helt ny design: duk med projektorljus, siffror som biljetter, rader på filmremsa.', 'Helt nyt design: lærred med projektorlys, tal som billetter, rækker på filmstrimmel.'],
+      },
+      {
+        icon: '💺', go: 'times',
+        t: ['Sitzplan & Kinocharts', 'Seating chart & box office', 'Plan de salle & box-office', 'Plano de butacas y taquilla', 'Mappa dei posti e classifica', 'Platskarta & topplista', 'Pladsoversigt & hitliste'],
+        d: ['Deine Schauzeiten als Kinosaal, deine Top 10 mit leuchtenden Rangschildern.', 'Your watch times as a cinema hall, your top 10 with glowing rank signs.', 'Tes horaires en salle de cinéma, ton top 10 avec des numéros lumineux.', 'Tus horarios como sala de cine y tu top 10 con números luminosos.', 'I tuoi orari come una sala, la top 10 con numeri luminosi.', 'Dina tittartider som en biosalong, topp 10 med lysande skyltar.', 'Dine seertider som en biografsal, top 10 med lysende skilte.'],
+      },
+      {
+        icon: '➕', go: 'import',
+        t: ['Import immer griffbereit', 'Import always at hand', 'Import toujours à portée', 'Importar siempre a mano', 'Importa sempre a portata', 'Import alltid nära', 'Import altid lige ved hånden'],
+        d: ['In der Seitenleiste oder mitten im Dock auf dem Handy.', 'In the sidebar, or right in the middle of the dock on your phone.', 'Dans la barre latérale ou au centre du dock sur mobile.', 'En la barra lateral o en el centro del dock en el móvil.', 'Nella barra laterale o al centro del dock sul telefono.', 'I sidofältet eller mitt i dockan på mobilen.', 'I sidebjælken eller midt i docken på mobilen.'],
+      },
+    ],
+  },
+  {
     id: '2026-11-14c',
     date: '2026-11-14',
     items: [

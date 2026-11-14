@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
-  <meta name="theme-color" content="#07070a" />
+  <meta name="theme-color" content="#0b0c12" />
   <meta name="color-scheme" content="dark" />
   <meta name="robots" content="noindex, nofollow" />
   <meta name="view-transition" content="same-origin" />
@@ -16,72 +16,73 @@
   <link rel="icon" href="/assets/icon.svg" type="image/svg+xml" />
   <link rel="icon" href="/assets/favicon-32.png" type="image/png" sizes="32x32" />
   <title>Watchlfy</title>
-  <script src="/assets/theme.js?v=20261114d"></script>
-  <script src="/assets/i18n.js?v=20261114d"></script>
-  <link rel="stylesheet" href="/assets/styles.css?v=20261114d" />
-  <link rel="stylesheet" href="/assets/watch.css?v=20261114d" />
-  <link rel="stylesheet" href="/assets/cinema.css?v=20261114d" />
-  <script src="/assets/changelog.js?v=20261114d" defer></script>
+  <script src="/assets/theme.js?v=20261115b"></script>
+  <script src="/assets/i18n.js?v=20261115b"></script>
+  <link rel="stylesheet" href="/assets/watchlfy.css?v=20261115b" />
+  <script src="/assets/changelog.js?v=20261115b" defer></script>
   <script src="/vendor/chart.umd.min.js" defer></script>
-  <script src="/app.js?v=20261114d" defer></script>
-  <script src="/assets/extras.js?v=20261114d" defer></script>
-  <script src="/assets/collection.js?v=20261114d" defer></script>
+  <script src="/app.js?v=20261115b" defer></script>
+  <script src="/assets/extras.js?v=20261115b" defer></script>
+  <script src="/assets/collection.js?v=20261115b" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#main" data-i18n="aria.skip">Zum Inhalt</a>
-  <div class="statusbar-bg" aria-hidden="true"></div>
-  <div class="aurora" aria-hidden="true"></div>
+  <div class="leader" id="leader" hidden aria-hidden="true"><div class="leader-ring"><span class="leader-sweep"></span><b class="leader-num">3</b></div></div>
+  <div class="grain" aria-hidden="true"></div>
 
-  <div class="appbar" id="appbar">
-  <header class="topbar">
+  <!-- Seitenleiste (Desktop) bzw. Kopfzeile (Handy) -->
+  <aside class="sidebar" id="appbar">
     <a class="brand" href="/" data-goto="overview" data-i18n-attr="aria-label:aria.toOverview">
-      <span class="brand-logo-wrap"><img src="/assets/logo-animated.svg" alt="" width="38" height="38" class="brand-logo" /></span>
-      <div>
-        <strong>Watchlfy</strong>
-        <span id="user-line" class="muted small" hidden></span>
-      </div>
+      <span class="brand-reel" aria-hidden="true"><img src="/assets/logo-animated.svg" alt="" width="34" height="34" /></span>
+      <span class="brand-word"><strong>Watchlfy</strong><small data-i18n="brand.tagline">Lichtspielhaus</small></span>
     </a>
-    <div class="topbar-actions">
-      <button id="import-open" class="btn btn-ghost btn-xs topbar-import" type="button">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14" /></svg>
-        <span data-i18n="btn.import">Importieren</span>
-      </button>
-      <button id="profile-btn" class="profile-btn" type="button" data-i18n-attr="aria-label:aria.openProfile;title:aria.openProfile">
-        <img id="avatar" alt="" hidden />
-        <span id="avatar-initials" aria-hidden="true"></span>
-      </button>
-    </div>
-  </header>
-  <nav class="subnav">
-    <div class="tabs" id="panel-tabs" role="tablist">
-      <button role="tab" data-panel="overview" data-i18n="nav.overview">Übersicht</button>
-      <button role="tab" data-panel="top" data-i18n="nav.top">Top-Listen</button>
-      <button role="tab" data-panel="times" data-i18n="nav.times">Schauzeiten</button>
-      <button role="tab" data-panel="progress" data-i18n="nav.progress">Fortschritt</button>
-      <button role="tab" data-panel="history" data-i18n="nav.history">Verlauf</button>
-      <button role="tab" data-panel="wrapped" data-i18n="nav.wrapped">Rückblick</button>
-      <button role="tab" data-panel="friends" data-i18n="nav.friends">Freunde</button>
-      <button role="tab" data-panel="collection" data-i18n="nav.collection">Sammlung</button>
-      <button role="tab" data-panel="admin" id="admin-tab" hidden data-i18n="nav.admin">Admin</button>
-    </div>
-  </nav>
-  </div>
+    <nav class="side-nav" id="panel-tabs" role="tablist" data-i18n-attr="aria-label:nav.main">
+      <button role="tab" data-panel="overview"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H4z"/><path d="M8 20h8M12 16v4"/><path d="m10 8 4 2.5-4 2.5z" fill="currentColor"/></svg><span data-i18n="nav.overview"></span></button>
+      <button role="tab" data-panel="top"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V11h4v10M10 21V4h4v17M15 21v-7h4v7"/></svg><span data-i18n="nav.top"></span></button>
+      <button role="tab" data-panel="times"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9 2h6"/></svg><span data-i18n="nav.times"></span></button>
+      <button role="tab" data-panel="progress"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="1"/><path d="M3 9h18M3 15h18M7 6v3M12 6v3M17 6v3M7 15v3M12 15v3M17 15v3"/></svg><span data-i18n="nav.progress"></span></button>
+      <button role="tab" data-panel="history"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.3-5.6M4 4v4h4"/><path d="M12 8v4l3 2"/></svg><span data-i18n="nav.history"></span></button>
+      <button role="tab" data-panel="wrapped"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h16v12H4zM2 4h20v4H2zM12 4v16"/><path d="M12 4c-1.5-2.5-5-2.5-4 0M12 4c1.5-2.5 5-2.5 4 0"/></svg><span data-i18n="nav.wrapped"></span></button>
+      <button role="tab" data-panel="friends"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5"/><circle cx="17.5" cy="9" r="2.5"/><path d="M16.5 14.6c2.6.2 4.4 1.9 5 4.9"/></svg><span data-i18n="nav.friends"></span></button>
+      <button role="tab" data-panel="collection"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="5" height="16" rx="1"/><rect x="10" y="4" width="5" height="16" rx="1"/><path d="m17 5 3.5 1-3.5 14"/></svg><span data-i18n="nav.collection"></span></button>
+      <button role="tab" data-panel="admin" id="admin-tab" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4 6v6c0 4.5 3.4 8.2 8 9 4.6-.8 8-4.5 8-9V6z"/><path d="m9 12 2 2 4-4"/></svg><span data-i18n="nav.admin"></span></button>
+    </nav>
+    <button id="import-open" class="side-import" type="button">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+      <span data-i18n="btn.import">Importieren</span>
+    </button>
+    <button id="profile-btn" class="side-profile" type="button" data-i18n-attr="aria-label:aria.openProfile;title:aria.openProfile">
+      <span class="sp-avatar"><img id="avatar" alt="" hidden /><span id="avatar-initials" aria-hidden="true"></span></span>
+      <span class="sp-text"><b id="user-line"></b><small data-i18n="nav.profile"></small></span>
+    </button>
+  </aside>
 
-  <!-- Handy: Leiste unten -->
+  <!-- Handy: Dock unten mit Import in der Mitte -->
   <nav class="bottom-nav" id="bottom-nav" data-i18n-attr="aria-label:nav.main">
-    <button type="button" data-bn="overview"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg><span data-i18n="nav.overview">Übersicht</span></button>
-    <button type="button" data-bn="top"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20V10M12 20V4M19 20v-7"/></svg><span data-i18n="nav.top">Top-Listen</span></button>
-    <button type="button" data-bn="history"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span data-i18n="nav.history">Verlauf</span></button>
+    <button type="button" data-bn="overview"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H4z"/><path d="M8 20h8M12 16v4"/><path d="m10 8 4 2.5-4 2.5z" fill="currentColor"/></svg><span data-i18n="nav.overview">Übersicht</span></button>
+    <button type="button" data-bn="top"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V11h4v10M10 21V4h4v17M15 21v-7h4v7"/></svg><span data-i18n="nav.top">Top-Listen</span></button>
+    <button type="button" data-bn="import" class="dock-fab" data-i18n-attr="aria-label:btn.import"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
     <button type="button" data-bn="collection"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="5" height="16" rx="1"/><rect x="10" y="4" width="5" height="16" rx="1"/><path d="m17 5 3.5 1-3.5 14"/></svg><span data-i18n="nav.collection">Sammlung</span></button>
     <button type="button" data-bn="more" aria-haspopup="dialog"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg><span class="bn-more-label" data-i18n="nav.more">Mehr</span></button>
   </nav>
   <dialog id="more-sheet" class="dialog more-sheet" aria-labelledby="more-title">
-    <div class="ms-grip" aria-hidden="true"></div>
     <h2 id="more-title" class="sr-only" data-i18n="nav.more">Mehr</h2>
     <div class="ms-grid" id="more-grid"></div>
   </dialog>
 
   <main class="container" id="main">
+    <header class="page-head" id="page-head">
+      <div class="page-titles"><p class="page-kicker" id="page-kicker"></p><h1 class="page-title" id="page-title"></h1></div>
+      <div class="range-bar" id="range-bar">
+        <div class="segmented small" id="range-control" role="tablist" data-i18n-attr="aria-label:aria.range">
+          <button role="tab" data-range="7d" data-i18n="range.7d"></button>
+          <button role="tab" data-range="30d" data-i18n="range.30d"></button>
+          <button role="tab" data-range="90d" data-i18n="range.90d"></button>
+          <button role="tab" data-range="365d" data-i18n="range.365d"></button>
+          <button role="tab" data-range="all" data-i18n="range.all"></button>
+        </div>
+      </div>
+    </header>
     <section class="hero" id="hero" hidden aria-roledescription="carousel" data-i18n-attr="aria-label:hero.label"></section>
     <section id="privacy-banner" class="notice" hidden>
       <span class="notice-icon" aria-hidden="true">🔒</span>
@@ -107,31 +108,22 @@
     </div>
 
     <div class="view" id="view-stats" hidden>
-      <div class="range-bar" id="range-bar">
-        <div class="segmented small" id="range-control" role="tablist" data-i18n-attr="aria-label:aria.range">
-          <button role="tab" data-range="7d" data-i18n="range.7d"></button>
-          <button role="tab" data-range="30d" data-i18n="range.30d"></button>
-          <button role="tab" data-range="90d" data-i18n="range.90d"></button>
-          <button role="tab" data-range="365d" data-i18n="range.365d"></button>
-          <button role="tab" data-range="all" data-i18n="range.all"></button>
-        </div>
-      </div>
 
       <!-- ================================================= Übersicht -->
       <section class="panel" data-panel="overview">
         <div class="fest-ribbon" id="fest-ribbon" hidden></div>
         <div class="wrapped-promo" id="wrapped-promo" hidden></div>
-        <div class="kpis stat-strip">
-          <article class="kpi kpi-hero">
+        <div class="kpis tickets">
+          <article data-no="001" class="kpi kpi-hero">
             <span class="kpi-label" data-i18n="kpi.watchtime"></span>
             <strong class="kpi-value" data-kpi="hours">–</strong>
             <span class="kpi-sub" data-kpi-sub="hours"></span>
             <svg class="sparkline" id="sparkline" viewBox="0 0 120 32" preserveAspectRatio="none" aria-hidden="true"></svg>
           </article>
-          <article class="kpi"><span class="kpi-label" data-i18n="kpi.avg"></span><strong class="kpi-value" data-kpi="avg">–</strong><span class="kpi-sub" data-i18n="kpi.minPerDay"></span></article>
-          <article class="kpi"><span class="kpi-label" data-i18n="kpi.episodes"></span><strong class="kpi-value" data-kpi="episodes">–</strong><span class="kpi-sub" data-kpi-sub="series"></span></article>
-          <article class="kpi"><span class="kpi-label" data-i18n="kpi.movies"></span><strong class="kpi-value" data-kpi="movies">–</strong><span class="kpi-sub" data-i18n="kpi.different"></span></article>
-          <article class="kpi"><span class="kpi-label" data-i18n="kpi.series"></span><strong class="kpi-value" data-kpi="series">–</strong><span class="kpi-sub" data-kpi-sub="activeDays"></span></article>
+          <article data-no="002" class="kpi"><span class="kpi-label" data-i18n="kpi.avg"></span><strong class="kpi-value" data-kpi="avg">–</strong><span class="kpi-sub" data-i18n="kpi.minPerDay"></span></article>
+          <article data-no="003" class="kpi"><span class="kpi-label" data-i18n="kpi.episodes"></span><strong class="kpi-value" data-kpi="episodes">–</strong><span class="kpi-sub" data-kpi-sub="series"></span></article>
+          <article data-no="004" class="kpi"><span class="kpi-label" data-i18n="kpi.movies"></span><strong class="kpi-value" data-kpi="movies">–</strong><span class="kpi-sub" data-i18n="kpi.different"></span></article>
+          <article data-no="005" class="kpi"><span class="kpi-label" data-i18n="kpi.series"></span><strong class="kpi-value" data-kpi="series">–</strong><span class="kpi-sub" data-kpi-sub="activeDays"></span></article>
         </div>
         <div class="insights" id="insights"></div>
 

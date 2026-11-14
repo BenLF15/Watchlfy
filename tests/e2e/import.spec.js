@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { newUser, importFile, waitTmdb, shot, watchErrors, goPanel, fixture, selectByText } from './helpers.js';
+import { newUser, importFile, waitTmdb, shot, watchErrors, goPanel, fixture, selectByText , openImport } from './helpers.js';
 
 test('Registrierung über das Formular, leerer Zustand mit Import-Knöpfen', async ({ page }, ti) => {
   const errors = watchErrors(page);
@@ -23,7 +23,7 @@ test('Registrierung über das Formular, leerer Zustand mit Import-Knöpfen', asy
 test('Netflix-ZIP: Anleitung, Vorschau mit Profilen, Import, Übersicht mit Postern', async ({ page }, ti) => {
   const errors = watchErrors(page);
   await newUser(page, ti);
-  await page.click('#import-open');
+  await openImport(page);
   await page.click('#import-dialog [data-import="netflix"]');
   await expect(page.locator('.imp-steps li')).toHaveCount(4);
   await expect(page.locator('.imp-links a').first()).toHaveAttribute('href', /netflix\.com/);
@@ -83,7 +83,7 @@ test('Prime-CSV und Max-JSON werden erkannt; mehrere Dienste gleichzeitig', asyn
 
 test('Unklare Spalten → Zuordnungs-Dialog', async ({ page }, ti) => {
   await newUser(page, ti);
-  await page.click('#import-open');
+  await openImport(page);
   await page.click('#import-dialog [data-import="other"]');
   await page.setInputFiles('#import-file', fixture('weird.csv'));
   await page.waitForSelector('.imp-map[open]');

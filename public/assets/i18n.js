@@ -781,6 +781,13 @@
     'range.long.90d': ['letzte 90 Tage', 'last 90 days', '90 derniers jours', 'últimos 90 días', 'ultimi 90 giorni', 'senaste 90 dagarna', 'seneste 90 dage'],
     'range.long.365d': ['letztes Jahr', 'last year', 'dernière année', 'último año', 'ultimo anno', 'senaste året', 'seneste år'],
     'range.long.all': ['aller Zeiten', 'all time', 'de tous les temps', 'de todos los tiempos', 'di sempre', 'genom tiderna', 'nogensinde'],
+
+    // ------------------------------------------------------------ Lichtspielhaus
+    'brand.tagline': ['Lichtspielhaus', 'Picture house', 'Salle obscure', 'Sala de cine', 'Sala cinematografica', 'Biograf', 'Biograf'],
+    'greet.morning': ['Guten Morgen, {name}', 'Good morning, {name}', 'Bonjour, {name}', 'Buenos días, {name}', 'Buongiorno, {name}', 'God morgon, {name}', 'Godmorgen, {name}'],
+    'greet.day': ['Matinee für {name}', 'Matinee for {name}', 'Matinée pour {name}', 'Matiné para {name}', 'Matinée per {name}', 'Matiné för {name}', 'Matiné for {name}'],
+    'greet.evening': ['Guten Abend, {name}', 'Good evening, {name}', 'Bonsoir, {name}', 'Buenas tardes, {name}', 'Buonasera, {name}', 'God kväll, {name}', 'Godaften, {name}'],
+    'greet.night': ['Spätvorstellung, {name}', 'Late show, {name}', 'Séance de minuit, {name}', 'Sesión golfa, {name}', 'Ultimo spettacolo, {name}', 'Sen kvällsvisning, {name}', 'Sen forestilling, {name}'],
   };
 
   // ---------------------------------------------------------------- Sprache bestimmen
