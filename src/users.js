@@ -257,7 +257,7 @@ export async function adminSystem() {
       keepAlive: Boolean(config.keepAliveUrl),
       allowRegistration: config.allowRegistration,
       tmdb: Boolean(config.tmdb.apiKey),
-      trakt: Boolean(config.trakt.clientId && config.trakt.clientSecret),
+      trakt: Boolean(config.trakt.clientId),
     },
   };
 }

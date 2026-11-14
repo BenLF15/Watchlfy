@@ -25,7 +25,7 @@ Render baut standardmäßig den Standard-Branch (`main`). Der aktuelle Stand lie
 |---|---|---|
 | `TMDB_API_KEY` | dein TMDB-Schlüssel (siehe Abschnitt 2) | empfohlen – ohne ihn keine Poster, Genres, Laufzeiten, kein Fortschritt |
 | `TRAKT_CLIENT_ID` | Client ID deiner Trakt-App (siehe Abschnitt 3) | optional – nur für automatischen Sync |
-| `TRAKT_CLIENT_SECRET` | Client Secret deiner Trakt-App | optional – nur zusammen mit der ID |
+| `TRAKT_CLIENT_SECRET` | Client Secret deiner Trakt-App – **leer lassen**, wenn Trakt keins anzeigt (PKCE) | optional |
 | `OPERATOR_NAME` | dein Name (für die Datenschutzerklärung) | Pflicht, wenn andere die App nutzen |
 | `OPERATOR_ADDRESS` | Anschrift, Zeilen mit `|` trennen, z. B. `Musterstraße 1|12345 Musterstadt` | wie oben |
 | `OPERATOR_EMAIL` | Kontakt-E-Mail | wie oben |
@@ -67,7 +67,9 @@ Optional: `TMDB_LANGUAGE` (Standard `de-DE`) für die Sprache von Titeln und Bes
    - **Javascript (cors) origins**: leer lassen
    - **Permissions**: nichts ankreuzen (Watchlfy liest nur)
 3. **Save App** → die Seite zeigt **Client ID** und **Client Secret**.
-4. In Render: **Environment** → `TRAKT_CLIENT_ID` und `TRAKT_CLIENT_SECRET` eintragen → **Save Changes**.
+4. In Render: **Environment** → `TRAKT_CLIENT_ID` eintragen → **Save Changes**. Zeigt Trakt **kein Client Secret** an
+   (Anmeldung per **PKCE**), bleibt `TRAKT_CLIENT_SECRET` leer – Watchlfy meldet sich dann per PKCE an. Gibt Trakt ein
+   Secret aus, trägst du es zusätzlich in `TRAKT_CLIENT_SECRET` ein.
 
 Eigene Domain? Dann zusätzlich `TRAKT_REDIRECT_URI` = `https://deine-domain.de/auth/trakt/callback` setzen
 und dieselbe Adresse in der Trakt-App eintragen.

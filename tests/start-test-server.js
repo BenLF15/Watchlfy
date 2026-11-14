@@ -16,7 +16,7 @@ const env = {
   ...process.env,
   DATABASE_URL: url, PORT: String(appPort), PGSSL: 'false', INTERNAL_SCHEDULER: 'false', SESSION_SECRET: 'test-secret', REGISTER_LIMIT: '1000',
   TMDB_API_KEY: 'test', TMDB_API_BASE: `http://127.0.0.1:${mockPort}/3`, TMDB_IMAGE_BASE: `http://127.0.0.1:${mockPort}/t/p`,
-  TRAKT_CLIENT_ID: 'cid', TRAKT_CLIENT_SECRET: 'secret', TRAKT_API_BASE: `http://127.0.0.1:${mockPort}`, TRAKT_AUTH_BASE: `http://127.0.0.1:${mockPort}`,
+  TRAKT_CLIENT_ID: 'cid', TRAKT_API_BASE: `http://127.0.0.1:${mockPort}`, TRAKT_AUTH_BASE: `http://127.0.0.1:${mockPort}`,
   TRAKT_REDIRECT_URI: `http://127.0.0.1:${appPort}/auth/trakt/callback`,
 };
 const kids = [

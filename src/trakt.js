@@ -7,14 +7,27 @@ import { rawKey } from './parse/titles.js';
 import * as tmdb from './tmdb.js';
 import { UserError } from './users.js';
 
-export const available = () => Boolean(config.trakt.clientId && config.trakt.clientSecret);
+// Nur die Client ID ist Pflicht. Ohne Client Secret läuft die Anmeldung über PKCE (Trakt-Apps mit
+// „PKCE“ geben kein Secret aus); mit Secret wird PKCE zusätzlich mitgeschickt.
+export const available = () => Boolean(config.trakt.clientId);
 
-export function authorizeUrl(state) {
+/** PKCE: zufälliger Prüfwert (bleibt beim Nutzer im Cookie) und dessen SHA-256-Hash (geht an Trakt). */
+export function pkcePair() {
+  const verifier = crypto.randomBytes(48).toString('base64url'); // 64 Zeichen, erlaubt sind 43–128
+  const challenge = crypto.createHash('sha256').update(verifier).digest('base64url');
+  return { verifier, challenge };
+}
+
+export function authorizeUrl(state, challenge) {
   const u = new URL(`${config.trakt.authBase}/oauth/authorize`);
   u.searchParams.set('response_type', 'code');
   u.searchParams.set('client_id', config.trakt.clientId);
   u.searchParams.set('redirect_uri', config.trakt.redirectUri);
   u.searchParams.set('state', state);
+  if (challenge) {
+    u.searchParams.set('code_challenge', challenge);
+    u.searchParams.set('code_challenge_method', 'S256');
+  }
   return u.toString();
 }
 
@@ -22,10 +35,20 @@ async function tokenRequest(body) {
   const res = await fetch(`${config.trakt.base}/oauth/token`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ client_id: config.trakt.clientId, client_secret: config.trakt.clientSecret, redirect_uri: config.trakt.redirectUri, ...body }),
+    body: JSON.stringify({
+      client_id: config.trakt.clientId,
+      // Secret nur senden, wenn es eins gibt (PKCE-Apps haben keins)
+      ...(config.trakt.clientSecret ? { client_secret: config.trakt.clientSecret } : {}),
+      redirect_uri: config.trakt.redirectUri,
+      ...body,
+    }),
     signal: AbortSignal.timeout(15000),
   });
-  if (!res.ok) throw Object.assign(new Error(`Trakt-Token ${res.status}`), { code: 'TRAKT_TOKEN' });
+  if (!res.ok) {
+    const detail = await res.text().catch(() => '');
+    console.error('[trakt] Token-Anfrage abgelehnt', res.status, detail.slice(0, 300));
+    throw Object.assign(new Error(`Trakt-Token ${res.status}`), { code: 'TRAKT_TOKEN' });
+  }
   const j = await res.json();
   return { access: j.access_token, refresh: j.refresh_token, expiresAt: new Date(((j.created_at || Date.now() / 1000) + (j.expires_in || 7776000)) * 1000) };
 }
@@ -45,8 +68,8 @@ async function traktFetch(token, path, { params = {}, allow204 = false } = {}) {
 }
 
 /** OAuth-Code einlösen und Konto verknüpfen. */
-export async function connect(accountId, code) {
-  const tok = await tokenRequest({ code, grant_type: 'authorization_code' });
+export async function connect(accountId, code, verifier = null) {
+  const tok = await tokenRequest({ code, grant_type: 'authorization_code', ...(verifier ? { code_verifier: verifier } : {}) });
   let username = null;
   try { username = (await traktFetch(tok.access, '/users/settings')).data?.user?.username || null; } catch { /* egal */ }
   await query(

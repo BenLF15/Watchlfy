@@ -1,5 +1,6 @@
 // Mock für TMDB- und Trakt-API (nur für Tests). Start: node tests/mock-server.js [port]
 // Liefert einen kleinen Katalog, Poster als SVG und einen Trakt-OAuth/Verlauf.
+import crypto from 'node:crypto';
 import http from 'node:http';
 
 const port = Number(process.argv[2] || process.env.MOCK_PORT || 4100);
@@ -64,7 +65,7 @@ function send(res, status, body, type = 'application/json') {
   res.end(typeof body === 'string' ? body : JSON.stringify(body));
 }
 
-http.createServer((req, res) => {
+http.createServer(async (req, res) => {
   const u = new URL(req.url, `http://localhost:${port}`);
   const p = u.pathname;
   let m;
@@ -97,10 +98,21 @@ http.createServer((req, res) => {
   // ---------------- Trakt
   if (p === '/oauth/authorize') {
     const redirect = u.searchParams.get('redirect_uri');
-    res.writeHead(302, { Location: `${redirect}?code=mockcode&state=${encodeURIComponent(u.searchParams.get('state') || '')}` });
+    const ch = u.searchParams.get('code_challenge') || '';
+    if (ch && u.searchParams.get('code_challenge_method') !== 'S256') return send(res, 400, { error: 'invalid_request' });
+    res.writeHead(302, { Location: `${redirect}?code=${encodeURIComponent(`mockcode.${ch}`)}&state=${encodeURIComponent(u.searchParams.get('state') || '')}` });
     return res.end();
   }
   if (p === '/oauth/token' && req.method === 'POST') {
+    const body = await new Promise((r) => { let b = ''; req.on('data', (c) => { b += c; }); req.on('end', () => r(JSON.parse(b || '{}'))); });
+    if (body.grant_type === 'authorization_code') {
+      // Wie ein PKCE-Server: Challenge aus dem Code muss zum Prüfwert passen; ohne PKCE ist das Secret Pflicht
+      const ch = String(body.code || '').split('.')[1] || '';
+      const pkceOk = ch && body.code_verifier && crypto.createHash('sha256').update(body.code_verifier).digest('base64url') === ch;
+      if (ch && !pkceOk) return send(res, 401, { error: 'invalid_grant', error_description: 'code_verifier passt nicht' });
+      if (!ch && body.client_secret !== 'secret') return send(res, 401, { error: 'invalid_client' });
+      trakt.lastGrant = { pkce: Boolean(ch), secret: Boolean(body.client_secret) };
+    }
     const tok = `tok-${Date.now()}`;
     trakt.tokens.add(tok);
     return send(res, 200, { access_token: tok, refresh_token: `ref-${tok}`, expires_in: 7776000, created_at: Math.floor(Date.now() / 1000), token_type: 'bearer', scope: 'public' });
@@ -121,6 +133,7 @@ http.createServer((req, res) => {
     }
     if (p === '/sync/ratings') return send(res, 200, [{ rated_at: new Date().toISOString(), rating: 9, type: 'show', show: { title: 'Dark', ids: { tmdb: 70523 } } }, { rated_at: new Date().toISOString(), rating: 8, type: 'movie', movie: { title: 'Oppenheimer', ids: { tmdb: 872585 } } }]);
   }
+  if (p === '/mock/last-grant') return send(res, 200, trakt.lastGrant || {});
   if (p === '/mock/watching') { trakt.watching = u.searchParams.get('on') !== '0'; return send(res, 200, { ok: true }); }
   send(res, 404, { status_code: 34, status_message: 'not found' });
 }).listen(port, () => console.log(`[mock] TMDB/Trakt-Mock auf Port ${port}`));

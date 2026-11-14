@@ -41,7 +41,7 @@ Dienst selbst gibt.
 
 ```bash
 npm install
-cp .env.example .env   # DATABASE_URL eintragen, optional TMDB_API_KEY, TRAKT_CLIENT_ID/SECRET
+cp .env.example .env   # DATABASE_URL eintragen, optional TMDB_API_KEY, TRAKT_CLIENT_ID
 npm run dev            # http://127.0.0.1:3000
 ```
 
@@ -54,7 +54,7 @@ Das erste registrierte Konto wird Admin. Das Datenbankschema wird bei jedem Star
 | `DATABASE_URL` | ✓ | Postgres (Render: „Internal Database URL“) |
 | `SESSION_SECRET` | empfohlen | Schlüssel für Sitzungs-Cookies (Render erzeugt ihn per Blueprint) |
 | `TMDB_API_KEY` | empfohlen | v3-API-Key oder v4-Lesetoken von [themoviedb.org](https://www.themoviedb.org/settings/api) – ohne ihn gibt es keine Poster, Genres, Laufzeiten und keinen Fortschritt |
-| `TRAKT_CLIENT_ID`, `TRAKT_CLIENT_SECRET` | optional | Trakt-App unter [trakt.tv/oauth/applications](https://trakt.tv/oauth/applications); Redirect URI: `<deine URL>/auth/trakt/callback` |
+| `TRAKT_CLIENT_ID` (+ `TRAKT_CLIENT_SECRET`, nur falls Trakt eins ausgibt – sonst PKCE) | optional | Trakt-App unter [trakt.tv/oauth/applications](https://trakt.tv/oauth/applications); Redirect URI: `<deine URL>/auth/trakt/callback` |
 | `TIMEZONE` | optional | Standard `Europe/Berlin` (für Uhrzeiten, Tageswechsel der Videothek) |
 | `OPERATOR_NAME`, `OPERATOR_ADDRESS`, `OPERATOR_EMAIL` | für öffentliche Instanzen | Angaben in der Datenschutzerklärung |
 | `ALLOW_REGISTRATION`, `REGISTER_LIMIT`, `SYNC_INTERVAL_MINUTES`, `MAX_UPLOAD_MB`, `TMDB_LANGUAGE`, `KEEP_ALIVE`, `CRON_SECRET` | optional | siehe `.env.example` |

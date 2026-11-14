@@ -9,6 +9,9 @@ test('Mit Trakt verbinden (OAuth), Verlauf holen, „Läuft gerade“, keine Dop
   await page.waitForURL((u) => u.pathname === '/');
   await page.waitForSelector('body.ready');
   await expect(page.locator('#toast')).toContainText('Trakt verbunden');
+  // Anmeldung lief per PKCE (Prüfwert statt Client Secret) – wie bei Trakt-Apps ohne Secret
+  const grant = await (await page.request.get('http://127.0.0.1:4199/mock/last-grant')).json();
+  expect(grant).toEqual({ pkce: true, secret: false });
   // Erster Sync läuft im Hintergrund
   await expect.poll(async () => (await (await page.request.get('/api/status')).json()).counts.views, { timeout: 20_000 }).toBe(4);
   await waitTmdb(page);

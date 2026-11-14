@@ -1865,7 +1865,7 @@
       const c = sys.catalog;
       $('#admin-system').innerHTML = [
         ['admin.db', `${sys.database.size} · ${sys.database.version}`], ['admin.catalog', t('admin.catalogLine', { t: fmt(c.titles), e: fmt(c.episodes), p: fmt(c.aliases_pending), u: fmt(c.aliases_unsure) })],
-        ['TMDB', sys.config.tmdb ? '✓' : t('admin.missing', { v: 'TMDB_API_KEY' })], ['Trakt', sys.config.trakt ? '✓' : t('admin.missing', { v: 'TRAKT_CLIENT_ID/SECRET' })],
+        ['TMDB', sys.config.tmdb ? '✓' : t('admin.missing', { v: 'TMDB_API_KEY' })], ['Trakt', sys.config.trakt ? '✓' : t('admin.missing', { v: 'TRAKT_CLIENT_ID' })],
         ['admin.sync', t('admin.syncLine', { n: sys.config.syncIntervalMinutes })], ['admin.tz', sys.config.timezone],
       ].map(([k, v]) => `<dt>${esc(I.D[k] ? t(k) : k)}</dt><dd>${esc(v)}</dd>`).join('');
       $('#admin-errors').innerHTML = sys.errors.map((e) => `<li><b>${esc(e.username || '–')}</b><span>${esc(e.job)} · ${esc(dateTimeFmt.format(new Date(e.started_at)))}</span><small class="muted">${esc(e.message || '')}</small></li>`).join('') || `<li class="empty">✓ ${esc(t('admin.noErrors'))}</li>`;

@@ -26,7 +26,7 @@ code{color:#ff5a5f;font-weight:600}.err{background:#2a1515;border:1px solid #e66
 <h1>Fast geschafft – Einrichtung unvollständig</h1>
 ${missing.length ? `<p>Trage in Render unter <strong>Environment</strong> diese Variablen ein und speichere (der Service startet dann neu):</p><ul>${rows}</ul>` : ''}
 ${error ? `<p>Beim Start ist ein Fehler aufgetreten:</p><div class="err">${esc(error)}</div>` : ''}
-<p>Optional: <code>TMDB_API_KEY</code> (Poster &amp; Metadaten) und <code>TRAKT_CLIENT_ID</code>/<code>TRAKT_CLIENT_SECRET</code>.<br>Trakt-Redirect-URI: <code>${esc(config.trakt.redirectUri)}</code></p>
+<p>Optional: <code>TMDB_API_KEY</code> (Poster &amp; Metadaten) und <code>TRAKT_CLIENT_ID</code> (Client Secret nur, falls deine Trakt-App eins hat).<br>Trakt-Redirect-URI: <code>${esc(config.trakt.redirectUri)}</code></p>
 </main></body></html>`;
   http
     .createServer((req, res) => {

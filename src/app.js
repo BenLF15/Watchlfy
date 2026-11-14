@@ -269,17 +269,26 @@ app.get('/avatar/:id', async (req, res) => {
 app.get('/auth/trakt', (_req, res) => {
   if (!trakt.available()) return res.redirect('/?trakt=not_configured');
   const state = crypto.randomBytes(16).toString('hex');
+  const { verifier, challenge } = trakt.pkcePair();
   setCookie(res, 'wl_oauth_state', state, 600);
-  res.redirect(trakt.authorizeUrl(state));
+  // PKCE-Prüfwert bleibt nur im Browser (HttpOnly, 10 Min.) und wird erst beim Token-Tausch an Trakt geschickt
+  setCookie(res, 'wl_oauth_pkce', `${verifier}.${sign(`pkce:${verifier}:${state}`)}`, 600);
+  res.redirect(trakt.authorizeUrl(state, challenge));
 });
 app.get('/auth/trakt/callback', async (req, res) => {
   const { code, state, error } = req.query;
-  const expected = parseCookies(req).wl_oauth_state;
+  const cookies = parseCookies(req);
+  const expected = cookies.wl_oauth_state;
   setCookie(res, 'wl_oauth_state', '', 0);
+  setCookie(res, 'wl_oauth_pkce', '', 0);
   if (error) return res.redirect(`/?trakt=${encodeURIComponent(String(error))}`);
   if (!code || !state || state !== expected) return res.redirect('/?trakt=state_mismatch');
+  // Prüfwert nur verwenden, wenn die Signatur zu genau dieser Anmeldung (state) passt
+  const [verifier, vsig] = String(cookies.wl_oauth_pkce || '').split('.');
+  const pkceOk = verifier && vsig && vsig === sign(`pkce:${verifier}:${state}`);
+  if (!pkceOk && !config.trakt.clientSecret) return res.redirect('/?trakt=pkce_missing');
   try {
-    await trakt.connect(req.account.id, String(code));
+    await trakt.connect(req.account.id, String(code), pkceOk ? verifier : null);
     trakt.syncAccount(req.account.id, { full: true }).catch((err) => console.error('[trakt]', err.message));
     res.redirect('/?trakt=connected');
   } catch (err) {
@@ -317,7 +326,7 @@ api.get(
       counts: c,
       tmdb: { enabled: tmdb.enabled(), loading: tmdb.isEnriching(), pausedUntil: tmdb.tmdbPausedUntil(), ...tm },
       trakt: {
-        available: Boolean(config.trakt.clientId && config.trakt.clientSecret),
+        available: trakt.available(),
         connected: Boolean(a.trakt_connected), username: a.trakt_username || null,
         last_sync: a.trakt_last_sync || null, error: a.trakt_error || null,
       },
