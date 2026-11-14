@@ -109,3 +109,47 @@ test('Import rückgängig machen und Dienst-Daten löschen', async ({ page }, ti
   const st = await (await page.request.get('/api/status')).json();
   expect(st.counts.views).toBe(0);
 });
+
+/** Datei direkt über die API importieren (ohne Assistent). */
+async function apiImport(page, source, filename, text) {
+  const pv = await (await page.request.post(`/api/import/preview?source=${source}`, { headers: { 'Content-Type': 'application/octet-stream', 'X-Filename': filename }, data: Buffer.from(text) })).json();
+  const r = await page.request.post('/api/import/commit', { data: { token: pv.token } });
+  expect(r.ok()).toBeTruthy();
+  return r.json();
+}
+const ep = async (page) => (await (await page.request.get('/api/dashboard?range=all')).json()).overview.episodes;
+
+test('Keine Doppelzählung: Netflix kurz + genau, Trakt + späterer Import', async ({ page }, ti) => {
+  await newUser(page, ti);
+  const d = new Date(Date.now() - 5 * 864e5);
+  const pad = (n) => String(n).padStart(2, '0');
+  const dmy = `${pad(d.getUTCDate())}.${pad(d.getUTCMonth() + 1)}.${String(d.getUTCFullYear()).slice(2)}`;
+  const iso = `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())} 20:15:00`;
+  // 1) schneller Export: nur Datum, Folge nur über den Titel erkennbar
+  await apiImport(page, 'netflix', 'NetflixViewingHistory.csv', `Title,Date\n"Dark: Staffel 1: Geheimnisse","${dmy}"\n"Inception","${dmy}"\n`);
+  await waitTmdb(page);
+  expect(await ep(page)).toBe(1);
+  // 2) genauer Export derselben Folge + desselben Films → zählt trotzdem nur einmal
+  await apiImport(page, 'netflix', 'ViewingActivity.csv', `Profile Name,Start Time,Duration,Title,Supplemental Video Type,Device Type\nBen,${iso},00:52:00,Dark: Staffel 1: Geheimnisse (Folge 1),,TV\nBen,${iso},02:28:00,Inception,,TV\n`);
+  await waitTmdb(page);
+  expect(await ep(page)).toBe(1);
+  const ov = (await (await page.request.get('/api/dashboard?range=all')).json()).overview;
+  expect(ov.movies).toBe(1);
+  expect(ov.views).toBe(2);
+  // 3) Trakt meldet Dark S2E1 (vor 3 Std.) – kommt dieselbe Folge danach per Import, zählt sie einmal
+  await page.goto('/auth/trakt');
+  await page.waitForSelector('body.ready');
+  await expect.poll(async () => (await (await page.request.get('/api/status')).json()).counts.sources.includes('trakt'), { timeout: 20_000 }).toBe(true);
+  await waitTmdb(page);
+  const before = await ep(page);
+  const t3 = new Date(Date.now() - 3 * 3600e3);
+  const iso3 = `${t3.getUTCFullYear()}-${pad(t3.getUTCMonth() + 1)}-${pad(t3.getUTCDate())} ${pad(t3.getUTCHours())}:${pad(t3.getUTCMinutes())}:00`;
+  await apiImport(page, 'netflix', 'ViewingActivity2.csv', `Profile Name,Start Time,Duration,Title,Supplemental Video Type,Device Type\nBen,${iso3},00:55:00,Dark: Staffel 2: Anfänge und Enden (Folge 1),,TV\n`);
+  await waitTmdb(page);
+  expect(await ep(page)).toBe(before);
+  // Verlauf zeigt die Folge nur einmal – mit echter Dauer aus Netflix
+  const h = (await (await page.request.get('/api/history?q=Anfänge')).json()).items;
+  expect(h.length).toBe(1);
+  expect(h[0].source).toBe('netflix');
+  expect(h[0].estimated).toBe(false);
+});

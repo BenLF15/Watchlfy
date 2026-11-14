@@ -103,8 +103,9 @@ docs/PLAN.md Datenmodell & Import-Formate
   Datenseiten können sich ebenfalls ändern.
 - **Zeitzonen.** Zeitangaben ohne Zone (z. B. Netflix „Start Time“) werden als UTC gelesen.
 - **TMDB-Treffer** für mehrdeutige oder lokalisierte Titel können falsch sein → im Profil unter „Zuordnungen prüfen“ korrigieren.
-- **Doppelte Zählung** zwischen Trakt und Importen wird für dieselbe Folge am selben Tag vermieden; zwischen zwei
-  Streaming-Importen (gleicher Titel bei zwei Diensten) nicht.
+- **Doppelte Zählung** wird vermieden: Trakt-Einträge zählen nicht, wenn dieselbe Folge/derselbe Film innerhalb von 36 Std.
+  auch per Import vorliegt, und Netflix-Kurzexport-Einträge (nur Datum) treten hinter die genaue Datenauskunft zurück.
+  Zwischen zwei verschiedenen Streaming-Diensten (gleicher Titel bei Netflix und Prime) wird nicht zusammengeführt.
 - **Vorführraum:** Das Standbild wird serverseitig in kleiner Auflösung geliefert (echte Unschärfe); wer die
   Netzwerk-Tools öffnet, kann trotzdem schummeln.
 - Poster, Backdrops und Metadaten stammen von TMDB. *This product uses the TMDB API but is not endorsed or certified by TMDB.*

@@ -8,6 +8,25 @@ export const DEFAULT_SECS = { tv: 45 * 60, movie: 105 * 60 };
 const TZ = config.timezone;
 
 /**
+ * Doppelte Zählung vermeiden (gilt für alle Auswertungen, nichts wird gelöscht):
+ * - Trakt-Eintrag zählt nicht, wenn dieselbe Folge bzw. derselbe Film innerhalb von 36 Std. aus einem Import vorliegt.
+ * - Eintrag nur mit Datum (z. B. Netflix-Kurzexport) zählt nicht, wenn derselbe Dienst ihn auch mit Uhrzeit geliefert hat
+ *   (Netflix-Datenauskunft). Gleich ist, was zum selben Titel gehört (Roh-Titel oder TMDB-Zuordnung).
+ */
+export const NOT_SUPERSEDED = `
+       AND NOT EXISTS (
+         SELECT 1 FROM views o
+           LEFT JOIN title_aliases oa ON oa.account_id = o.account_id AND oa.raw_key = o.raw_key
+          WHERE o.account_id = v.account_id AND o.id <> v.id
+            AND ((v.source = 'trakt' AND o.source <> 'trakt') OR (NOT v.time_known AND o.time_known AND o.source = v.source))
+            AND (o.raw_key = v.raw_key OR (al.title_id IS NOT NULL AND oa.title_id = al.title_id))
+            AND o.watched_at BETWEEN v.watched_at - interval '36 hours' AND v.watched_at + interval '36 hours'
+            AND (COALESCE(t.kind, v.kind_hint) = 'movie'
+                 OR (o.season IS NOT DISTINCT FROM v.season
+                     AND (o.episode = v.episode OR lower(o.episode_name) = lower(v.episode_name)
+                          OR (o.episode IS NULL AND v.episode IS NULL AND o.episode_name IS NULL AND v.episode_name IS NULL)))))`;
+
+/**
  * Basis-CTE „v“: ein Eintrag pro Seh-Ereignis mit aufgelöstem Titel und Sekunden.
  * $1 = Konto, $2 = Tage (NULL = alles), $3 = Zeitzone. Weitere Parameter ab $4.
  */
@@ -30,6 +49,7 @@ export const BASE_SQL = `
       LEFT JOIN episodes e ON e.title_id = t.id AND e.season = v.season AND e.episode = v.episode
      WHERE v.account_id = $1
        AND ($2::int IS NULL OR v.watched_at >= now() - make_interval(days => $2::int))
+       ${NOT_SUPERSEDED}
   )`;
 
 const run = (sql, accountId, days, extra = []) => query(`WITH ${BASE_SQL} ${sql}`, [accountId, days ?? null, TZ, ...extra]).then((r) => r.rows);
@@ -69,7 +89,8 @@ export async function overview(accountId, days) {
              LEFT JOIN titles t ON t.id = al.title_id
              LEFT JOIN episodes e ON e.title_id = t.id AND e.season = v.season AND e.episode = v.episode
             WHERE v.account_id = $1 AND v.watched_at >= now() - make_interval(days => $2::int * 2)
-              AND v.watched_at < now() - make_interval(days => $2::int)`,
+              AND v.watched_at < now() - make_interval(days => $2::int)
+              ${NOT_SUPERSEDED}`,
           [accountId, days],
         ).then((r) => r.rows[0])
       : Promise.resolve(null),
