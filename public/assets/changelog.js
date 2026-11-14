@@ -7,6 +7,32 @@
    Danach den Cache-Parameter ?v=… in public/*.html hochzählen. */
 window.WatchlfyNews = [
   {
+    id: '2026-11-14b',
+    date: '2026-11-14',
+    items: [
+      {
+        icon: '📼', go: 'collection',
+        t: ['Begehbare Videothek', 'Walk-in video store', 'Vidéoclub à visiter', 'Videoclub para recorrer', 'Videoteca da visitare', 'Videobutik att gå in i', 'Videobutik du kan gå ind i'],
+        d: ['Sammle DVDs, Blu-rays und Filmplakate deiner Serien – vom Steelbook bis zur holografischen Ausgabe.', 'Collect DVDs, Blu-rays and posters of your series – from steelbooks to holographic editions.', 'Collectionne DVD, Blu-ray et affiches – du steelbook à l’édition holographique.', 'Colecciona DVD, Blu-ray y pósteres, del steelbook a la edición holográfica.', 'Colleziona DVD, Blu-ray e locandine – dallo steelbook all’edizione olografica.', 'Samla dvd, Blu-ray och affischer – från steelbook till holografisk utgåva.', 'Saml dvd’er, Blu-rays og plakater – fra steelbook til holografisk udgave.'],
+      },
+      {
+        icon: '📽️', go: 'collection',
+        t: ['Vorführraum-Quiz', 'Screening room quiz', 'Quiz de projection', 'Quiz de proyección', 'Quiz in sala', 'Visningsquiz', 'Biografquiz'],
+        d: ['Erkenne Titel am unscharfen Standbild – je früher, desto mehr Noten.', 'Guess titles from a blurry still – the earlier, the more notes.', 'Devine les titres sur une image floue – plus tôt, plus de notes.', 'Adivina títulos en una imagen borrosa: cuanto antes, más notas.', 'Indovina i titoli da un fotogramma sfocato – prima indovini, più note.', 'Gissa titlar från en suddig stillbild – ju tidigare, desto fler noter.', 'Gæt titler fra et sløret stillbillede – jo før, jo flere noder.'],
+      },
+      {
+        icon: '🎬', go: 'wrapped',
+        t: ['Dein Jahr in Serien', 'Your year in series', 'Ton année en séries', 'Tu año en series', 'Il tuo anno in serie', 'Ditt år i serier', 'Dit år i serier'],
+        d: ['Rückblick als Story im Vollbild – wischen zum Schließen.', 'Year in review as a full-screen story – swipe to close.', 'Rétrospective en story plein écran – balaie pour fermer.', 'Resumen en historia a pantalla completa; desliza para cerrar.', 'Riepilogo come storia a schermo intero – scorri per chiudere.', 'Återblick som helskärmsstory – svep för att stänga.', 'Tilbageblik som fuldskærmsstory – swipe for at lukke.'],
+      },
+      {
+        icon: '🔗', go: 'profile',
+        t: ['Trakt & Freunde', 'Trakt & friends', 'Trakt & amis', 'Trakt y amigos', 'Trakt e amici', 'Trakt & vänner', 'Trakt & venner'],
+        d: ['Automatisch synchronisieren, „Läuft gerade“ sehen und Geschmack mit Freunden vergleichen.', 'Sync automatically, see what’s playing and compare taste with friends.', 'Synchro automatique, « en cours » et comparaison avec tes amis.', 'Sincroniza solo, ve qué se reproduce y compara gustos con amigos.', 'Sincronizza da solo, vedi cosa guardi e confronta i gusti con gli amici.', 'Synka automatiskt, se vad som spelas och jämför smak med vänner.', 'Synkroniser automatisk, se hvad der spiller, og sammenlign smag med venner.'],
+      },
+    ],
+  },
+  {
     id: '2026-11-14a',
     date: '2026-11-14',
     items: [

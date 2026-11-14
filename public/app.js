@@ -280,7 +280,7 @@
     if (!tm.enabled) html = `<span class="notice-icon" aria-hidden="true">🎞️</span><div class="notice-text"><strong>${esc(t('tmdb.offTitle'))}</strong><p class="muted small">${esc(t('tmdb.offText'))}</p></div>`;
     else if (tm.pending > 0) html = `<span class="notice-icon spin-slow" aria-hidden="true">⏳</span><div class="notice-text"><strong>${esc(t('tmdb.loadingTitle'))}</strong><p class="muted small">${esc(t('tmdb.loadingText', { n: fmt(tm.pending) }))}</p></div>`;
     else if (tm.uncertain > 0 && !session.get('tmdb-review-dismiss')) {
-      html = `<span class="notice-icon" aria-hidden="true">🔎</span><div class="notice-text"><strong>${esc(t('tmdb.reviewTitle'))}</strong><p class="muted small">${esc(t('tmdb.reviewText', { n: fmt(tm.uncertain) }))}</p></div>
+      html = `<span class="notice-icon" aria-hidden="true">🔎</span><div class="notice-text"><strong>${esc(t('tmdb.reviewTitle'))}</strong><p class="muted small">${esc(tn('tmdb.reviewText', tm.uncertain, { n: fmt(tm.uncertain) }))}</p></div>
         <div class="notice-actions"><button class="btn btn-primary btn-xs" type="button" data-open-review>${esc(t('tmdb.reviewBtn'))}</button><button class="btn btn-ghost btn-xs" type="button" data-dismiss-review>${esc(t('btn.later'))}</button></div>`;
     }
     el.innerHTML = html;
@@ -352,7 +352,10 @@
     document.documentElement.dataset.vtDir = dir || 'none';
     try {
       const vt = document.startViewTransition(update);
-      vt.finished.finally(() => { delete document.documentElement.dataset.vtDir; });
+      // Abgebrochene Übergänge (z. B. Zeitüberschreitung) sind harmlos – nicht als Fehler melden
+      vt.ready.catch(() => {});
+      vt.updateCallbackDone.catch(() => {});
+      vt.finished.catch(() => {}).finally(() => { delete document.documentElement.dataset.vtDir; });
     } catch { update(); }
   }
   (function smoothDialogs() {

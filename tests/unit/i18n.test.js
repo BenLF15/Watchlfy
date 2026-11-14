@@ -12,7 +12,7 @@ function loadD() {
 }
 const D = loadD();
 const prefixes = new Set(Object.keys(D).map((k) => k.split('.')[0]));
-const files = ['public/app.js', 'public/assets/extras.js', 'public/index.html', 'public/login.html', 'public/assets/login.js'];
+const files = ['public/app.js', 'public/assets/extras.js', 'public/assets/collection.js', 'public/index.html', 'public/login.html', 'public/assets/login.js'];
 
 test('alle Einträge haben 7 Sprachen', () => {
   for (const [k, v] of Object.entries(D)) assert.equal(v.length, 7, k);

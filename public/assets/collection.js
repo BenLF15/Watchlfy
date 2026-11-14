@@ -3,7 +3,7 @@
   'use strict';
   const W = window.Watchlfy;
   if (!W) return;
-  const { api, postJSON, t, esc, fmt, toast, errMsg, $, $$, poster, tmdbImg, reduceMotion, confetti, CLOSE_BTN, store, session } = W;
+  const { api, postJSON, t, tn, esc, fmt, toast, errMsg, $, $$, poster, tmdbImg, reduceMotion, confetti, CLOSE_BTN, store, session } = W;
 
   const TIERS = ['bronze', 'silver', 'gold', 'platinum'];
   const RAR = ['common', 'rare', 'epic', 'legendary', 'mythic'];
@@ -52,7 +52,7 @@
     const tabs = ['shelf', 'store', 'screening', 'notes'];
     el.innerHTML = `
       <section class="card col-head">
-        <div><h2 data-fest-title>${esc(t('col.title'))}</h2><p class="muted small">${esc(t('col.sub', { n: d.items.length }))}</p></div>
+        <div><h2 data-fest-title>${esc(t('col.title'))}</h2><p class="muted small">${esc(tn('col.sub', d.items.length, { n: d.items.length }))}</p></div>
         ${balanceHtml(d.balance)}
       </section>
       <div class="segmented col-tabs" id="col-tabs" role="tablist">${tabs.map((x) => `<button role="tab" data-coltab="${x}">${esc(t(`col.tab.${x}`))}</button>`).join('')}</div>
@@ -82,11 +82,11 @@
     for (let i = 0; i < discs.length; i += 8) rows.push(discs.slice(i, i + 8));
     return `
       <section class="card wall-card">
-        <header class="card-head"><div><h3>${esc(t('col.wall'))}</h3><p class="muted small">${esc(t('col.wallSub', { n: discs.length }))}</p></div></header>
+        <header class="card-head"><div><h3>${esc(t('col.wall'))}</h3><p class="muted small">${esc(tn('col.wallSub', discs.length, { n: discs.length }))}</p></div></header>
         <div class="disc-wall">${rows.map((r) => `<div class="shelf-row">${r.map((it, k) => caseHtml(it, { tag: 'button', attrs: `type="button" data-own="${esc(it.id)}" style="--i:${k}" aria-label="${esc(it.name)}"` })).join('')}</div>`).join('') || `<p class="muted small">${esc(t('col.noDiscs'))}</p>`}</div>
       </section>
       <section class="card gallery-card">
-        <header class="card-head"><div><h3>${esc(t('col.gallery'))}</h3><p class="muted small">${esc(t('col.gallerySub', { n: posters.length }))}</p></div></header>
+        <header class="card-head"><div><h3>${esc(t('col.gallery'))}</h3><p class="muted small">${esc(tn('col.gallerySub', posters.length, { n: posters.length }))}</p></div></header>
         <div class="poster-wall">${posters.map((it, k) => caseHtml(it, { tag: 'button', attrs: `type="button" data-own="${esc(it.id)}" style="--i:${k};--tilt:${((it.hue % 7) - 3) * 0.6}deg" aria-label="${esc(it.name)}"` })).join('') || `<p class="muted small">${esc(t('col.noPosters'))}</p>`}</div>
       </section>`;
   }
@@ -246,8 +246,7 @@
     $('.screen')?.classList.replace(`lvl-${round.level}`, 'lvl-3');
     if (round.correct) confetti($('#fx-layer'), 14);
     if (r.reward) setTimeout(() => noteToast([{ label: 'quiz', ...r.reward }]), 900);
-    setTimeout(() => { renderBody(); }, reduceMotion ? 300 : 1500);
-    render();
+    setTimeout(() => { render(); }, reduceMotion ? 300 : 1500);
   }
 
   function refineHtml() {

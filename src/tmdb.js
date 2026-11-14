@@ -217,12 +217,15 @@ async function resolveEpisodeNumbers(accountId = null) {
 
 // ---------------------------------------------------------------- Hintergrund-Lauf
 let running = null;
+let again = false;
 export const isEnriching = () => Boolean(running);
 
-/** Gleicht offene Titel ab, lädt Details und benötigte Staffeln. Läuft nie doppelt. */
+/** Gleicht offene Titel ab, lädt Details und benötigte Staffeln. Läuft nie doppelt –
+ *  wird es währenddessen erneut angestoßen (z. B. neuer Import), folgt direkt ein weiterer Lauf. */
 export function enrich({ limit = config.tmdb.batch } = {}) {
   if (!enabled()) return Promise.resolve({ skipped: 'disabled' });
-  if (running) return running;
+  if (running) { again = true; return running; }
+  again = false;
   running = (async () => {
     const stats = { matched: 0, details: 0, seasons: 0, errors: 0 };
     const deadline = Date.now() + 4 * 60_000;
@@ -278,6 +281,7 @@ export function enrich({ limit = config.tmdb.batch } = {}) {
       running = null;
     }
     if (stats.matched || stats.details || stats.seasons) console.log('[tmdb]', JSON.stringify(stats));
+    if (again && !tmdbPausedUntil()) setImmediate(() => enrich({ limit }).catch(() => {}));
     return stats;
   })();
   return running;
