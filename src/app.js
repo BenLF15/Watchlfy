@@ -397,8 +397,8 @@ api.get('/dashboard', wrap(async (req, res) => {
   const days = rangeDays(req);
   const [overview, series, movies, progress] = await Promise.all([
     stats.overview(req.account.id, days),
-    stats.top(req.account.id, days, 'series', 5),
-    stats.top(req.account.id, days, 'movies', 5),
+    stats.top(req.account.id, days, 'series', 10),
+    stats.top(req.account.id, days, 'movies', 10),
     stats.progress(req.account.id),
   ]);
   res.json({ range: req.query.range || '30d', overview, series, movies, continue: progress.continue.slice(0, 10) });

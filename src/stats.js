@@ -18,7 +18,7 @@ export const BASE_SQL = `
            COALESCE(t.kind, v.kind_hint) AS kind,
            COALESCE('t' || t.id, 'r' || md5(v.raw_key)) AS tkey,
            t.id AS title_id, t.tmdb_id, COALESCE(t.name, al.raw_name) AS name, t.year, t.poster_path, t.backdrop_path,
-           t.genres, t.countries, t.cast_names, al.state AS match_state,
+           t.genres, t.countries, t.cast_names, t.overview, al.state AS match_state,
            COALESCE(v.duration_sec, e.runtime * 60, t.runtime * 60,
                     CASE WHEN COALESCE(t.kind, v.kind_hint) = 'movie' THEN ${DEFAULT_SECS.movie} ELSE ${DEFAULT_SECS.tv} END) AS secs,
            v.duration_sec IS NULL AS estimated,
@@ -115,7 +115,8 @@ export async function top(accountId, days, kind = 'series', limit = 50) {
   switch (kind) {
     case 'movies':
       return run(
-        `SELECT tkey, title_id, max(name) AS name, max(year) AS year, max(poster_path) AS poster_path, sum(secs) AS secs, count(*) AS views,
+        `SELECT tkey, title_id, max(name) AS name, max(year) AS year, max(poster_path) AS poster_path, max(backdrop_path) AS backdrop_path,
+                max(genres) AS genres, max(overview) AS overview, sum(secs) AS secs, count(*) AS views,
                 bool_or(estimated) AS estimated, max(watched_at) AS last
            FROM v WHERE kind = 'movie' GROUP BY tkey, title_id ORDER BY secs DESC, views DESC LIMIT $4`,
         accountId, days, [lim],
@@ -141,7 +142,8 @@ export async function top(accountId, days, kind = 'series', limit = 50) {
       );
     default:
       return run(
-        `SELECT tkey, title_id, max(name) AS name, max(year) AS year, max(poster_path) AS poster_path, sum(secs) AS secs,
+        `SELECT tkey, title_id, max(name) AS name, max(year) AS year, max(poster_path) AS poster_path, max(backdrop_path) AS backdrop_path,
+                max(genres) AS genres, max(overview) AS overview, sum(secs) AS secs,
                 count(DISTINCT ep_key) AS episodes, bool_or(estimated) AS estimated, max(watched_at) AS last
            FROM v WHERE kind = 'tv' GROUP BY tkey, title_id ORDER BY secs DESC LIMIT $4`,
         accountId, days, [lim],
@@ -194,7 +196,7 @@ export function findBinges(rows, min = 3) {
 // ---------------------------------------------------------------- Serien-Fortschritt & Weiterschauen
 export async function progress(accountId) {
   const rows = await run(
-    `SELECT title_id, max(name) AS name, max(poster_path) AS poster_path, max(watched_at) AS last, sum(secs) AS secs,
+    `SELECT title_id, max(name) AS name, max(poster_path) AS poster_path, max(backdrop_path) AS backdrop_path, max(watched_at) AS last, sum(secs) AS secs,
             array_agg(DISTINCT season || ':' || episode) FILTER (WHERE season > 0 AND episode > 0) AS seen,
             count(DISTINCT ep_key) AS ep_views
        FROM v WHERE kind = 'tv' AND title_id IS NOT NULL GROUP BY title_id`,
@@ -231,7 +233,7 @@ export async function progress(accountId) {
       if (next) next.name = epName.get(`${r.title_id}|${next.season}:${next.episode}`) || null;
     }
     return {
-      title_id: r.title_id, name: r.name, poster_path: r.poster_path, last: r.last, secs: r.secs,
+      title_id: r.title_id, name: r.name, poster_path: r.poster_path, backdrop_path: r.backdrop_path, last: r.last, secs: r.secs,
       seen: seenCount, total, pct: total ? Math.min(1, seenCount / total) : null, seasons, next, status: m.status || null,
       unnumbered: Math.max(0, r.ep_views - seen.size),
     };

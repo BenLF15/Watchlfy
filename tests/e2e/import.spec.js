@@ -42,9 +42,10 @@ test('Netflix-ZIP: Anleitung, Vorschau mit Profilen, Import, Übersicht mit Post
   await page.waitForSelector('body.ready');
   await expect(page.locator('[data-kpi="episodes"]')).toHaveText('12');
   await expect(page.locator('[data-kpi="movies"]')).toHaveText('1');
-  await expect(page.locator('#overview-series .rb')).toHaveCount(3);
-  await expect(page.locator('#overview-series .rb').first()).toContainText('Breaking Bad');
-  await expect(page.locator('#continue-row .poster-card').first()).toBeVisible();
+  await expect(page.locator('#overview-series .rank-card')).toHaveCount(3);
+  await expect(page.locator('#overview-series .rank-card').first()).toContainText('Breaking Bad');
+  await expect(page.locator('#hero .hero-slide.on .hero-title')).toHaveText('Breaking Bad');
+  await expect(page.locator('#continue-row .wide-card').first()).toBeVisible();
   // Poster kommen über den eigenen Server
   await expect(page.locator('#overview-movies img.poster-img').first()).toHaveAttribute('src', /^\/img\/tmdb\/w185\//);
   await expect.poll(() => page.locator('#overview-movies img.poster-img').first().evaluate((i) => i.naturalWidth)).toBeGreaterThan(0);

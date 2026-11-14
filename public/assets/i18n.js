@@ -768,6 +768,19 @@
     'err.giftTaken': ['Das heutige Geschenk hast du schon geöffnet.', 'You already opened today’s gift.', 'Tu as déjà ouvert le cadeau du jour.', 'Ya abriste el regalo de hoy.', 'Hai già aperto il regalo di oggi.', 'Du har redan öppnat dagens present.', 'Du har allerede åbnet dagens gave.'],
     'err.quizTooFew': ['Für das Quiz brauchst du mindestens 4 Titel mit Standbild.', 'You need at least 4 titles with a still for the quiz.', 'Il faut au moins 4 titres avec image pour le quiz.', 'Necesitas al menos 4 títulos con imagen.', 'Servono almeno 4 titoli con fotogramma.', 'Du behöver minst 4 titlar med stillbild.', 'Du skal bruge mindst 4 titler med stillbillede.'],
     'err.quizRound': ['Diese Runde ist schon vorbei.', 'This round is already over.', 'Cette manche est terminée.', 'Esta ronda ya terminó.', 'Questo round è già finito.', 'Rundan är redan över.', 'Runden er allerede slut.'],
+
+    // ------------------------------------------------------------ Hero
+    'hero.label': ['Highlights', 'Highlights', 'À la une', 'Destacados', 'In evidenza', 'Höjdpunkter', 'Højdepunkter'],
+    'hero.top': ['Nr. 1 · {r}', 'No. 1 · {r}', 'N° 1 · {r}', 'N.º 1 · {r}', 'N. 1 · {r}', 'Nr 1 · {r}', 'Nr. 1 · {r}'],
+    'hero.series': ['Top-Serie · {r}', 'Top series · {r}', 'Série phare · {r}', 'Serie top · {r}', 'Serie top · {r}', 'Toppserie · {r}', 'Topserie · {r}'],
+    'hero.movie': ['Top-Film · {r}', 'Top movie · {r}', 'Film phare · {r}', 'Película top · {r}', 'Film top · {r}', 'Toppfilm · {r}', 'Topfilm · {r}'],
+    'hero.watched': ['geschaut', 'watched', 'regardé', 'vistos', 'guardati', 'tittat', 'set'],
+    'hero.details': ['Details', 'Details', 'Détails', 'Detalles', 'Dettagli', 'Detaljer', 'Detaljer'],
+    'range.long.7d': ['letzte 7 Tage', 'last 7 days', '7 derniers jours', 'últimos 7 días', 'ultimi 7 giorni', 'senaste 7 dagarna', 'seneste 7 dage'],
+    'range.long.30d': ['letzte 30 Tage', 'last 30 days', '30 derniers jours', 'últimos 30 días', 'ultimi 30 giorni', 'senaste 30 dagarna', 'seneste 30 dage'],
+    'range.long.90d': ['letzte 90 Tage', 'last 90 days', '90 derniers jours', 'últimos 90 días', 'ultimi 90 giorni', 'senaste 90 dagarna', 'seneste 90 dage'],
+    'range.long.365d': ['letztes Jahr', 'last year', 'dernière année', 'último año', 'ultimo anno', 'senaste året', 'seneste år'],
+    'range.long.all': ['aller Zeiten', 'all time', 'de tous les temps', 'de todos los tiempos', 'di sempre', 'genom tiderna', 'nogensinde'],
   };
 
   // ---------------------------------------------------------------- Sprache bestimmen

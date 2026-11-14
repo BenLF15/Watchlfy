@@ -135,6 +135,11 @@
       ? `<img class="poster-img" src="${src}" alt="" loading="lazy" decoding="async" data-ph="${esc(name)}" />`
       : placeholderPoster(name);
   }
+  // Bilder blenden weich ein, sobald sie geladen sind (statt aufzuploppen)
+  document.addEventListener('load', (e) => { if (e.target instanceof HTMLImageElement && e.target.classList.contains('poster-img')) e.target.classList.add('is-loaded'); }, true);
+  new MutationObserver(() => {
+    requestAnimationFrame(() => $$('img.poster-img:not(.is-loaded)').forEach((i) => { if (i.complete && i.naturalWidth) i.classList.add('is-loaded'); }));
+  }).observe(document.documentElement, { childList: true, subtree: true });
   // Fehlgeschlagene Poster → Platzhalter (Inline-Handler verbietet die CSP)
   document.addEventListener('error', (e) => {
     const img = e.target;
@@ -285,6 +290,7 @@
     }
     el.innerHTML = html;
     el.hidden = !html;
+    placeHeroChrome();
   }
 
   // Während TMDB noch lädt: alle 15 s Status + aktuellen Bereich neu holen (Poster erscheinen nach und nach)
@@ -425,11 +431,12 @@
     ].join('');
     renderTimeline(o.daily);
     renderServiceSplit(o.services);
-    renderRankBars($('#overview-series'), d.series, 'series');
+    renderHero(d);
+    $('#overview-series').innerHTML = d.series.length ? d.series.map(rankCard).join('') : `<p class="empty">${esc(t('empty.range'))}</p>`;
     $('#overview-movies').innerHTML = d.movies.length ? d.movies.map(posterCard).join('') : `<p class="empty">${esc(t('empty.range'))}</p>`;
     const cont = d.continue || [];
     $('#continue-card').hidden = !cont.length;
-    $('#continue-row').innerHTML = cont.map(continueCard).join('');
+    $('#continue-row').innerHTML = cont.map(wideCard).join('');
     decoratePanel('overview');
   }
 
@@ -525,6 +532,102 @@
     </button>`;
   }
 
+  /** Top-10-Kachel mit großer Rangzahl (wie in Streaming-Apps). */
+  function rankCard(x, i) {
+    const key = x.title_id ? `data-title-id="${x.title_id}"` : `data-title-key="${esc(x.tkey)}"`;
+    return `<button type="button" class="rank-card" ${key} style="--i:${i}" aria-label="${esc(`${i + 1}. ${x.name}`)}">
+      <span class="rank-num" aria-hidden="true">${i + 1}</span>
+      <span class="poster">${poster(x.poster_path, x.name, 'w342')}</span>
+      <span class="rank-meta"><b>${esc(x.name)}</b><small>${esc(x.episodes ? tn('unit.episode', x.episodes, { n: fmt(x.episodes) }) : x.year || '')} · ${esc(dur(x.secs, { short: true }))}</small></span>
+    </button>`;
+  }
+  /** Breitbild-Kachel mit Backdrop und Fortschritt (Weiterschauen). */
+  function wideCard(s, i) {
+    const back = tmdbImg(s.backdrop_path, 'w780');
+    const label = s.next ? t('continue.next', { s: s.next.season, e: s.next.episode }) : '';
+    return `<button type="button" class="wide-card" data-title-id="${s.title_id}" style="--i:${i}">
+      <span class="wide-art">${back ? `<img class="poster-img" src="${back}" alt="" loading="lazy" decoding="async" data-ph="${esc(s.name)}" />` : placeholderPoster(s.name)}
+        <span class="wide-play" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></span>
+        ${s.pct !== null ? `<span class="pc-progress"><i style="width:${Math.max(3, Math.round(s.pct * 100))}%"></i></span>` : ''}</span>
+      <span class="wide-meta"><b>${esc(s.name)}</b><small>${esc(label)}${s.next?.name ? ` · ${esc(s.next.name)}` : ''}</small></span>
+    </button>`;
+  }
+
+  // ================================================================ Hero (wechselnde Titel mit Backdrop)
+  /** Hero nur in der Übersicht; die Zeitraum-Wahl schwebt dort im Hero, sonst steht sie über dem Bereich. */
+  function placeHeroChrome() {
+    const el = $('#hero');
+    const on = state.panel === 'overview' && hasData() && hero.items.length > 0;
+    el.hidden = !on;
+    document.body.classList.toggle('on-hero', on);
+    const rb = $('#range-bar');
+    if (on && rb.parentElement !== el) el.appendChild(rb);
+    if (!on && rb.parentElement === el) $('#view-stats').prepend(rb);
+    requestAnimationFrame(() => $('#range-control')?.realign?.());
+    const notices = $$('#privacy-banner, #tmdb-banner, #now-playing').some((n) => !n.hidden);
+    document.body.classList.toggle('hero-flush', on && !notices);
+  }
+  const hero = { items: [], i: 0, timer: null };
+  function renderHero(d) {
+    const el = $('#hero');
+    const pool = [...d.series.slice(0, 3), ...d.movies.slice(0, 2)].filter((x) => x.backdrop_path || x.poster_path);
+    hero.items = pool;
+    clearInterval(hero.timer);
+    const rbKeep = $('#range-bar');
+    if (rbKeep.parentElement === el) $('#view-stats').prepend(rbKeep);
+    if (!pool.length) { el.innerHTML = ''; placeHeroChrome(); return; }
+    el.innerHTML = `<div class="hero-slides">${pool.map((x, i) => {
+      const back = tmdbImg(x.backdrop_path, 'w1280') || tmdbImg(x.poster_path, 'w780');
+      const isTv = Boolean(x.episodes);
+      const meta = [x.year, (x.genres || []).slice(0, 2).join(' · '), isTv ? tn('unit.episode', x.episodes, { n: fmt(x.episodes) }) : t('kind.movie')].filter(Boolean).join('  •  ');
+      return `<article class="hero-slide${i === 0 ? ' on' : ''}" data-i="${i}" aria-hidden="${i !== 0}">
+        <div class="hero-bg">${back ? `<img class="poster-img" src="${back}" alt="" decoding="async" data-ph="${esc(x.name)}" ${i ? 'loading="lazy"' : 'fetchpriority="high"'} />` : ''}</div>
+        <div class="hero-shade" aria-hidden="true"></div>
+        <div class="hero-body">
+          <p class="hero-kicker">${esc(t(i === 0 ? 'hero.top' : isTv ? 'hero.series' : 'hero.movie', { r: t(`range.long.${state.range}`) }))}</p>
+          <h2 class="hero-title">${esc(x.name)}</h2>
+          <p class="hero-meta">${esc(meta)}</p>
+          ${x.overview ? `<p class="hero-text">${esc(x.overview)}</p>` : ''}
+          <p class="hero-stat"><b>${esc(dur(x.secs))}</b> ${esc(t('hero.watched'))}</p>
+          <div class="hero-actions">
+            <button type="button" class="btn btn-hero" ${x.title_id ? `data-title-id="${x.title_id}"` : `data-title-key="${esc(x.tkey)}"`}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor" stroke="none"/></svg>${esc(t('hero.details'))}</button>
+            ${isTv ? `<button type="button" class="btn btn-glass" data-goto="progress">${esc(t('nav.progress'))}</button>` : `<button type="button" class="btn btn-glass" data-goto="top" data-top-kind="movies">${esc(t('top.movies'))}</button>`}
+          </div>
+        </div>
+      </article>`;
+    }).join('')}</div>
+    ${pool.length > 1 ? `<div class="hero-dots" role="tablist">${pool.map((x, i) => `<button type="button" role="tab" class="${i === 0 ? 'on' : ''}" data-hero="${i}" aria-label="${esc(x.name)}"><i></i></button>`).join('')}</div>` : ''}`;
+    hero.i = 0;
+    placeHeroChrome();
+    startHero();
+  }
+  function heroGo(i) {
+    const el = $('#hero');
+    if (!el || !hero.items.length) return;
+    hero.i = (i + hero.items.length) % hero.items.length;
+    $$('.hero-slide', el).forEach((sl, k) => { sl.classList.toggle('on', k === hero.i); sl.setAttribute('aria-hidden', String(k !== hero.i)); });
+    $$('.hero-dots button', el).forEach((b, k) => { b.classList.toggle('on', k === hero.i); });
+  }
+  function startHero() {
+    clearInterval(hero.timer);
+    if (reduceMotion || hero.items.length < 2) return;
+    hero.timer = setInterval(() => { if (!document.hidden && state.panel === 'overview' && !hero.paused) heroGo(hero.i + 1); }, 7000);
+  }
+  function bindHero() {
+    const el = $('#hero');
+    el.addEventListener('click', (e) => { const b = e.target.closest('[data-hero]'); if (b) { heroGo(Number(b.dataset.hero)); startHero(); } });
+    el.addEventListener('pointerenter', () => { hero.paused = true; });
+    el.addEventListener('pointerleave', () => { hero.paused = false; });
+    let x0 = null;
+    el.addEventListener('touchstart', (e) => { x0 = e.touches[0].clientX; }, { passive: true });
+    el.addEventListener('touchend', (e) => {
+      if (x0 === null) return;
+      const dx = (e.changedTouches[0]?.clientX ?? x0) - x0;
+      x0 = null;
+      if (Math.abs(dx) > 50) { heroGo(hero.i + (dx < 0 ? 1 : -1)); startHero(); }
+    });
+  }
+
   function renderRankBars(el, list, kind, offset = 0) {
     if (!list.length) { el.innerHTML = offset ? '' : `<li class="empty">${esc(t('empty.range'))}</li>`; return; }
     const max = list[0].secs || 1;
@@ -569,8 +672,16 @@
     const items = d.items;
     const top3 = items.slice(0, 3);
     const el = $('#podium');
+    const posterKind = kind === 'series' || kind === 'movies';
+    el.classList.toggle('top-grid', posterKind);
     if (!top3.length) el.innerHTML = `<p class="empty">${esc(t('empty.range'))}</p>`;
-    else {
+    else if (posterKind) {
+      el.innerHTML = items.slice(0, 10).map(rankCard).join('');
+      renderRankBars($('#top-list'), items.slice(10), kind, 10);
+      $('#top-list').start = 11;
+      decoratePanel('top');
+      return;
+    } else {
       const order = [top3[1], top3[0], top3[2]].map((a, i) => (a ? { a, place: [2, 1, 3][i] } : null)).filter(Boolean);
       const img = (a) => (kind === 'series' || kind === 'movies' ? poster(a.poster_path, a.name, 'w342')
         : kind === 'countries' ? `<div class="placeholder flag-big">${esc(flag(a.name))}</div>` : `<div class="placeholder" aria-hidden="true">${initials(a.name)}</div>`);
@@ -582,6 +693,7 @@
           <div class="podium-step">${place}</div>
         </div>`).join('');
     }
+    $('#top-list').start = 4;
     renderRankBars($('#top-list'), items.slice(3), kind, 3);
     if (['genres', 'actors', 'countries'].includes(kind) && !items.length && state.status?.tmdb && !state.status.tmdb.enabled) {
       $('#top-list').innerHTML = `<li class="empty">${esc(t('top.needsTmdb'))}</li>`;
@@ -751,13 +863,30 @@
   }
 
   // ================================================================ Detailansicht
-  async function openDetail({ id = null, key = null }) {
+  async function openDetail({ id = null, key = null }, src = null) {
     const dlg = $('#detail-dialog');
-    $('#detail-body').innerHTML = `${CLOSE_BTN()}<div class="detail-loading"><span class="spinner"></span></div>`;
-    if (!dlg.open) dlg.showModal();
+    const srcImg = src?.querySelector('img.poster-img');
+    const name = src?.querySelector('b, .podium-name, .rb-title, .hero-title')?.textContent || '';
+    const skeleton = () => {
+      $('#detail-body').innerHTML = `${CLOSE_BTN('on-image')}<div class="detail-hero no-back"><div class="detail-poster vt-poster">${srcImg ? `<img class="poster-img is-loaded" src="${srcImg.getAttribute('src')}" alt="" />` : placeholderPoster(name)}</div>
+        <div class="detail-head"><h2 id="detail-title">${esc(name)}</h2><div class="sk-lines"><span class="sk sk-line"></span><span class="sk sk-line short"></span></div></div></div>
+        <div class="detail-loading"><span class="spinner"></span></div>`;
+      if (!dlg.open) dlg.showModal();
+    };
+    // Geteiltes Element: das angetippte Poster gleitet in die Detailansicht
+    if (srcImg && canVT && !reduceMotion && !dlg.open) {
+      srcImg.style.viewTransitionName = 'vt-poster';
+      document.documentElement.dataset.vtDir = 'detail';
+      try {
+        const vt = document.startViewTransition(() => { srcImg.style.viewTransitionName = ''; skeleton(); });
+        vt.ready.catch(() => {}); vt.updateCallbackDone.catch(() => {});
+        vt.finished.catch(() => {}).finally(() => { delete document.documentElement.dataset.vtDir; srcImg.style.viewTransitionName = ''; });
+      } catch { srcImg.style.viewTransitionName = ''; skeleton(); }
+    } else skeleton();
     try {
       const d = await api(`/api/title?${id ? `id=${encodeURIComponent(id)}` : `key=${encodeURIComponent(key)}`}`);
       renderDetail(d);
+      $('#detail-body')?.classList.remove('fresh'); void $('#detail-body')?.offsetWidth; $('#detail-body')?.classList.add('fresh');
     } catch (err) {
       $('#detail-body').innerHTML = `${CLOSE_BTN()}<p class="empty">${esc(errMsg(err))}</p>`;
     }
@@ -783,7 +912,7 @@
     ].filter(Boolean);
     $('#detail-body').innerHTML = `${CLOSE_BTN('on-image')}
       <div class="detail-hero${back ? '' : ' no-back'}" ${back ? `style="--back:url('${back}')"` : ''}>
-        <div class="detail-poster">${poster(tt?.poster_path, d.name, 'w342')}</div>
+        <div class="detail-poster vt-poster">${poster(tt?.poster_path, d.name, 'w342')}</div>
         <div class="detail-head">
           <p class="detail-kicker">${esc(t(d.kind === 'tv' ? 'kind.tv' : 'kind.movie'))}${d.match_state === 'uncertain' ? ` · <span class="tag tag-warn">${esc(t('match.uncertain'))}</span>` : ''}${d.match_state === 'none' || !tt ? ` · <span class="tag tag-warn">${esc(t('match.none'))}</span>` : ''}</p>
           <h2 id="detail-title">${esc(d.name)}</h2>
@@ -1035,6 +1164,7 @@
       el.classList.remove('np-in'); void el.offsetWidth; el.classList.add('np-in');
     }
     el.hidden = false;
+    placeHeroChrome();
     updateNpProgress();
   }
   function updateNpProgress() {
@@ -1655,6 +1785,7 @@
     $('#view-stats').hidden = special || empty;
     $$('#view-stats .panel').forEach((p) => { p.hidden = p.dataset.panel !== state.panel; });
     $('#range-bar').hidden = !RANGE_PANELS.has(state.panel);
+    placeHeroChrome();
     $('#panel-tabs').place?.(true);
     paintBottomNav();
     if (empty) $('#empty-services').innerHTML = servicesGrid(false);
@@ -1771,9 +1902,9 @@
       if (pick) { pickCorrect(pick.dataset.pickKind, Number(pick.dataset.pickId)); return; }
       if (e.target.closest('[data-correct-none]')) { pickCorrect(null, null); return; }
       const tid = e.target.closest('[data-title-id]');
-      if (tid && !e.target.closest('dialog#detail-dialog .detail-views')) { openDetail({ id: tid.dataset.titleId }); return; }
+      if (tid && !e.target.closest('dialog#detail-dialog .detail-views')) { openDetail({ id: tid.dataset.titleId }, tid.closest('#detail-dialog') ? null : tid); return; }
       const tkey = e.target.closest('[data-title-key]');
-      if (tkey) { openDetail({ key: tkey.dataset.titleKey }); return; }
+      if (tkey) { openDetail({ key: tkey.dataset.titleKey }, tkey); return; }
       const fd = e.target.closest('[data-fest-dismiss]');
       if (fd) { store.set(fd.dataset.festDismiss, '1'); $('#fest-ribbon').hidden = true; return; }
       if (e.target.closest('[data-open-review]')) { showPanel('profile'); setTimeout(() => $('#review-card').scrollIntoView({ behavior: 'smooth' }), 300); return; }
@@ -1850,8 +1981,20 @@
     register(panel, fn) { external[panel] = fn; if (state.panel === panel && state.account) renderPanel(panel); },
   };
 
+  function bindAppbar() {
+    const bar = $('#appbar');
+    const setH = () => document.documentElement.style.setProperty('--appbar-h', `${bar.offsetHeight}px`);
+    new ResizeObserver(setH).observe(bar);
+    setH();
+    const upd = () => bar.classList.toggle('scrolled', window.scrollY > 12);
+    window.addEventListener('scroll', upd, { passive: true });
+    upd();
+  }
+
   async function init() {
     I.apply();
+    bindAppbar();
+    bindHero();
     setupTabs();
     bindBottomNav();
     bindGlobal();

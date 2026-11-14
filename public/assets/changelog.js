@@ -7,6 +7,22 @@
    Danach den Cache-Parameter ?v=… in public/*.html hochzählen. */
 window.WatchlfyNews = [
   {
+    id: '2026-11-14c',
+    date: '2026-11-14',
+    items: [
+      {
+        icon: '🎬', go: 'overview',
+        t: ['Neuer Kino-Look', 'New cinema look', 'Nouveau look cinéma', 'Nuevo aspecto de cine', 'Nuovo look da cinema', 'Ny biolook', 'Nyt biograflook'],
+        d: ['Großes Titelbild mit wechselnden Highlights, Top-10-Reihen und Breitbild-Kacheln zum Weiterschauen.', 'A big hero with rotating highlights, top 10 rows and widescreen tiles to continue watching.', 'Grande affiche avec temps forts, top 10 et vignettes larges pour reprendre.', 'Gran portada con destacados, filas top 10 y miniaturas panorámicas para seguir viendo.', 'Grande copertina con highlight, top 10 e riquadri panoramici per continuare.', 'Stor toppbild med höjdpunkter, topp 10-rader och breda rutor för att fortsätta titta.', 'Stort topbillede med højdepunkter, top 10-rækker og brede felter til at fortsætte.'],
+      },
+      {
+        icon: '✨', go: 'top',
+        t: ['Weichere Übergänge', 'Smoother transitions', 'Transitions plus douces', 'Transiciones más suaves', 'Transizioni più morbide', 'Mjukare övergångar', 'Blødere overgange'],
+        d: ['Poster gleiten in die Detailansicht, Bilder blenden sanft ein, die Leiste wird beim Scrollen zu Glas.', 'Posters glide into the detail view, images fade in and the bar turns to glass as you scroll.', 'Les affiches glissent vers le détail, les images apparaissent en fondu, la barre devient verre au défilement.', 'Los pósteres se deslizan al detalle, las imágenes aparecen suavemente y la barra se vuelve de cristal.', 'Le locandine scivolano nel dettaglio, le immagini appaiono dolcemente e la barra diventa vetro.', 'Affischer glider in i detaljvyn, bilder tonas in och fältet blir glas när du scrollar.', 'Plakater glider ind i detaljevisningen, billeder toner ind, og bjælken bliver til glas, når du scroller.'],
+      },
+    ],
+  },
+  {
     id: '2026-11-14b',
     date: '2026-11-14',
     items: [

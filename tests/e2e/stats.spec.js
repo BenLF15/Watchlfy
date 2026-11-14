@@ -14,8 +14,8 @@ test.describe('Statistik', () => {
   test('Top-Listen: Serien, Filme, Genres, Schauspieler, Länder', async ({ page }, ti) => {
     const errors = watchErrors(page);
     await goPanel(page, 'top');
-    await expect(page.locator('#podium .podium-item')).toHaveCount(3);
-    await expect(page.locator('#podium .p1')).toContainText('Breaking Bad');
+    await expect(page.locator('#podium .rank-card')).not.toHaveCount(0);
+    await expect(page.locator('#podium .rank-card').first()).toContainText('Breaking Bad');
     for (const [kind, text] of [['movies', 'Dune'], ['genres', 'Drama'], ['actors', 'Bryan Cranston'], ['countries', 'Vereinigte Staaten']]) {
       await page.click(`#top-kind [data-kind="${kind}"]`);
       await expect(page.locator('#top-title')).not.toBeEmpty();
@@ -76,4 +76,34 @@ test.describe('Statistik', () => {
     const after = await (await page.request.get('/api/history?q=office')).json();
     expect(after.items[0].name).toBe('Lucifer');
   });
+});
+
+test('Kino-Ansicht: Hero-Karussell, gläserne Leiste, Poster gleitet ins Detail', async ({ page }, ti) => {
+  await newUser(page, ti);
+  await importFile(page, 'netflix', 'netflix-data.zip', { profiles: ['Ben'] });
+  await importFile(page, 'prime', 'prime.csv');
+  await waitTmdb(page);
+  await page.reload();
+  await page.waitForSelector('body.ready');
+  await expect(page.locator('body')).toHaveClass(/on-hero/);
+  await expect(page.locator('#hero .hero-slide')).not.toHaveCount(0);
+  // Zeitraum-Wahl schwebt im Hero
+  await expect(page.locator('#hero > #range-bar')).toBeVisible();
+  await page.click('#hero .hero-dots [data-hero="1"]');
+  await expect(page.locator('#hero .hero-slide[data-i="1"]')).toHaveClass(/on/);
+  // Bilder blenden ein
+  await expect(page.locator('#overview-series img.poster-img.is-loaded').first()).toBeVisible();
+  // Kopfleiste wird beim Scrollen gläsern
+  await page.mouse.wheel(0, 600);
+  await expect(page.locator('#appbar')).toHaveClass(/scrolled/);
+  // Detail öffnet aus dem Poster
+  await page.locator('#overview-series .rank-card').first().click();
+  await expect(page.locator('#detail-dialog')).toHaveAttribute('open', '');
+  await expect(page.locator('#detail-title')).toHaveText('Breaking Bad');
+  await expect(page.locator('#detail-dialog .vt-poster')).toBeVisible();
+  // In anderen Bereichen kein Hero
+  await page.keyboard.press('Escape');
+  await goPanel(page, 'history');
+  await expect(page.locator('#hero')).toBeHidden();
+  await expect(page.locator('#view-stats > #range-bar')).toHaveCount(1);
 });

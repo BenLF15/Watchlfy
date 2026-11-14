@@ -104,7 +104,7 @@ test('Veredeln (Admin-Gratismodus) und verstecktes Geschenk', async ({ page }, t
   await goPanel(page, 'overview');
   const gift = page.locator('.hidden-gift');
   if (await gift.isVisible()) {
-    await gift.click({ force: true });
+    await gift.evaluate((el) => el.click());
     await expect(page.locator('#gift-dialog')).toHaveAttribute('open', '');
     await shot(page, ti, 'gift');
   } else {
