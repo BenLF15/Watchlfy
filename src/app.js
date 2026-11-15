@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import compression from 'compression';
 import express from 'express';
 import { config } from './config.js';
-import { migrate } from './db.js';
+import { migrate, query } from './db.js';
 import * as users from './users.js';
 import * as stats from './stats.js';
 import * as imports from './imports.js';
@@ -317,7 +317,10 @@ api.get(
   '/status',
   wrap(async (req, res) => {
     const a = req.account;
-    const [c, tm] = await Promise.all([stats.counts(a.id), tmdb.pendingFor(a.id)]);
+    const [c, tm, tr] = await Promise.all([
+      stats.counts(a.id), tmdb.pendingFor(a.id),
+      a.trakt_connected ? query(`SELECT count(*)::int AS n, min(watched_at) AS first FROM views WHERE account_id = $1 AND source = 'trakt'`, [a.id]).then((r) => r.rows[0]) : null,
+    ]);
     res.json({
       account: {
         id: a.id, username: a.username, is_admin: a.is_admin, created_at: a.created_at,
@@ -331,6 +334,7 @@ api.get(
         available: trakt.available(),
         connected: Boolean(a.trakt_connected), username: a.trakt_username || null,
         last_sync: a.trakt_last_sync || null, error: a.trakt_error || null,
+        stored: tr?.n ?? 0, first: tr?.first || null,
       },
     });
   }),

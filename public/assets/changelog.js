@@ -7,6 +7,17 @@
    Danach den Cache-Parameter ?v=… in public/*.html hochzählen. */
 window.WatchlfyNews = [
   {
+    id: '2026-11-15k',
+    date: '2026-11-15',
+    items: [
+      {
+        icon: '🔄', go: 'profile',
+        t: ['Trakt-Abgleich erklärt sich', 'Trakt sync explains itself', 'La synchro Trakt s’explique', 'La sincronización con Trakt se explica', 'La sincronizzazione Trakt si spiega', 'Trakt-synken förklarar sig', 'Trakt-synk forklarer sig selv'],
+        d: ['Statt „0 neu“ steht da, wie viele Einträge Trakt meldet und was davon schon über Trakt oder aus Importen da ist.', 'Instead of “0 new” you see how many entries Trakt reports and how many already came via Trakt or imports.', 'Au lieu de « 0 nouveau », tu vois combien d’entrées Trakt signale et ce qui est déjà là.', 'En vez de «0 nuevas» ves cuántas entradas informa Trakt y cuántas ya estaban.', 'Invece di «0 nuove» vedi quante voci segnala Trakt e quante c’erano già.', 'I stället för ”0 nya” ser du hur många poster Trakt rapporterar och vad som redan fanns.', 'I stedet for “0 nye” ser du, hvor mange poster Trakt melder, og hvad der allerede var der.'],
+      },
+    ],
+  },
+  {
     id: '2026-11-15j',
     date: '2026-11-15',
     items: [

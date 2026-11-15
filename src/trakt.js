@@ -188,7 +188,11 @@ export async function syncAccount(accountId, { full = false } = {}) {
       if (!data?.length || page >= pages) break;
     }
     const views = items.map(toView).filter(Boolean);
+    // Aufschlüsselung für die Rückmeldung: schon über Trakt gespeichert bzw. schon aus einem Import bekannt
+    const { rows: ex } = await query('SELECT count(*)::int AS n FROM views WHERE account_id = $1 AND dedupe_key = ANY($2)', [accountId, views.map((v) => v.dedupe_key)]);
+    const existing = ex[0].n;
     const added = await saveViews(accountId, views);
+    const fromImports = Math.max(0, views.length - existing - added);
     // Bewertungen (optional)
     try {
       const { data } = await traktFetch(token, '/sync/ratings');
@@ -210,9 +214,9 @@ export async function syncAccount(accountId, { full = false } = {}) {
               last_history_at = GREATEST(COALESCE(last_history_at, $2::timestamptz), COALESCE($2::timestamptz, last_history_at)) WHERE account_id = $1`,
       [accountId, newest, activity],
     );
-    await query('UPDATE sync_log SET finished_at = now(), ok = true, message = $2 WHERE id = $1', [log.rows[0].id, `${added} neu`]);
+    await query('UPDATE sync_log SET finished_at = now(), ok = true, message = $2 WHERE id = $1', [log.rows[0].id, `${added} neu, ${existing} schon da, ${fromImports} aus Importen`]);
     if (added) tmdb.enrich().catch(() => {});
-    return { added, fetched: items.length };
+    return { added, fetched: views.length, existing, fromImports };
   } catch (err) {
     await query('UPDATE sync_log SET finished_at = now(), ok = false, message = $2 WHERE id = $1', [log.rows[0].id, err.message]);
     await query('UPDATE trakt_tokens SET last_error = $2 WHERE account_id = $1', [accountId, err.message]).catch(() => {});

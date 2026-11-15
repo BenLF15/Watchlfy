@@ -25,7 +25,10 @@ test('Mit Trakt verbinden (OAuth), Verlauf holen, „Läuft gerade“, keine Dop
   await expect(page.locator('#trakt-body')).toContainText('mockuser');
   // Erneuter Sync: nichts doppelt
   await page.click('[data-trakt-sync]');
-  await expect(page.locator('#toast')).toContainText('0 neue Einträge');
+  // Nichts Neues: die Meldung sagt, warum (schon über Trakt da)
+  await expect(page.locator('#toast')).toContainText('Alles aktuell');
+  await expect(page.locator('#toast')).toContainText('4 hat Watchlfy schon über Trakt');
+  await expect(page.locator('#trakt-body')).toContainText('4 Einträge');
   // Trakt-Einträge mit TMDB-ID sind sofort sicher zugeordnet
   const prog = await (await page.request.get('/api/progress')).json();
   expect(prog.series.find((s) => s.name === 'Dark').seen).toBe(2);
@@ -86,4 +89,21 @@ test('Videothek und Fernseher funktionieren auch nur mit Trakt (ohne Import)', a
   expect(c.channels.map((x) => x.name).sort()).toEqual([...traktTitles].sort());
   // „Erster Verlauf“ gibt es auch für den Trakt-Abgleich
   expect(c.earn.find((e) => e.id === 'import').done).toBe(true);
+});
+
+test('Abgleich ohne Neues erklärt, was schon aus Importen bekannt ist', async ({ page }, ti) => {
+  await newUser(page, ti);
+  // Oppenheimer kommt im Trakt-Mock vor 30 Std. – derselbe Film steht schon im Netflix-Export
+  const d = new Date(Date.now() - 30 * 3600e3);
+  const dmy = `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getFullYear()).slice(2)}`;
+  const pv = await (await page.request.post('/api/import/preview?source=netflix', { headers: { 'Content-Type': 'application/octet-stream', 'X-Filename': 'NetflixViewingHistory.csv' }, data: Buffer.from(`Title,Date\n"Oppenheimer","${dmy}"\n`) })).json();
+  expect((await page.request.post('/api/import/commit', { data: { token: pv.token } })).ok()).toBeTruthy();
+  await page.goto('/auth/trakt');
+  await page.waitForURL(/\/(\?|$)/);
+  await page.waitForSelector('body.ready');
+  const r = await (await page.request.post('/api/trakt/sync', { data: {} })).json();
+  expect(r).toMatchObject({ added: 0, fetched: 4, existing: 3, fromImports: 1 });
+  await goPanel(page, 'profile');
+  await page.click('[data-trakt-sync]');
+  await expect(page.locator('#toast')).toContainText('1 kennt es bereits aus deinen Importen');
 });
