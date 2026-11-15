@@ -1357,10 +1357,14 @@
     if (!state.status?.tmdb?.enabled) { el.innerHTML = `<p class="muted small">${esc(t('tmdb.offText'))}</p>`; return; }
     try {
       const r = await api('/api/tmdb/review');
-      el.innerHTML = r.items.length ? `<ul class="review-list">${r.items.map((x) => `<li>
+      // Zusammenfassung oben, darunter die ersten 3 (meistgesehenen) – der Rest klappt auf
+      const unsure = r.items.filter((x) => x.name).length;
+      const none = r.items.length - unsure;
+      el.innerHTML = r.items.length ? `<p class="review-sum">${unsure ? `<span class="review-chip unsure">${esc(tn('review.unsure', unsure, { n: unsure }))}</span>` : ''}${none ? `<span class="review-chip none">${esc(tn('review.none', none, { n: none }))}</span>` : ''}</p>
+        <ul class="review-list">${foldList(r.items.map((x) => `<li>
           <div class="cover poster-mini">${poster(x.poster_path, x.name || x.raw_name, 'w92')}</div>
           <div><b>${esc(x.raw_name)}</b><small>${x.name ? `→ ${esc(x.name)}${x.year ? ` (${x.year})` : ''} · ${esc(t('match.uncertain'))}` : esc(t('match.none'))} · ${esc(tn('unit.entry', x.views, { n: x.views }))}</small></div>
-          <button type="button" class="btn btn-ghost btn-xs" data-correct="${esc(x.raw_key)}" data-correct-name="${esc(x.raw_name)}" data-correct-kind="${x.kind || x.kind_hint}">✎ ${esc(t('match.correct'))}</button></li>`).join('')}</ul>`
+          <button type="button" class="btn btn-ghost btn-xs" data-correct="${esc(x.raw_key)}" data-correct-name="${esc(x.raw_name)}" data-correct-kind="${x.kind || x.kind_hint}">✎ ${esc(t('match.correct'))}</button></li>`), 3)}</ul>`
         : `<p class="muted small">✓ ${esc(t('review.allGood'))}</p>`;
     } catch (err) { el.innerHTML = `<p class="muted small">${esc(errMsg(err))}</p>`; }
   }

@@ -60,3 +60,22 @@ test('Datenschutz-Seite ist öffentlich', async ({ page }) => {
   await expect(page.locator('#legal h1')).toHaveText('Datenschutzerklärung');
   await expect(page.locator('#legal')).toContainText('TMDB');
 });
+
+test('Zuordnungen prüfen: Zusammenfassung, erst 3 Titel, Rest aufklappbar', async ({ page }, ti) => {
+  await newUser(page, ti);
+  const d = new Date(Date.now() - 3 * 864e5);
+  const dmy = `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getFullYear()).slice(2)}`;
+  const names = ['Gibtesnicht Eins', 'Gibtesnicht Zwei', 'Gibtesnicht Drei', 'Gibtesnicht Vier', 'Gibtesnicht Fünf'];
+  const csv = `Title,Date\n${names.map((x) => `"${x}","${dmy}"`).join('\n')}\n`;
+  const pv = await (await page.request.post('/api/import/preview?source=netflix', { headers: { 'Content-Type': 'application/octet-stream', 'X-Filename': 'NetflixViewingHistory.csv' }, data: Buffer.from(csv) })).json();
+  expect((await page.request.post('/api/import/commit', { data: { token: pv.token } })).ok()).toBeTruthy();
+  for (let i = 0; i < 60; i++) { const s = await (await page.request.get('/api/status')).json(); if (!s.tmdb.pending && !s.tmdb.loading) break; await page.waitForTimeout(300); }
+  await page.reload(); await page.waitForSelector('body.ready');
+  await goPanel(page, 'profile');
+  const list = page.locator('#review-body .review-list');
+  await expect(page.locator('#review-body .review-chip.none')).toContainText('5');
+  await expect(list.locator('li:visible:not(.fold-row)')).toHaveCount(3);
+  await list.locator('[data-fold]').click();
+  await expect(list.locator('li:visible:not(.fold-row)')).toHaveCount(5);
+  await shot(page, ti, 'review-fold');
+});

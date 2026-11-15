@@ -7,6 +7,17 @@
    Danach den Cache-Parameter ?v=… in public/*.html hochzählen. */
 window.WatchlfyNews = [
   {
+    id: '2026-11-15j',
+    date: '2026-11-15',
+    items: [
+      {
+        icon: '🔎', go: 'profile',
+        t: ['Zuordnungen kompakt', 'Matches at a glance', 'Correspondances compactes', 'Coincidencias compactas', 'Abbinamenti compatti', 'Kompakta matchningar', 'Kompakte matches'],
+        d: ['Unsichere und nicht gefundene Titel: oben die Anzahl, darunter die wichtigsten 3 – der Rest klappt auf.', 'Uncertain and unmatched titles: the count on top, the 3 most important below – the rest folds out.', 'Titres incertains ou introuvables : le nombre en haut, les 3 principaux dessous, le reste se déplie.', 'Títulos dudosos o no encontrados: el número arriba, los 3 principales debajo; el resto se despliega.', 'Titoli incerti o non trovati: il numero in alto, i 3 principali sotto – il resto si espande.', 'Osäkra och ej hittade titlar: antalet överst, de 3 viktigaste under – resten fälls ut.', 'Usikre og ikke fundne titler: antallet øverst, de 3 vigtigste nedenunder – resten foldes ud.'],
+      },
+    ],
+  },
+  {
     id: '2026-11-15i',
     date: '2026-11-15',
     items: [

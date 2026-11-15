@@ -779,6 +779,10 @@
     'range.long.all': ['aller Zeiten', 'all time', 'de tous les temps', 'de todos los tiempos', 'di sempre', 'genom tiderna', 'nogensinde'],
 
     // ------------------------------------------------------------ Kanal-Design, Verlauf, Musik, Wohnzimmer
+    'review.unsure.one': ['1 unsicher', '1 uncertain', '1 incertain', '1 dudoso', '1 incerto', '1 osäker', '1 usikker'],
+    'review.unsure.other': ['{n} unsicher', '{n} uncertain', '{n} incertains', '{n} dudosos', '{n} incerti', '{n} osäkra', '{n} usikre'],
+    'review.none.one': ['1 nicht gefunden', '1 not found', '1 introuvable', '1 no encontrado', '1 non trovato', '1 hittades inte', '1 ikke fundet'],
+    'review.none.other': ['{n} nicht gefunden', '{n} not found', '{n} introuvables', '{n} no encontrados', '{n} non trovati', '{n} hittades inte', '{n} ikke fundet'],
     'shop.discover': ['Neu für dich', 'New to you', 'Nouveau pour toi', 'Nuevo para ti', 'Nuovo per te', 'Nytt för dig', 'Nyt for dig'],
     'shop.discoverNote': ['Hast du noch nie gesehen – gerade angesagt oder hoch bewertet.', 'You’ve never watched this – trending right now or highly rated.', 'Jamais vu – tendance ou très bien noté.', 'Nunca lo has visto: en tendencia o muy valorado.', 'Mai visto – di tendenza o molto votato.', 'Aldrig sett – trendar just nu eller högt betygsatt.', 'Aldrig set – populær lige nu eller højt bedømt.'],
     'rar.fame': ['Bekanntheit', 'Fame', 'Notoriété', 'Fama', 'Notorietà', 'Kändhet', 'Kendthed'],
