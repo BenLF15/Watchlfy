@@ -10,7 +10,7 @@ const gunzip = promisify(zlib.gunzip);
 // Reihenfolge berücksichtigt Fremdschlüssel (Eltern vor Kindern).
 export const BACKUP_TABLES = [
   'app_meta', 'accounts', 'titles', 'episodes', 'title_aliases', 'imports', 'views', 'trakt_tokens', 'ratings',
-  'sync_log', 'login_events', 'friendships', 'note_ledger', 'collection', 'screening_sessions', 'account_avatars',
+  'sync_log', 'login_events', 'friendships', 'note_ledger', 'collection', 'screening_sessions', 'account_avatars', 'shop_days',
 ];
 const SERIAL_TABLES = ['accounts', 'titles', 'imports', 'views', 'sync_log', 'login_events', 'note_ledger'];
 

@@ -65,6 +65,11 @@ CREATE TABLE IF NOT EXISTS titles (
   created_at         timestamptz NOT NULL DEFAULT now(),
   updated_at         timestamptz NOT NULL DEFAULT now()
 );
+-- Kennzahlen für Seltenheiten in der Sammlung: Bekanntheit, Bewertung, Einspielergebnis (TMDB)
+ALTER TABLE titles ADD COLUMN IF NOT EXISTS popularity real;
+ALTER TABLE titles ADD COLUMN IF NOT EXISTS vote_average real;
+ALTER TABLE titles ADD COLUMN IF NOT EXISTS vote_count integer;
+ALTER TABLE titles ADD COLUMN IF NOT EXISTS revenue bigint;
 CREATE UNIQUE INDEX IF NOT EXISTS titles_tmdb_uq ON titles (kind, tmdb_id) WHERE tmdb_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS titles_name_idx ON titles (lower(name));
 
@@ -251,3 +256,12 @@ CREATE TABLE IF NOT EXISTS soundtrack_cache (
   fetched_at  timestamptz NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS soundtrack_cache_track_idx ON soundtrack_cache (track_id);
+
+-- ---------------------------------------------------------------- Videothek: was schon im Regal stand (für Rotation)
+CREATE TABLE IF NOT EXISTS shop_days (
+  account_id  bigint NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+  day         date NOT NULL,
+  items       jsonb NOT NULL,
+  created_at  timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (account_id, day)
+);

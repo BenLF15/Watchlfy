@@ -11,6 +11,12 @@ async function setup(page, ti) {
   return u;
 }
 const bal = async (page) => (await (await page.request.get('/api/collection')).json()).balance;
+/** Günstigstes bezahlbares Stück im heutigen Angebot (Filmmeter vor Tickets). */
+async function affordable(page) {
+  const d = await (await page.request.get('/api/collection')).json();
+  const can = (x) => !x.owned && Number(d.balance[x.price.cur]) >= x.price.amount;
+  return Object.values(d.shop.items).flat().filter(can).sort((a, b) => (a.price.cur === b.price.cur ? a.price.amount - b.price.amount : a.price.cur === 'meters' ? -1 : 1))[0];
+}
 
 test('Videothek betreten, Stück anheben, zurücklegen, kaufen → im Regal', async ({ page }, ti) => {
   const errors = watchErrors(page);
@@ -26,7 +32,9 @@ test('Videothek betreten, Stück anheben, zurücklegen, kaufen → im Regal', as
   await expect(page.locator('.store-room .st-shelf')).toHaveCount(3);
   // günstigstes bezahlbares Stück suchen (Bronze)
   const before = await bal(page);
-  const item = page.locator('.st-item:has(.coin-meters)').first();
+  const pickIt = await affordable(page);
+  expect(pickIt).toBeTruthy();
+  const item = page.locator(`.st-item[data-shop="${pickIt.id}"]`);
   await item.click();
   await expect(page.locator('#item-dialog')).toHaveAttribute('open', '');
   await expect(item).toHaveClass(/lifted/);
@@ -37,7 +45,7 @@ test('Videothek betreten, Stück anheben, zurücklegen, kaufen → im Regal', as
   await page.click('[data-buy]');
   await expect(page.locator('#toast')).toContainText('steht jetzt in deinem Regal');
   const after = await bal(page);
-  expect(Number(after.meters)).toBeLessThan(Number(before.meters));
+  expect(Number(after[pickIt.price.cur])).toBeLessThan(Number(before[pickIt.price.cur]) + (pickIt.price.cur === 'meters' ? 1 : 0));
   await page.click('[data-coltab="shelf"]');
   await expect(page.locator('#col-body [data-own]')).toHaveCount(1);
   await shot(page, ti, 'shelf');
@@ -98,19 +106,22 @@ test('Vorführraum: Standbild wird schärfer, Antworten, Belohnung', async ({ pa
 
 test('Veredeln (Admin-Gratismodus) und verstecktes Geschenk', async ({ page }, ti) => {
   await setup(page, ti);
-  const shop = (await (await page.request.get('/api/collection')).json()).shop.items;
-  const it = [...shop.tv, ...shop.movie, ...shop.poster].find((x) => x.rarity === 'common' && x.price.cur === 'meters');
+  const it = await affordable(page);
   expect(it).toBeTruthy();
+  // Seltenheit kommt aus Bekanntheit, Bewertung und Umsatz (TMDB) – die Kennzahlen liegen bei
+  expect(it.factors.votes).toBeGreaterThan(0);
+  expect(it.score).toBeGreaterThan(0);
   expect((await page.request.post('/api/collection/buy', { data: { id: it.id } })).ok()).toBeTruthy();
   await goPanel(page, 'collection');
   await page.click('[data-coltab="screening"]');
-  // Veredeln zu „selten“ kostet 80 Filmmeter
+  // Veredeln um eine Stufe: Kosten je nach Ziel-Seltenheit
   const b = await bal(page);
-  test.skip(Number(b.meters) < 80, 'nicht genug Filmmeter zum Veredeln');
+  const cost = (await (await page.request.get('/api/collection')).json()).refineCosts[['common', 'rare', 'epic', 'legendary', 'mythic'][['common', 'rare', 'epic', 'legendary', 'mythic'].indexOf(it.rarity) + 1]];
+  test.skip(Number(b.meters) < (cost.meters || 0) || Number(b.tickets) < (cost.tickets || 0), 'nicht genug zum Veredeln');
   await page.reload(); await page.waitForSelector('body.ready');
   await page.click('[data-coltab="screening"]');
   await page.click(`.refine-list [data-refine="${it.id}"]`);
-  await expect(page.locator('#toast')).toContainText('selten');
+  await expect(page.locator('#toast')).toContainText(/selten|episch|legendär|mythisch/);
   // Geschenk: ist irgendwo versteckt
   await goPanel(page, 'overview');
   const gift = page.locator('.hidden-gift');

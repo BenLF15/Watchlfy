@@ -127,7 +127,7 @@ export async function loadDetails(titleId) {
   if (!t?.tmdb_id) return;
   const d = await tmdbGet(`/${t.kind}/${t.tmdb_id}`, { language: LANG, append_to_response: 'credits' }, 30);
   if (!d) {
-    await query('UPDATE titles SET details_at = now() WHERE id = $1', [titleId]);
+    await query('UPDATE titles SET details_at = now(), vote_count = COALESCE(vote_count, 0) WHERE id = $1', [titleId]);
     return;
   }
   const cast = (d.credits?.cast || []).slice(0, 12).map((c) => c.name);
@@ -140,12 +140,15 @@ export async function loadDetails(titleId) {
   await query(
     `UPDATE titles SET name = $2, original_name = $3, year = $4, overview = $5, poster_path = COALESCE($6, poster_path),
             backdrop_path = COALESCE($7, backdrop_path), genres = $8, countries = $9, cast_names = $10, runtime = $11,
-            seasons = $12, episode_count = $13, status = $14, original_language = $15, details_at = now(), updated_at = now()
+            seasons = $12, episode_count = $13, status = $14, original_language = $15,
+            popularity = $16, vote_average = $17, vote_count = $18, revenue = $19, details_at = now(), updated_at = now()
       WHERE id = $1`,
     [titleId, d.title || d.name, d.original_title || d.original_name || null, yearOf(d.release_date || d.first_air_date), d.overview || null,
       d.poster_path || null, d.backdrop_path || null, genres, countries, cast, runtime,
       seasons ? JSON.stringify(seasons) : null, t.kind === 'tv' ? seasons.reduce((a, s) => a + (s.episodes || 0), 0) || d.number_of_episodes || null : null,
-      d.status || null, d.original_language || null],
+      d.status || null, d.original_language || null,
+      Number.isFinite(d.popularity) ? d.popularity : null, Number.isFinite(d.vote_average) ? d.vote_average : null,
+      Number.isFinite(d.vote_count) ? d.vote_count : 0, t.kind === 'movie' && d.revenue > 0 ? d.revenue : null],
   );
 }
 
@@ -245,14 +248,14 @@ export function enrich({ limit = config.tmdb.batch } = {}) {
         }
         const { rows: titles } = await query(
           `SELECT DISTINCT t.id FROM titles t JOIN title_aliases al ON al.title_id = t.id
-            WHERE t.details_at IS NULL AND t.tmdb_id IS NOT NULL LIMIT $1`,
+            WHERE (t.details_at IS NULL OR t.vote_count IS NULL) AND t.tmdb_id IS NOT NULL LIMIT $1`,
           [limit],
         );
         for (const t of titles) {
           try { await loadDetails(t.id); stats.details++; } catch (err) {
             if (err.code === 'TMDB_PAUSED') throw err;
             stats.errors++;
-            await query('UPDATE titles SET details_at = now() WHERE id = $1', [t.id]);
+            await query('UPDATE titles SET details_at = now(), vote_count = COALESCE(vote_count, 0) WHERE id = $1', [t.id]);
           }
         }
         // Staffeln, aus denen etwas gesehen wurde, aber deren Folgen noch fehlen

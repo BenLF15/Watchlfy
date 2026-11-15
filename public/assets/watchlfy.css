@@ -1712,6 +1712,18 @@ details.day-card[open] .hist-list { animation: fold-in 0.35s var(--ease-out) bot
 .sync-btn.is-syncing { opacity: 1; cursor: progress; border-color: rgba(var(--cyan-rgb), 0.6); box-shadow: 0 0 20px -6px rgba(var(--cyan-rgb), 0.8); }
 .sync-btn.is-syncing .sync-ico { color: var(--cyan); animation: spin 0.9s linear infinite; }
 
+/* ------------------------------------------------------------------ Seltenheit: Kennzahlen im Stück-Dialog */
+.rar-factors { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 12px 0 10px; }
+.rar-chip { display: grid; grid-template-columns: auto auto; grid-template-rows: auto auto; column-gap: 8px; align-items: center; padding: 8px 12px; border-radius: 12px; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--line); text-align: left; }
+.rar-chip i { grid-row: span 2; font-style: normal; width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; background: var(--grad); color: #fff; font-weight: 800; }
+.rar-chip b { font: 800 0.95rem/1.1 var(--display); letter-spacing: -0.03em; }
+.rar-chip small { font: 600 0.6rem/1.2 var(--osd); letter-spacing: 0.06em; color: var(--text-3); text-transform: uppercase; }
+.rar-meter { position: relative; height: 22px; margin: 4px auto 8px; max-width: 320px; border-radius: 11px; background: rgba(255, 255, 255, 0.06); overflow: hidden; }
+.rar-meter i { position: absolute; inset: 0 auto 0 0; width: calc(var(--s) * 1%); background: var(--grad); box-shadow: 0 0 14px rgba(var(--cyan-rgb), 0.6); animation: meter-in 1s var(--ease-out) both; }
+@keyframes meter-in { from { width: 0; } }
+.rar-meter span { position: relative; display: block; text-align: center; font: 600 0.62rem/22px var(--osd); letter-spacing: 0.1em; text-transform: uppercase; color: #fff; text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7); }
+.rar-why { max-width: 42ch; margin: 0 auto 6px; }
+
 /* ================================================================== Bewegung reduzieren */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important; }

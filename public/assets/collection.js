@@ -33,6 +33,20 @@
     </${tag}>`;
   }
   const sigName = (name) => String(name).split(/[\s:]+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase() + w.slice(1, 6)).join(' ');
+  /** Warum ist das Stück so selten? Bekanntheit, Bewertung, Einspielergebnis (aus TMDB). */
+  const usd = new Intl.NumberFormat(W.LOCALE, { notation: 'compact', style: 'currency', currency: 'USD', maximumFractionDigits: 1 });
+  const factorsHtml = (it) => {
+    const f = it.factors;
+    if (!f) return `<p class="rar-why muted small">${esc(t('rar.unknown'))}</p>`;
+    const chip = (ico, label, val) => `<span class="rar-chip"><i aria-hidden="true">${ico}</i><b>${esc(val)}</b><small>${esc(label)}</small></span>`;
+    return `<div class="rar-factors">
+        ${chip('◎', t('rar.fame'), `${f.fame} %`)}
+        ${f.rating ? chip('★', t('rar.rating', { n: fmt(f.votes) }), String(f.rating).replace('.', W.LOCALE.startsWith('en') ? '.' : ',')) : ''}
+        ${f.revenue ? chip('$', t('rar.revenue'), usd.format(f.revenue)) : ''}
+      </div>
+      <div class="rar-meter" style="--s:${it.score ?? 0}" aria-label="${esc(t('rar.score', { n: it.score ?? 0 }))}"><i></i><span>${esc(t('rar.score', { n: it.score ?? 0 }))}</span></div>
+      <p class="rar-why muted small">${esc(t('rar.why'))}</p>`;
+  };
   const rarLabel = (r) => `<span class="rar rar-${r}">${esc(t(`rar.${r}`))}</span>`;
   const itemTitle = (it) => `${esc(it.name)}${it.year ? ` <small>(${it.year})</small>` : ''}`;
   const fmtLabel = (it) => t(`fmt.${it.format}`) + (it.format !== 'poster' ? ` · ${t(it.kind === 'movie' || (!it.kind && it.format !== 'poster') ? 'kind.movie' : 'kind.tv')}` : '');
@@ -175,6 +189,7 @@
       <h2 id="item-title">${itemTitle(it)}</h2>
       <p class="item-meta">${rarLabel(it.rarity)} · ${esc(t(`ed.${it.edition}`))} · ${esc(t(`fmt.${it.format}`))}</p>
       <p class="muted small">${esc(t(`edd.${it.edition}`))}</p>
+      ${factorsHtml(it)}
       <div class="item-actions">
         ${it.title_id ? `<button type="button" class="btn btn-ghost" data-title-id="${it.title_id}">ℹ️ ${esc(t('col.details'))}</button>` : ''}
         ${!readonly && next ? `<button type="button" class="btn btn-primary" data-refine="${esc(it.id)}">✨ ${esc(t('scr.refineTo', { r: t(`rar.${next}`) }))} · ${costHtml(cost)}</button>` : ''}
@@ -216,7 +231,7 @@
       </div>`;
     return `<section class="store-room${W.festiveKey() ? ` fest-${W.festiveKey()}` : ''}">
       ${decoHtml()}
-      <header class="room-head"><button type="button" class="link-btn" data-store-leave>‹ ${esc(t('shop.leave'))}</button><span class="muted small">${esc(t('shop.restock', { t: countdown(d.nextDay) }))}</span>${free ? `<span class="tag tag-warn">${esc(t('shop.freeOn'))}</span>` : ''}</header>
+      <header class="room-head"><button type="button" class="link-btn" data-store-leave>‹ ${esc(t('shop.leave'))}</button><span class="muted small">${esc(t('shop.restock', { t: countdown(d.nextDay) }))} · ${esc(t('shop.rotation'))}</span>${free ? `<span class="tag tag-warn">${esc(t('shop.freeOn'))}</span>` : ''}</header>
       ${shelf('tv', sh.items.tv)}${shelf('movie', sh.items.movie)}${shelf('poster', sh.items.poster)}
       <div class="counter" aria-hidden="true"><span>🍿</span><span>📼</span><span>🛎️</span></div>
     </section>`;
@@ -241,6 +256,7 @@
       <h2 id="item-title">${itemTitle(it)}</h2>
       <p class="item-meta">${rarLabel(it.rarity)} · ${esc(t(`ed.${it.edition}`))} · ${esc(fmtLabel(it))}</p>
       <p class="muted small">${esc(t(`edd.${it.edition}`))}</p>
+      ${factorsHtml(it)}
       <div class="item-price">${it.owned ? `✓ ${esc(t('shop.inCollection'))}` : price(it.price, col.data.freeShop)}</div>
       <div class="item-actions">
         <button type="button" class="btn btn-ghost" data-putback>↩︎ ${esc(t('shop.putBack'))}</button>

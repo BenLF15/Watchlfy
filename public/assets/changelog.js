@@ -7,6 +7,22 @@
    Danach den Cache-Parameter ?v=… in public/*.html hochzählen. */
 window.WatchlfyNews = [
   {
+    id: '2026-11-15f',
+    date: '2026-11-15',
+    items: [
+      {
+        icon: '💎', go: 'collection',
+        t: ['Seltenheit nach Ruhm, Umsatz und Bewertung', 'Rarity by fame, box office and rating', 'Rareté selon notoriété, recettes et note', 'Rareza según fama, taquilla y valoración', 'Rarità per notorietà, incassi e voto', 'Sällsynthet efter kändhet, intäkter och betyg', 'Sjældenhed efter kendthed, indtægter og bedømmelse'],
+        d: ['Je bekannter, erfolgreicher und besser bewertet ein Titel, desto seltener die Ausgabe – mit Sammlerwert im Stück.', 'The more famous, successful and highly rated a title, the rarer its edition – with a collector value on each piece.', 'Plus un titre est connu, rentable et bien noté, plus l’édition est rare – avec une valeur de collection.', 'Cuanto más famoso, taquillero y valorado, más rara la edición, con valor de colección en cada pieza.', 'Più un titolo è noto, redditizio e votato, più rara è l’edizione – con valore da collezione.', 'Ju mer känd, lönsam och högt betygsatt en titel är, desto ovanligare utgåva – med samlarvärde.', 'Jo mere kendt, indbringende og velbedømt en titel er, desto sjældnere udgave – med samlerværdi.'],
+      },
+      {
+        icon: '🔁', go: 'collection',
+        t: ['Videothek mit Gedächtnis', 'A video store that remembers', 'Un vidéoclub qui se souvient', 'Un videoclub con memoria', 'Una videoteca che ricorda', 'En videobutik som minns', 'En videobutik der husker'],
+        d: ['Gekauftes kommt nie wieder ins Regal, Liegengelassenes erst nach einer Pause.', 'Bought items never return to the shelf, skipped ones only after a break.', 'Ce qui est acheté ne revient jamais, le reste seulement après une pause.', 'Lo comprado nunca vuelve; lo demás, solo tras una pausa.', 'Ciò che compri non torna più, il resto solo dopo una pausa.', 'Köpt kommer aldrig tillbaka, resten först efter en paus.', 'Det købte kommer aldrig igen, resten først efter en pause.'],
+      },
+    ],
+  },
+  {
     id: '2026-11-15e',
     date: '2026-11-15',
     items: [

@@ -30,11 +30,15 @@ const MOVIES = [
 const slug = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 const norm = (s) => s.normalize('NFKD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim();
 
+const REVENUE = { 27205: 839e6, 693134: 714e6, 872585: 975e6, 346698: 1446e6, 603: 467e6, 120: 871e6, 324857: 384e6 };
+// Bewertungen gemischt (5,8–6,7), ein paar echte Klassiker darüber – damit es gewöhnliche bis mythische Stücke gibt
+const VOTE = { 'Breaking Bad': 8.9 };
+const voteAvg = (name) => VOTE[name] ?? Math.round((5.8 + (hue(name) % 10) / 10) * 10) / 10;
 function tvResult(t) {
-  return { id: t.id, name: t.name, original_name: t.original_name, first_air_date: t.first_air_date, popularity: t.popularity, vote_count: t.vote_count, poster_path: `/p-${slug(t.original_name)}.svg`, backdrop_path: `/b-${slug(t.original_name)}.svg`, overview: `Überblick zu ${t.name}.`, original_language: 'en' };
+  return { vote_average: voteAvg(t.original_name), id: t.id, name: t.name, original_name: t.original_name, first_air_date: t.first_air_date, popularity: t.popularity, vote_count: t.vote_count, poster_path: `/p-${slug(t.original_name)}.svg`, backdrop_path: `/b-${slug(t.original_name)}.svg`, overview: `Überblick zu ${t.name}.`, original_language: 'en' };
 }
 function movieResult(m) {
-  return { id: m.id, title: m.title, original_title: m.original_title || m.title, release_date: m.release_date, popularity: m.popularity, vote_count: m.vote_count, poster_path: `/p-${slug(m.original_title || m.title)}.svg`, backdrop_path: `/b-${slug(m.original_title || m.title)}.svg`, overview: `Überblick zu ${m.title}.`, original_language: 'en' };
+  return { vote_average: voteAvg(m.original_title || m.title), revenue: REVENUE[m.id] || 0, id: m.id, title: m.title, original_title: m.original_title || m.title, release_date: m.release_date, popularity: m.popularity, vote_count: m.vote_count, poster_path: `/p-${slug(m.original_title || m.title)}.svg`, backdrop_path: `/b-${slug(m.original_title || m.title)}.svg`, overview: `Überblick zu ${m.title}.`, original_language: 'en' };
 }
 function search(list, q, nameOf) {
   const n = norm(q);
