@@ -8,6 +8,7 @@ import crypto from 'node:crypto';
 import { config } from './config.js';
 import { query, withTransaction } from './db.js';
 import { areFriends, wrappedYears } from './features.js';
+import * as tmdb from './tmdb.js';
 import * as stats from './stats.js';
 import { UserError } from './users.js';
 
@@ -47,7 +48,8 @@ const TICKET_PRICE = 200;
 const PRICE = { common: ['meters', 20, 40], rare: ['meters', 40, 80], epic: ['tickets', 1, 2], legendary: ['tickets', 4, 4], mythic: ['tickets', 12, 12] };
 const POSTER_PRICE = { common: ['meters', 10, 20], rare: ['meters', 40, 40], epic: ['tickets', 1, 1], legendary: ['tickets', 3, 3], mythic: ['tickets', 8, 8] };
 const REFINE_COST = { rare: R(80), epic: R(0, 2), legendary: R(0, 4), mythic: R(0, 8) };
-const SHOP = { tv: 8, movie: 8, poster: 8 };
+/** Stücke je Regal (etwa die Hälfte aus den eigenen Titeln, der Rest Neues zum Entdecken). */
+const SHOP = { tv: 10, movie: 10, poster: 10 };
 
 const hashInt = (s) => crypto.createHash('sha256').update(s).digest().readUInt32BE(0);
 const localDate = (d = new Date()) => new Intl.DateTimeFormat('en-CA', { timeZone: config.timezone }).format(d);
@@ -161,8 +163,8 @@ const clamp01 = (x) => Math.max(0, Math.min(1, x));
 /**
  * Seltenheit eines Titels – fest, nicht ausgewürfelt:
  * - Bekanntheit: Anzahl TMDB-Bewertungen (30 → 0, 30 000 → 1) und TMDB-Popularität
- * - Umsatz: weltweites Einspielergebnis (Filme; 10 Mio. $ → 0, 2 Mrd. $ → 1). Serien haben keins – dort zählen
- *   Bekanntheit und Bewertung je zur Hälfte.
+ * - Umsatz: weltweites Einspielergebnis (Filme; 10 Mio. $ → 0, 2 Mrd. $ → 1). Ohne bekanntes Einspielergebnis (Serien,
+ *   viele kleine Filme) zählen Bekanntheit und Bewertung je zur Hälfte.
  * - Bewertung: TMDB-Durchschnitt (5,5 → 0, 8,8 → 1), erst ab 50 Stimmen voll gewertet
  * Je bekannter, erfolgreicher und besser bewertet, desto seltener (und wertvoller) die Ausgabe.
  */
@@ -176,7 +178,8 @@ export function rarityOf(t) {
   const trust = clamp01(votes / 50);
   const rating = clamp01((avg - 5.5) / 3.3) * trust + 0.3 * (1 - trust);
   const revenue = rev > 0 ? clamp01((Math.log10(rev) - 7) / 2.3) : 0;
-  const score = t.kind === 'movie' ? 0.35 * fame + 0.3 * revenue + 0.35 * rating : 0.5 * fame + 0.5 * rating;
+  // Umsatz nur werten, wenn TMDB ihn kennt (Serien und viele kleine Filme haben keinen)
+  const score = t.kind === 'movie' && rev > 0 ? 0.35 * fame + 0.3 * revenue + 0.35 * rating : 0.5 * fame + 0.5 * rating;
   const rarity = score >= 0.86 ? 'mythic' : score >= 0.74 ? 'legendary' : score >= 0.6 ? 'epic' : score >= 0.45 ? 'rare' : 'common';
   return {
     rarity,
@@ -204,6 +207,7 @@ function makeItem(title, format, seedExtra = '') {
     price: { cur, amount: lo + (hashInt(`${key}#price`) % (hi - lo + 1)) },
     score,
     factors,
+    discover: Boolean(title.discover),
   };
 }
 
@@ -225,10 +229,20 @@ export async function shopFor(accountId, day = localDate()) {
     for (const list of Object.values(items)) for (const it of list) it.owned = ownIds.has(it.id) || ownKeys.has(`${it.title_id}|${it.format === 'poster' ? 'poster' : 'disc'}`);
     return items;
   };
-  const pool = await titlePool(accountId);
+  const own = await titlePool(accountId);
+  const ownIdsSet = new Set(own.map((x) => Number(x.id)));
+  let extra = [];
+  try { extra = (await tmdb.discoverPool()).filter((x) => !ownIdsSet.has(Number(x.id))); } catch (err) { console.warn('[videothek] Entdecken:', err.message); }
+  const pool = [...own, ...extra];
   const byId = new Map(pool.map((x) => [Number(x.id), x]));
   // Gespeichert wird nur die Auswahl (Titel + Format); Seltenheit und Preis kommen immer aus den aktuellen TMDB-Daten
-  const build = (sel) => {
+  const build = async (sel) => {
+    // Titel, die inzwischen aus den Entdecken-Listen gefallen sind, direkt nachladen – das Tagesangebot bleibt stabil
+    const missing = Object.values(sel).filter(Array.isArray).flat().map((x) => Number(x.title_id)).filter((id) => !byId.has(id));
+    if (missing.length) {
+      const { rows } = await query('SELECT id, kind, name, year, poster_path, backdrop_path, popularity, vote_average, vote_count, revenue, details_at FROM titles WHERE id = ANY($1)', [missing]);
+      for (const r of rows) byId.set(Number(r.id), { ...r, views: 0, discover: true });
+    }
     const items = { tv: [], movie: [], poster: [] };
     for (const [shelf, list] of Object.entries(sel)) for (const x of Array.isArray(list) ? list : []) {
       const tt = byId.get(Number(x.title_id));
@@ -238,8 +252,9 @@ export async function shopFor(accountId, day = localDate()) {
   };
   const { rows: today } = await query('SELECT items FROM shop_days WHERE account_id = $1 AND day = $2', [accountId, day]);
   // Gespeichertes Angebot gilt, solange seitdem keine neuen Titel dazugekommen sind (z. B. erster Import am selben Tag)
-  if (today[0] && Number(today[0].items.pool ?? 0) >= pool.length) return { day, items: build(today[0].items), poolSize: pool.length };
-  if (!pool.length) return { day, items: { tv: [], movie: [], poster: [] }, poolSize: 0 };
+  if (today[0] && Number(today[0].items.pool ?? 0) >= own.length) return { day, items: await build(today[0].items), poolSize: pool.length };
+  // Ohne eigene Titel (noch nichts importiert) gibt es kein Angebot – die Videothek baut auf deinem Verlauf auf
+  if (!own.length) return { day, items: { tv: [], movie: [], poster: [] }, poolSize: 0 };
 
   // Zuletzt gezeigt: Titel je Regal → letzter Tag
   const { rows: past } = await query(
@@ -253,16 +268,26 @@ export async function shopFor(accountId, day = localDate()) {
   }
   const minus = (n) => { const d = new Date(`${day}T12:00:00Z`); d.setUTCDate(d.getUTCDate() - n); return d.toISOString().slice(0, 10); };
   // Pause je Regal: genug Auswahl → 14 Tage, wenig Auswahl → kürzer (mind. 3 Tage), damit das Regal nicht leer bleibt
-  const pick = (list, n, shelf) => {
+  const pickFrom = (list, n, shelf) => {
+    if (!list.length || n <= 0) return [];
     const rest = Math.min(COOLDOWN_DAYS, Math.max(3, Math.ceil((2 * list.length) / n)));
     const cut = minus(rest);
+    // eigene Titel: oft gesehen = öfter im Regal; Neues: beliebt = öfter im Regal
+    const weight = (tt) => (tt.discover ? 1 + Math.log10(1 + (Number(tt.popularity) || 0)) : Math.sqrt(1 + Number(tt.views)));
     return list
-      .map((tt) => ({ tt, last: lastShown.get(`${shelf}|${tt.id}`) || null, k: hashInt(`${accountId}|${day}|${shelf}|${tt.id}`) / 2 ** 32 / Math.sqrt(1 + Number(tt.views)) }))
+      .map((tt) => ({ tt, last: lastShown.get(`${shelf}|${tt.id}`) || null, k: hashInt(`${accountId}|${day}|${shelf}|${tt.id}`) / 2 ** 32 / weight(tt) }))
       .filter((x) => !x.last || x.last <= cut)
       .sort((a, b) => a.k - b.k)
       // gleichmäßig verteilen: bei wenig Auswahl täglich weniger Stücke, dafür jeden Tag welche
       .slice(0, Math.min(n, Math.max(1, Math.floor(list.length / (rest + 1)))))
       .map(({ tt }) => tt);
+  };
+  /** Etwa die Hälfte aus den eigenen Titeln, der Rest zum Entdecken; fehlt eins, füllt das andere auf. */
+  const pick = (list, n, shelf) => {
+    const mine = pickFrom(list.filter((x) => !x.discover), Math.ceil(n / 2), shelf);
+    const fresh = pickFrom(list.filter((x) => x.discover), n - mine.length, shelf);
+    const more = mine.length + fresh.length < n ? pickFrom(list.filter((x) => !x.discover && !mine.includes(x)), n - mine.length - fresh.length, shelf) : [];
+    return [...mine, ...more, ...fresh];
   };
   const notOwned = (fmtKey) => (tt) => !ownKeys.has(`${tt.id}|${fmtKey}`);
   const sel = {
@@ -270,15 +295,23 @@ export async function shopFor(accountId, day = localDate()) {
     movie: pick(pool.filter((x) => x.kind === 'movie' && notOwned('disc')(x)), SHOP.movie, 'movie').map((tt) => ({ title_id: tt.id, format: hashInt(`${day}|fmt|${tt.id}`) % 2 === 0 ? 'bluray' : 'dvd' })),
     poster: pick(pool.filter(notOwned('poster')), SHOP.poster, 'poster').map((tt) => ({ title_id: tt.id, format: 'poster' })),
   };
-  sel.pool = pool.length;
+  const needDetails = [...sel.movie, ...sel.poster].map((x) => byId.get(Number(x.title_id))).filter((tt) => tt?.discover && tt.kind === 'movie' && !tt.details_at);
+  for (const tt of needDetails) {
+    try {
+      await tmdb.loadDetails(tt.id);
+      const { rows: r } = await query('SELECT revenue, vote_count, vote_average, popularity FROM titles WHERE id = $1', [tt.id]);
+      Object.assign(tt, r[0] || {}, { details_at: new Date() });
+    } catch { /* ohne Umsatz geht es auch */ }
+  }
+  sel.pool = own.length;
   await query(
     `INSERT INTO shop_days (account_id, day, items) VALUES ($1, $2, $3)
      ON CONFLICT (account_id, day) DO UPDATE SET items = EXCLUDED.items WHERE (shop_days.items->>'pool')::int < $4`,
-    [accountId, day, JSON.stringify(sel), pool.length],
+    [accountId, day, JSON.stringify(sel), own.length],
   );
   query(`DELETE FROM shop_days WHERE account_id = $1 AND day < $2::date - 150`, [accountId, day]).catch(() => {});
   const { rows: saved } = await query('SELECT items FROM shop_days WHERE account_id = $1 AND day = $2', [accountId, day]);
-  return { day, items: build(saved[0]?.items || sel), poolSize: pool.length };
+  return { day, items: await build(saved[0]?.items || sel), poolSize: pool.length };
 }
 
 async function findShopItem(accountId, itemId) {

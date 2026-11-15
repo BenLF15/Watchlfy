@@ -127,7 +127,7 @@ export async function loadDetails(titleId) {
   if (!t?.tmdb_id) return;
   const d = await tmdbGet(`/${t.kind}/${t.tmdb_id}`, { language: LANG, append_to_response: 'credits' }, 30);
   if (!d) {
-    await query('UPDATE titles SET details_at = now(), vote_count = COALESCE(vote_count, 0) WHERE id = $1', [titleId]);
+    await query('UPDATE titles SET details_at = now(), stats_at = now() WHERE id = $1', [titleId]);
     return;
   }
   const cast = (d.credits?.cast || []).slice(0, 12).map((c) => c.name);
@@ -141,7 +141,7 @@ export async function loadDetails(titleId) {
     `UPDATE titles SET name = $2, original_name = $3, year = $4, overview = $5, poster_path = COALESCE($6, poster_path),
             backdrop_path = COALESCE($7, backdrop_path), genres = $8, countries = $9, cast_names = $10, runtime = $11,
             seasons = $12, episode_count = $13, status = $14, original_language = $15,
-            popularity = $16, vote_average = $17, vote_count = $18, revenue = $19, details_at = now(), updated_at = now()
+            popularity = $16, vote_average = $17, vote_count = $18, revenue = $19, stats_at = now(), details_at = now(), updated_at = now()
       WHERE id = $1`,
     [titleId, d.title || d.name, d.original_title || d.original_name || null, yearOf(d.release_date || d.first_air_date), d.overview || null,
       d.poster_path || null, d.backdrop_path || null, genres, countries, cast, runtime,
@@ -248,14 +248,14 @@ export function enrich({ limit = config.tmdb.batch } = {}) {
         }
         const { rows: titles } = await query(
           `SELECT DISTINCT t.id FROM titles t JOIN title_aliases al ON al.title_id = t.id
-            WHERE (t.details_at IS NULL OR t.vote_count IS NULL) AND t.tmdb_id IS NOT NULL LIMIT $1`,
+            WHERE (t.details_at IS NULL OR t.stats_at IS NULL) AND t.tmdb_id IS NOT NULL LIMIT $1`,
           [limit],
         );
         for (const t of titles) {
           try { await loadDetails(t.id); stats.details++; } catch (err) {
             if (err.code === 'TMDB_PAUSED') throw err;
             stats.errors++;
-            await query('UPDATE titles SET details_at = now(), vote_count = COALESCE(vote_count, 0) WHERE id = $1', [t.id]);
+            await query('UPDATE titles SET details_at = now(), stats_at = now() WHERE id = $1', [t.id]);
           }
         }
         // Staffeln, aus denen etwas gesehen wurde, aber deren Folgen noch fehlen
@@ -366,4 +366,50 @@ export async function imageProxy(req, res, { cache = true } = {}) {
   } catch {
     if (!res.headersSent) res.status(504).end();
   }
+}
+
+// ---------------------------------------------------------------- Entdecken: Titel, die man noch nicht gesehen hat (für die Videothek)
+const DISCOVER_LISTS = [
+  ['movie', '/trending/movie/week'], ['tv', '/trending/tv/week'],
+  ['movie', '/movie/popular'], ['tv', '/tv/popular'],
+  ['movie', '/movie/top_rated'], ['tv', '/tv/top_rated'],
+];
+let discoverMemo = { at: 0, rows: [] };
+
+/**
+ * Beliebte, angesagte und bestbewertete Filme/Serien aus TMDB (je 2 Seiten, einen Tag zwischengespeichert).
+ * Werden als Titel angelegt (ohne Details); Kennzahlen für die Seltenheit kommen direkt aus den Listen.
+ */
+export async function discoverPool() {
+  if (!enabled()) return [];
+  if (Date.now() - discoverMemo.at < 3600e3 && discoverMemo.rows.length) return discoverMemo.rows;
+  const seen = new Map();
+  for (const [kind, path] of DISCOVER_LISTS) {
+    for (const page of [1, 2]) {
+      let data = null;
+      try { data = await tmdbGet(path, { language: LANG, page }, 1); } catch (err) { if (err.code === 'TMDB_PAUSED') break; continue; }
+      for (const r of data?.results || []) {
+        if (!r?.id || !r.poster_path || r.adult || seen.has(`${kind}|${r.id}`)) continue;
+        seen.set(`${kind}|${r.id}`, { kind, r });
+      }
+    }
+  }
+  const rows = [];
+  for (const { kind, r } of seen.values()) {
+    const { rows: t } = await query(
+      `INSERT INTO titles (kind, tmdb_id, name, original_name, year, overview, poster_path, backdrop_path, original_language, popularity, vote_average, vote_count)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+       ON CONFLICT (kind, tmdb_id) WHERE tmdb_id IS NOT NULL DO UPDATE SET
+         poster_path = COALESCE(titles.poster_path, EXCLUDED.poster_path), backdrop_path = COALESCE(titles.backdrop_path, EXCLUDED.backdrop_path),
+         popularity = COALESCE(EXCLUDED.popularity, titles.popularity), vote_average = COALESCE(EXCLUDED.vote_average, titles.vote_average),
+         vote_count = GREATEST(COALESCE(titles.vote_count, 0), COALESCE(EXCLUDED.vote_count, 0))
+       RETURNING id, kind, name, year, poster_path, backdrop_path, popularity, vote_average, vote_count, revenue, details_at`,
+      [kind, r.id, r.title || r.name || `#${r.id}`, r.original_title || r.original_name || null, yearOf(r.release_date || r.first_air_date),
+        r.overview || null, r.poster_path, r.backdrop_path || null, r.original_language || null,
+        Number.isFinite(r.popularity) ? r.popularity : null, Number.isFinite(r.vote_average) ? r.vote_average : null, Number.isFinite(r.vote_count) ? r.vote_count : null],
+    );
+    if (t[0]) rows.push({ ...t[0], views: 0, discover: true });
+  }
+  discoverMemo = { at: Date.now(), rows };
+  return rows;
 }

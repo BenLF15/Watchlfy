@@ -7,6 +7,17 @@
    Danach den Cache-Parameter ?v=… in public/*.html hochzählen. */
 window.WatchlfyNews = [
   {
+    id: '2026-11-15g',
+    date: '2026-11-15',
+    items: [
+      {
+        icon: '✦', go: 'collection',
+        t: ['Mehr in der Videothek', 'More in the video store', 'Plus au vidéoclub', 'Más en el videoclub', 'Di più in videoteca', 'Mer i videobutiken', 'Mere i videobutikken'],
+        d: ['Bis zu 10 Stücke pro Regal – darunter Filme, Serien und Poster, die du noch nie gesehen hast: angesagt oder hoch bewertet.', 'Up to 10 pieces per shelf – including films, series and posters you have never watched: trending or highly rated.', 'Jusqu’à 10 pièces par rayon, dont des films, séries et affiches jamais vus : tendance ou très bien notés.', 'Hasta 10 piezas por estante, con películas, series y pósters que nunca has visto: en tendencia o muy valorados.', 'Fino a 10 pezzi per scaffale, tra cui film, serie e poster mai visti: di tendenza o molto votati.', 'Upp till 10 saker per hylla – även filmer, serier och affischer du aldrig sett: trendande eller högt betygsatta.', 'Op til 10 ting pr. hylde – også film, serier og plakater, du aldrig har set: populære eller højt bedømte.'],
+      },
+    ],
+  },
+  {
     id: '2026-11-15f',
     date: '2026-11-15',
     items: [

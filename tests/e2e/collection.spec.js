@@ -30,6 +30,13 @@ test('Videothek betreten, Stück anheben, zurücklegen, kaufen → im Regal', as
   await shot(page, ti, 'store-front');
   await page.click('.sf-enter');
   await expect(page.locator('.store-room .st-shelf')).toHaveCount(3);
+  // Auch noch nie Gesehenes steht im Regal (aus den TMDB-Listen), deutlich markiert
+  const offer = Object.values((await (await page.request.get('/api/collection')).json()).shop.items).flat();
+  const fresh = offer.filter((x) => x.discover);
+  expect(fresh.length).toBeGreaterThan(0);
+  const seen = new Set((await (await page.request.get('/api/history?limit=200')).json()).items.map((v) => v.title_id));
+  expect(fresh.every((x) => !seen.has(x.title_id))).toBe(true);
+  await expect(page.locator('.store-room .new-tag').first()).toBeVisible();
   // günstigstes bezahlbares Stück suchen (Bronze)
   const before = await bal(page);
   const pickIt = await affordable(page);

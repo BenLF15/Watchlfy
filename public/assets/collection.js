@@ -225,13 +225,14 @@
         <h3>${esc(t(`shop.shelf.${key}`))}</h3>
         <div class="st-row">${list.map((it, i) => `<button type="button" class="st-item${it.owned ? ' owned' : ''}" data-shop="${esc(it.id)}" style="--i:${i}" aria-label="${esc(`${it.name} – ${t(`rar.${it.rarity}`)}`)}">
             ${caseHtml(it)}
+            ${it.discover ? `<span class="new-tag">${esc(t('shop.discover'))}</span>` : ''}
             ${it.owned ? `<span class="owned-tag">✓</span>` : price(it.price, free)}
           </button>`).join('') || `<p class="muted small">${esc(t('shop.shelfEmpty'))}</p>`}</div>
         <div class="st-board" aria-hidden="true"></div>
       </div>`;
     return `<section class="store-room${W.festiveKey() ? ` fest-${W.festiveKey()}` : ''}">
       ${decoHtml()}
-      <header class="room-head"><button type="button" class="link-btn" data-store-leave>‹ ${esc(t('shop.leave'))}</button><span class="muted small">${esc(t('shop.restock', { t: countdown(d.nextDay) }))} · ${esc(t('shop.rotation'))}</span>${free ? `<span class="tag tag-warn">${esc(t('shop.freeOn'))}</span>` : ''}</header>
+      <header class="room-head"><button type="button" class="link-btn" data-store-leave>‹ ${esc(t('shop.leave'))}</button><span class="muted small">${esc(t('shop.restock', { t: countdown(d.nextDay) }))}</span>${free ? `<span class="tag tag-warn">${esc(t('shop.freeOn'))}</span>` : ''}</header>
       ${shelf('tv', sh.items.tv)}${shelf('movie', sh.items.movie)}${shelf('poster', sh.items.poster)}
       <div class="counter" aria-hidden="true"><span>🍿</span><span>📼</span><span>🛎️</span></div>
     </section>`;
@@ -255,6 +256,7 @@
       <div class="item-stage lift">${caseHtml(it, { size: 'lg' })}</div>
       <h2 id="item-title">${itemTitle(it)}</h2>
       <p class="item-meta">${rarLabel(it.rarity)} · ${esc(t(`ed.${it.edition}`))} · ${esc(fmtLabel(it))}</p>
+      ${it.discover ? `<p class="discover-note">✦ ${esc(t('shop.discoverNote'))}</p>` : ''}
       <p class="muted small">${esc(t(`edd.${it.edition}`))}</p>
       ${factorsHtml(it)}
       <div class="item-price">${it.owned ? `✓ ${esc(t('shop.inCollection'))}` : price(it.price, col.data.freeShop)}</div>

@@ -234,7 +234,7 @@ export async function adminSystem() {
   const [db, catalog, errors] = await Promise.all([
     query(`SELECT pg_size_pretty(pg_database_size(current_database())) AS size, version() AS version`),
     query(
-      `SELECT (SELECT count(*) FROM titles) AS titles, (SELECT count(*) FROM titles WHERE details_at IS NULL OR (tmdb_id IS NOT NULL AND vote_count IS NULL)) AS titles_pending,
+      `SELECT (SELECT count(*) FROM titles) AS titles, (SELECT count(*) FROM titles t WHERE (t.details_at IS NULL OR (t.tmdb_id IS NOT NULL AND t.stats_at IS NULL)) AND EXISTS (SELECT 1 FROM title_aliases a WHERE a.title_id = t.id)) AS titles_pending,
               (SELECT count(*) FROM title_aliases WHERE state = 'pending') AS aliases_pending,
               (SELECT count(*) FROM title_aliases WHERE state IN ('uncertain', 'none')) AS aliases_unsure,
               (SELECT count(*) FROM episodes) AS episodes, (SELECT count(*) FROM views) AS views,

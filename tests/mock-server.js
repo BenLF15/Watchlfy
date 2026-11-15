@@ -26,11 +26,18 @@ const MOVIES = [
   { id: 603, title: 'Matrix', original_title: 'The Matrix', release_date: '1999-03-30', popularity: 90, vote_count: 25000, genres: ['Action', 'Science Fiction'], country: ['US'], cast: ['Keanu Reeves', 'Laurence Fishburne', 'Carrie-Anne Moss'], runtime: 136 },
   { id: 120, title: 'Der Herr der Ringe: Die Gefährten', original_title: 'The Lord of the Rings: The Fellowship of the Ring', release_date: '2001-12-18', popularity: 110, vote_count: 25000, genres: ['Abenteuer', 'Fantasy'], country: ['NZ', 'US'], cast: ['Elijah Wood', 'Ian McKellen', 'Viggo Mortensen'], runtime: 179 },
   { id: 324857, title: 'Spider-Man: A New Universe', original_title: 'Spider-Man: Into the Spider-Verse', release_date: '2018-12-06', popularity: 100, vote_count: 15000, genres: ['Animation', 'Action'], country: ['US'], cast: ['Shameik Moore', 'Jake Johnson'], runtime: 117 },
+  // nur in den Entdecken-Listen (kommt in keinem Test-Verlauf vor)
+  { id: 496243, title: 'Parasite', original_title: '기생충', release_date: '2019-05-30', popularity: 90, vote_count: 18000, genres: ['Drama', 'Thriller'], country: ['KR'], cast: ['Song Kang-ho'], runtime: 132 },
+  { id: 157336, title: 'Interstellar', release_date: '2014-11-05', popularity: 160, vote_count: 35000, genres: ['Science Fiction', 'Drama'], country: ['US'], cast: ['Matthew McConaughey'], runtime: 169 },
+  { id: 329865, title: 'Arrival', release_date: '2016-11-10', popularity: 40, vote_count: 17000, genres: ['Science Fiction'], country: ['US'], cast: ['Amy Adams'], runtime: 116 },
+  { id: 244786, title: 'Whiplash', release_date: '2014-10-10', popularity: 35, vote_count: 15000, genres: ['Drama', 'Musik'], country: ['US'], cast: ['Miles Teller'], runtime: 107 },
+  { id: 194, title: 'Die fabelhafte Welt der Amélie', original_title: 'Le Fabuleux Destin d’Amélie Poulain', release_date: '2001-04-25', popularity: 30, vote_count: 11000, genres: ['Komödie', 'Liebesfilm'], country: ['FR'], cast: ['Audrey Tautou'], runtime: 122 },
+  { id: 545611, title: 'Everything Everywhere All at Once', release_date: '2022-03-24', popularity: 60, vote_count: 6000, genres: ['Action', 'Abenteuer'], country: ['US'], cast: ['Michelle Yeoh'], runtime: 139 },
 ];
 const slug = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 const norm = (s) => s.normalize('NFKD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim();
 
-const REVENUE = { 27205: 839e6, 693134: 714e6, 872585: 975e6, 346698: 1446e6, 603: 467e6, 120: 871e6, 324857: 384e6 };
+const REVENUE = { 496243: 262e6, 157336: 701e6, 329865: 203e6, 244786: 49e6, 194: 174e6, 545611: 143e6, 27205: 839e6, 693134: 714e6, 872585: 975e6, 346698: 1446e6, 603: 467e6, 120: 871e6, 324857: 384e6 };
 // Bewertungen gemischt (5,8–6,7), ein paar echte Klassiker darüber – damit es gewöhnliche bis mythische Stücke gibt
 const VOTE = { 'Breaking Bad': 8.9 };
 const voteAvg = (name) => VOTE[name] ?? Math.round((5.8 + (hue(name) % 10) / 10) * 10) / 10;
@@ -78,6 +85,13 @@ http.createServer(async (req, res) => {
   const p = u.pathname;
   let m;
   // ---------------- TMDB
+  // Entdecken-Listen (Videothek): Trends, Beliebt, Bestbewertet
+  if ((m = /^\/3\/(?:trending\/(movie|tv)\/week|(movie|tv)\/(?:popular|top_rated))$/.exec(p))) {
+    const kind = m[1] || m[2];
+    const page = Number(u.searchParams.get('page') || 1);
+    const list = kind === 'movie' ? MOVIES.map(movieResult) : TV.map(tvResult);
+    return send(res, 200, { page, total_pages: 1, results: page === 1 ? list.sort((a, b) => b.popularity - a.popularity) : [] });
+  }
   if (p === '/3/search/tv') return send(res, 200, { results: search(TV, u.searchParams.get('query') || '', (t) => [t.name, t.original_name, ...(t.aka || [])]).map(tvResult) });
   if (p === '/3/search/movie') return send(res, 200, { results: search(MOVIES, u.searchParams.get('query') || '', (x) => [x.title, x.original_title || x.title]).map(movieResult) });
   if ((m = /^\/3\/tv\/(\d+)\/season\/(\d+)$/.exec(p))) {

@@ -1724,6 +1724,13 @@ details.day-card[open] .hist-list { animation: fold-in 0.35s var(--ease-out) bot
 .rar-meter span { position: relative; display: block; text-align: center; font: 600 0.62rem/22px var(--osd); letter-spacing: 0.1em; text-transform: uppercase; color: #fff; text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7); }
 .rar-why { max-width: 42ch; margin: 0 auto 6px; }
 
+/* ------------------------------------------------------------------ Videothek: Neues zum Entdecken */
+.st-item { position: relative; }
+.new-tag { order: 2; margin: -2px 0 -2px; padding: 3px 8px; border-radius: 999px; white-space: nowrap;
+  font: 700 0.56rem/1 var(--osd); letter-spacing: 0.08em; text-transform: uppercase; color: #fff; background: var(--grad); box-shadow: 0 4px 14px -4px rgba(var(--magenta-rgb), 0.9); }
+.st-item > .price-tag, .st-item > .owned-tag { order: 3; }
+.discover-note { margin: -2px auto 8px; font-size: 0.82rem; color: var(--cyan); }
+
 /* ================================================================== Bewegung reduzieren */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important; }
