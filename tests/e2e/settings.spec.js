@@ -47,6 +47,29 @@ test('Admin sieht Admin-Bereich mit Konten', async ({ page }, ti) => {
   await shot(page, ti, 'admin');
 });
 
+test('Admin: Videothek kostenlos schalten (an und wieder aus)', async ({ page }, ti) => {
+  // Der Admin ist für alle Tests derselbe – nur in einem Projekt schalten, damit sich nichts überschneidet
+  test.skip(ti.project.name !== 'desktop', 'nur einmal');
+  await loginAs(page, 'admin', 'adminpass1');
+  await page.goto('/');
+  await page.waitForSelector('body.ready');
+  await goPanel(page, 'admin');
+  const sw = page.locator('#free-shop-switch');
+  await expect(sw).toHaveAttribute('aria-checked', 'false');
+  await sw.click();
+  await expect(sw).toHaveAttribute('aria-checked', 'true');
+  await expect(page.locator('#toast')).toContainText('kostenlos');
+  expect((await (await page.request.get('/api/status')).json()).account.free_shop).toBe(true);
+  expect((await (await page.request.get('/api/collection')).json()).freeShop).toBe(true);
+  // nach dem Neuladen steht der Schalter weiter auf „an“
+  await page.reload(); await page.waitForSelector('body.ready');
+  await goPanel(page, 'admin');
+  await expect(sw).toHaveAttribute('aria-checked', 'true');
+  await sw.click();
+  await expect(sw).toHaveAttribute('aria-checked', 'false');
+  expect((await (await page.request.get('/api/status')).json()).account.free_shop).toBe(false);
+});
+
 test('Datenexport liefert JSON ohne Passwort-Hash', async ({ page }, ti) => {
   await newUser(page, ti);
   const r = await page.request.get('/api/me/export');

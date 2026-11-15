@@ -2,6 +2,7 @@
 // → optional Spalten-Zuordnung ändern → Import (idempotent über dedupe_key).
 import crypto from 'node:crypto';
 import { query, withTransaction } from './db.js';
+import { markSuperseded } from './dedupe.js';
 import { detectColumns, ROLES, tableScore, toEntries } from './parse/detect.js';
 import { extractTables } from './parse/tables.js';
 import { normName } from './parse/titles.js';
@@ -172,7 +173,7 @@ export async function commit(accountId, token, { profiles } = {}) {
     }
   }
 
-  return withTransaction(async (db) => {
+  const result = await withTransaction(async (db) => {
     const first = chosen.reduce((a, e) => (!a || e.watched_at < a ? e.watched_at : a), null);
     const last = chosen.reduce((a, e) => (!a || e.watched_at > a ? e.watched_at : a), null);
     const { rows: imp } = await db.query(
@@ -213,6 +214,8 @@ export async function commit(accountId, token, { profiles } = {}) {
     pending.delete(p.token);
     return { importId, added, duplicates: chosen.length - added, total: chosen.length, titles: names.size, first, last };
   });
+  await markSuperseded(accountId, { analyze: result.added > 200 });
+  return result;
 }
 
 export async function listImports(accountId) {
@@ -226,11 +229,13 @@ export async function listImports(accountId) {
 
 /** Import rückgängig machen: löscht alle Einträge, die genau dieser Import hinzugefügt hat. */
 export async function deleteImport(accountId, importId) {
-  return withTransaction(async (db) => {
+  const r = await withTransaction(async (db) => {
     const { rowCount } = await db.query('DELETE FROM views WHERE account_id = $1 AND import_id = $2', [accountId, importId]);
     await db.query('DELETE FROM imports WHERE account_id = $1 AND id = $2', [accountId, importId]);
     return { removed: rowCount };
   });
+  await markSuperseded(accountId, { analyze: r.removed > 200 });
+  return r;
 }
 
 /** Alle Einträge einer Quelle löschen (z. B. „Netflix-Daten entfernen“). */
@@ -238,5 +243,6 @@ export async function deleteSource(accountId, source) {
   if (![...SOURCES, 'trakt'].includes(source)) throw new UserError('Unbekannter Dienst.', 400, 'importSource');
   const { rowCount } = await query('DELETE FROM views WHERE account_id = $1 AND source = $2', [accountId, source]);
   await query('DELETE FROM imports WHERE account_id = $1 AND source = $2', [accountId, source]);
+  await markSuperseded(accountId, { analyze: rowCount > 200 });
   return { removed: rowCount };
 }

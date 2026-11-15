@@ -2,6 +2,7 @@
 // Läuft im Hintergrund (wie die Cover in Spotlfy); unsichere Treffer lassen sich im UI korrigieren.
 import { config } from './config.js';
 import { query, withTransaction } from './db.js';
+import { markSuperseded, markSupersededFor } from './dedupe.js';
 import { normName, rawKey } from './parse/titles.js';
 import { UserError } from './users.js';
 
@@ -252,6 +253,7 @@ export function enrich({ limit = config.tmdb.batch } = {}) {
   again = false;
   running = (async () => {
     const stats = { matched: 0, details: 0, seasons: 0, errors: 0 };
+    const touched = new Set();
     const deadline = Date.now() + 4 * 60_000;
     try {
       for (let round = 0; round < 50 && Date.now() < deadline; round++) {
@@ -260,6 +262,7 @@ export function enrich({ limit = config.tmdb.batch } = {}) {
           [limit],
         );
         for (const a of aliases) {
+          touched.add(a.account_id);
           try { await applyMatch(a.account_id, a, await findMatch(a.kind_hint, a.raw_name)); stats.matched++; } catch (err) {
             if (err.code === 'TMDB_PAUSED') throw err;
             stats.errors++;
@@ -297,6 +300,10 @@ export function enrich({ limit = config.tmdb.batch } = {}) {
           }
         }
         if (seasons.length || aliases.length) await resolveEpisodeNumbers();
+        // Neue Zuordnungen/Folgennummern können Doppelte sichtbar machen – betroffene Konten neu markieren
+        if (seasons.length) await markSuperseded(null); // Folgennummern betreffen alle Konten mit diesen Serien
+        else if (touched.size) await markSupersededFor([...touched]);
+        touched.clear();
         if (!aliases.length && !titles.length && !seasons.length) break;
       }
     } catch (err) {
@@ -343,6 +350,7 @@ export async function correctAlias(accountId, rawKeyValue, { kind, tmdbId } = {}
   if (!rows.length) throw new UserError('Titel nicht gefunden.', 404, 'notFound');
   if (!tmdbId) {
     await query(`UPDATE title_aliases SET title_id = NULL, state = 'manual', confidence = 1, checked_at = now() WHERE account_id = $1 AND raw_key = $2`, [accountId, rawKeyValue]);
+    await markSuperseded(accountId);
     return { ok: true };
   }
   if (!['movie', 'tv'].includes(kind) || !Number.isInteger(Number(tmdbId))) throw new UserError('Ungültige Auswahl.', 400, 'invalidSetting');
@@ -356,6 +364,7 @@ export async function correctAlias(accountId, rawKeyValue, { kind, tmdbId } = {}
   // Film ↔ Serie: Einträge passend umstellen
   await query('UPDATE views SET kind_hint = $3 WHERE account_id = $1 AND raw_key = $2', [accountId, rawKeyValue, kind]);
   enrich().catch(() => {});
+  await markSuperseded(accountId);
   return { ok: true, title_id: titleId };
 }
 

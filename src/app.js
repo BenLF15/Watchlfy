@@ -15,6 +15,7 @@ import { registerJob, runAllJobs, startScheduler } from './scheduler.js';
 import * as trakt from './trakt.js';
 import * as collection from './collection.js';
 import * as soundtrack from './soundtrack.js';
+import { markSuperseded } from './dedupe.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const publicDir = path.join(root, 'public');
@@ -136,7 +137,15 @@ app.get('/sw.js', (_req, res) => {
 });
 // Eigene JS/CSS-Dateien: Browser fragt bei jedem Laden per ETag nach, ob es eine neue Version gibt
 // (verhindert, dass nach einem Update veraltete Skripte aus dem Cache laufen).
-const revalidate = { maxAge: 0, setHeaders: (res) => res.set('Cache-Control', 'no-cache') };
+// Mit Versionsnummer (?v=…) ist eine Datei unveränderlich → ein Jahr im Browser behalten, kein Nachfragen beim Öffnen.
+// Ohne Versionsnummer (z. B. Icons, Manifest) weiter jedes Mal kurz prüfen.
+const revalidate = {
+  maxAge: 0,
+  setHeaders: (res) => {
+    const versioned = /[?&]v=[\w.-]+/.test(res.req?.originalUrl || '');
+    res.set('Cache-Control', versioned ? 'public, max-age=31536000, immutable' : 'no-cache');
+  },
+};
 app.use('/assets', express.static(path.join(publicDir, 'assets'), revalidate));
 app.get('/vendor/chart.umd.min.js', (_req, res) =>
   res.sendFile(path.join(root, 'node_modules/chart.js/dist/chart.umd.min.js'), { maxAge: '7d' }),
@@ -327,6 +336,7 @@ api.get(
         theme: a.theme, lang: a.lang, festive: a.festive, glass: a.glass, birthday: a.birthday,
         avatar_url: a.avatar_url || null, custom_avatar: Boolean(a.custom_avatar),
         privacy_accepted: Boolean(a.privacy_accepted_at),
+        free_shop: Boolean(a.is_admin && a.free_shop),
       },
       counts: c,
       tmdb: { enabled: tmdb.enabled(), loading: tmdb.isEnriching(), pausedUntil: tmdb.tmdbPausedUntil(), ...tm },
@@ -474,8 +484,8 @@ admin.get('/backup', async (req, res) => {
   }
 });
 admin.post('/free-shop', express.json({ limit: '1kb' }), wrap(async (req, res) => {
-  await collection.setFreeShop(req.account.id, req.body?.on === true);
-  res.json({ ok: true, on: req.body?.on === true });
+  const on = await collection.setFreeShop(req.account.id, req.body?.on === true);
+  res.json({ ok: true, on });
 }));
 admin.get('/backup/info', wrap(async (_req, res) => res.json({ last: await lastBackup() })));
 admin.post('/restore', express.raw({ type: () => true, limit: '300mb' }), wrap(async (req, res) => {
@@ -551,6 +561,13 @@ app.use('/api', api);
 registerJob('trakt', trakt.syncAll);
 
 await migrate();
+// Einmalig: Doppelte in bestehenden Verläufen markieren (früher wurde das bei jeder Abfrage berechnet)
+query(`SELECT 1 FROM app_meta WHERE key = 'superseded_v1'`).then(async ({ rows }) => {
+  if (rows.length) return;
+  const n = await markSuperseded(null, { analyze: true });
+  await query(`INSERT INTO app_meta (key, value) VALUES ('superseded_v1', $1) ON CONFLICT (key) DO NOTHING`, [String(n)]);
+  console.log(`[dedupe] ${n} doppelte Einträge markiert`);
+}).catch((err) => console.error('[dedupe]', err.message));
 app.listen(config.port, () => {
   console.log(`Watchlfy läuft auf Port ${config.port}`);
   startScheduler();

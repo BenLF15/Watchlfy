@@ -3,6 +3,7 @@
 import zlib from 'node:zlib';
 import { promisify } from 'node:util';
 import { pool, query, withTransaction } from './db.js';
+import { markSuperseded } from './dedupe.js';
 import { UserError } from './users.js';
 
 const gunzip = promisify(zlib.gunzip);
@@ -108,5 +109,6 @@ export async function restoreBackup(buf) {
       await db.query(`SELECT setval(pg_get_serial_sequence('${t}', 'id'), GREATEST((SELECT max(id) FROM ${t}), 1))`);
     }
   });
+  await markSuperseded(null, { analyze: true });
   return { created_at: data.created_at || null, tables: result };
 }

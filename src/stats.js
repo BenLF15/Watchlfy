@@ -7,24 +7,8 @@ export const RANGE_DAYS = { '7d': 7, '30d': 30, '90d': 90, '365d': 365, all: nul
 export const DEFAULT_SECS = { tv: 45 * 60, movie: 105 * 60 };
 const TZ = config.timezone;
 
-/**
- * Doppelte Zählung vermeiden (gilt für alle Auswertungen, nichts wird gelöscht):
- * - Trakt-Eintrag zählt nicht, wenn dieselbe Folge bzw. derselbe Film innerhalb von 36 Std. aus einem Import vorliegt.
- * - Eintrag nur mit Datum (z. B. Netflix-Kurzexport) zählt nicht, wenn derselbe Dienst ihn auch mit Uhrzeit geliefert hat
- *   (Netflix-Datenauskunft). Gleich ist, was zum selben Titel gehört (Roh-Titel oder TMDB-Zuordnung).
- */
-export const NOT_SUPERSEDED = `
-       AND NOT EXISTS (
-         SELECT 1 FROM views o
-           LEFT JOIN title_aliases oa ON oa.account_id = o.account_id AND oa.raw_key = o.raw_key
-          WHERE o.account_id = v.account_id AND o.id <> v.id
-            AND ((v.source = 'trakt' AND o.source <> 'trakt') OR (NOT v.time_known AND o.time_known AND o.source = v.source))
-            AND (o.raw_key = v.raw_key OR (al.title_id IS NOT NULL AND oa.title_id = al.title_id))
-            AND o.watched_at BETWEEN v.watched_at - interval '36 hours' AND v.watched_at + interval '36 hours'
-            AND (COALESCE(t.kind, v.kind_hint) = 'movie'
-                 OR (o.season IS NOT DISTINCT FROM v.season
-                     AND (o.episode = v.episode OR lower(o.episode_name) = lower(v.episode_name)
-                          OR (o.episode IS NULL AND v.episode IS NULL AND o.episode_name IS NULL AND v.episode_name IS NULL)))))`;
+// Doppelte Zählung vermeiden: views.superseded wird in dedupe.js beim Speichern berechnet (siehe dort).
+const NOT_SUPERSEDED = 'AND NOT v.superseded';
 
 /**
  * Basis-CTE „v“: ein Eintrag pro Seh-Ereignis mit aufgelöstem Titel und Sekunden.

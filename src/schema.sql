@@ -156,6 +156,9 @@ CREATE TABLE IF NOT EXISTS views (
 CREATE UNIQUE INDEX IF NOT EXISTS views_dedupe_uq ON views (account_id, dedupe_key);
 CREATE INDEX IF NOT EXISTS views_account_time_idx ON views (account_id, watched_at);
 CREATE INDEX IF NOT EXISTS views_account_raw_idx ON views (account_id, raw_key);
+-- Doppelt gezählte Einträge (Trakt + Import, Kurz- + Detail-Export) – berechnet in dedupe.js, nicht bei jeder Abfrage
+ALTER TABLE views ADD COLUMN IF NOT EXISTS superseded boolean NOT NULL DEFAULT false;
+CREATE INDEX IF NOT EXISTS title_aliases_title_idx ON title_aliases (account_id, title_id);
 
 -- ---------------------------------------------------------------- Trakt
 CREATE TABLE IF NOT EXISTS trakt_tokens (

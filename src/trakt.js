@@ -5,6 +5,7 @@ import { config } from './config.js';
 import { query, withTransaction } from './db.js';
 import { rawKey } from './parse/titles.js';
 import * as tmdb from './tmdb.js';
+import { markSuperseded } from './dedupe.js';
 import { UserError } from './users.js';
 
 // Nur die Client ID ist Pflicht. Ohne Client Secret läuft die Anmeldung über PKCE (Trakt-Apps mit
@@ -193,6 +194,7 @@ export async function syncAccount(accountId, { full = false } = {}) {
     const existing = ex[0].n;
     const added = await saveViews(accountId, views);
     const fromImports = Math.max(0, views.length - existing - added);
+    if (added) await markSuperseded(accountId, { analyze: added > 200 });
     // Bewertungen (optional)
     try {
       const { data } = await traktFetch(token, '/sync/ratings');

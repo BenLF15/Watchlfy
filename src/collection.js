@@ -532,7 +532,9 @@ export async function event(account, { type, year } = {}) {
 }
 
 export async function setFreeShop(accountId, on) {
-  await query('UPDATE accounts SET free_shop = $2 WHERE id = $1 AND is_admin', [accountId, Boolean(on)]);
+  const { rows } = await query('UPDATE accounts SET free_shop = $2 WHERE id = $1 AND is_admin RETURNING free_shop', [accountId, Boolean(on)]);
+  if (!rows[0]) throw new UserError('Nur für Admins.', 403, 'forbidden');
+  return rows[0].free_shop;
 }
 
 /** Sammlung eines Freundes (nur ansehen). */

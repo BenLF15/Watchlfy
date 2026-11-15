@@ -7,6 +7,22 @@
    Danach den Cache-Parameter ?v=… in public/*.html hochzählen. */
 window.WatchlfyNews = [
   {
+    id: '2026-11-15m',
+    date: '2026-11-15',
+    items: [
+      {
+        icon: '⚡', go: 'overview',
+        t: ['Viel schneller bei großen Verläufen', 'Much faster with big histories', 'Bien plus rapide avec de gros historiques', 'Mucho más rápida con historiales grandes', 'Molto più veloce con cronologie grandi', 'Mycket snabbare med stor historik', 'Meget hurtigere med stor historik'],
+        d: ['Doppelte Einträge werden einmal beim Speichern erkannt statt bei jedem Aufruf – die Übersicht lädt in Sekundenbruchteilen.', 'Duplicates are detected once on save instead of on every visit – the overview loads in a fraction of a second.', 'Les doublons sont détectés une fois à l’enregistrement – l’aperçu se charge en une fraction de seconde.', 'Los duplicados se detectan una vez al guardar; el resumen carga en fracciones de segundo.', 'I duplicati vengono rilevati una volta al salvataggio – la panoramica si apre in una frazione di secondo.', 'Dubbletter upptäcks en gång när de sparas – översikten laddar på bråkdelen av en sekund.', 'Dubletter findes én gang ved gemning – overblikket indlæses på et splitsekund.'],
+      },
+      {
+        icon: '🎟️',
+        t: ['Admin: „Kostenlos“ funktioniert', 'Admin: “Free” works', 'Admin : « Gratuit » fonctionne', 'Admin: «Gratis» funciona', 'Admin: «Gratis» funziona', 'Admin: ”Gratis” fungerar', 'Admin: “Gratis” virker'],
+        d: ['Der Schalter für die kostenlose Videothek schaltet zuverlässig an und aus.', 'The free video store switch now reliably turns on and off.', 'L’interrupteur du vidéoclub gratuit s’active et se désactive correctement.', 'El interruptor del videoclub gratis se activa y desactiva correctamente.', 'L’interruttore della videoteca gratis si attiva e disattiva correttamente.', 'Reglaget för gratis videobutik slås på och av som det ska.', 'Kontakten til gratis videobutik slår korrekt til og fra.'],
+      },
+    ],
+  },
+  {
     id: '2026-11-15l',
     date: '2026-11-15',
     items: [

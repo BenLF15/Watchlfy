@@ -511,9 +511,25 @@
     if (e.key === 'ArrowLeft') zapTv(-1);
   });
   $('#item-dialog').addEventListener('close', () => { $$('.st-item.lifted').forEach((x) => x.classList.remove('lifted')); });
+  // Admin: Videothek kostenlos. Schalter vorher merken – nach dem await ist e.currentTarget immer null.
   $('#free-shop-switch')?.addEventListener('click', async (e) => {
-    const on = e.currentTarget.getAttribute('aria-checked') !== 'true';
-    try { await postJSON('/api/admin/free-shop', { on }); e.currentTarget.setAttribute('aria-checked', String(on)); W.freeShop = on; col.data = null; } catch (err) { toast(errMsg(err), true); }
+    const sw = e.currentTarget;
+    if (sw.disabled) return;
+    const on = sw.getAttribute('aria-checked') !== 'true';
+    sw.disabled = true;
+    sw.setAttribute('aria-checked', String(on)); // sofort umschalten, bei Fehler zurück
+    try {
+      const r = await postJSON('/api/admin/free-shop', { on });
+      sw.setAttribute('aria-checked', String(r.on));
+      W.freeShop = r.on;
+      if (W.state.status?.account) W.state.status.account.free_shop = r.on;
+      col.data = null;
+      toast(t(r.on ? 'shop.freeOnToast' : 'shop.freeOffToast'));
+    } catch (err) {
+      sw.setAttribute('aria-checked', String(!on));
+      toast(errMsg(err), true);
+    }
+    sw.disabled = false;
   });
 
   W.register('collection', async () => { await load(); render(); });
