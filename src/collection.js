@@ -98,7 +98,7 @@ export async function checkRewards(account) {
   await give('starter', ONCE.starter, 'starter');
   await give(`visit:${today}`, RECURRING.visit, 'visit');
   const [{ rows: c }, ov, { rows: fr }, { rows: tr }, { rows: coll }, prog] = await Promise.all([
-    query('SELECT count(*) AS n FROM imports WHERE account_id = $1', [id]),
+    query(`SELECT (SELECT count(*) FROM imports WHERE account_id = $1) + (SELECT count(*) FROM views WHERE account_id = $1 AND source = 'trakt') AS n`, [id]),
     stats.overview(id, null),
     query(`SELECT count(*) AS n FROM friendships WHERE status = 'accepted' AND (requester_id = $1 OR addressee_id = $1)`, [id]),
     query('SELECT 1 FROM trakt_tokens WHERE account_id = $1', [id]),
@@ -145,10 +145,14 @@ function earnList(ledgerKeys, ov) {
 }
 
 // ---------------------------------------------------------------- Pool & Angebot
-/** Alle eigenen Titel mit Poster (Grundlage für Videothek und Quiz) – samt TMDB-Kennzahlen für die Seltenheit. */
+/**
+ * Alle eigenen Titel mit Poster (Grundlage für Videothek, Fernseher und Quiz) – aus jeder Quelle:
+ * Datei-Importe genauso wie der Trakt-Abgleich. Samt TMDB-Kennzahlen für die Seltenheit.
+ */
 async function titlePool(accountId) {
   const { rows } = await query(
-    `SELECT t.id, t.kind, t.name, t.year, t.poster_path, t.backdrop_path, t.popularity, t.vote_average, t.vote_count, t.revenue, count(*) AS views
+    `SELECT t.id, t.kind, t.name, t.year, t.poster_path, t.backdrop_path, t.popularity, t.vote_average, t.vote_count, t.revenue, count(*) AS views,
+            max(v.watched_at) AS last_at, bool_or(v.source = 'trakt') AS via_trakt
        FROM views v
        JOIN title_aliases al ON al.account_id = v.account_id AND al.raw_key = v.raw_key
        JOIN titles t ON t.id = al.title_id
@@ -273,7 +277,9 @@ export async function shopFor(accountId, day = localDate()) {
     const rest = Math.min(COOLDOWN_DAYS, Math.max(3, Math.ceil((2 * list.length) / n)));
     const cut = minus(rest);
     // eigene Titel: oft gesehen = öfter im Regal; Neues: beliebt = öfter im Regal
-    const weight = (tt) => (tt.discover ? 1 + Math.log10(1 + (Number(tt.popularity) || 0)) : Math.sqrt(1 + Number(tt.views)));
+    // frisch Geschautes (z. B. gerade über Trakt gekommen) zählt doppelt
+    const recent = (tt) => (tt.last_at && Date.now() - new Date(tt.last_at) < 30 * 864e5 ? 2 : 1);
+    const weight = (tt) => (tt.discover ? 1 + Math.log10(1 + (Number(tt.popularity) || 0)) : Math.sqrt(1 + Number(tt.views)) * recent(tt));
     return list
       .map((tt) => ({ tt, last: lastShown.get(`${shelf}|${tt.id}`) || null, k: hashInt(`${accountId}|${day}|${shelf}|${tt.id}`) / 2 ** 32 / weight(tt) }))
       .filter((x) => !x.last || x.last <= cut)

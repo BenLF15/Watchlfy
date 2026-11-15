@@ -7,6 +7,17 @@
    Danach den Cache-Parameter ?v=… in public/*.html hochzählen. */
 window.WatchlfyNews = [
   {
+    id: '2026-11-15h',
+    date: '2026-11-15',
+    items: [
+      {
+        icon: '🔗', go: 'collection',
+        t: ['Videothek mit Trakt', 'Video store with Trakt', 'Vidéoclub avec Trakt', 'Videoclub con Trakt', 'Videoteca con Trakt', 'Videobutik med Trakt', 'Videobutik med Trakt'],
+        d: ['Was über Trakt reinkommt, landet genauso im Regal und auf dem Fernseher – frisch Geschautes sogar bevorzugt.', 'Whatever arrives via Trakt ends up on the shelf and the TV just the same – recently watched titles even first.', 'Ce qui arrive via Trakt finit aussi en rayon et sur la TV – les titres récents en priorité.', 'Lo que llega por Trakt también acaba en el estante y en la tele, y lo reciente tiene prioridad.', 'Ciò che arriva da Trakt finisce sullo scaffale e sulla TV – i titoli recenti hanno la precedenza.', 'Det som kommer via Trakt hamnar också på hyllan och tv:n – nyligen sett först.', 'Det, der kommer via Trakt, havner også på hylden og tv’et – nyligt set først.'],
+      },
+    ],
+  },
+  {
     id: '2026-11-15g',
     date: '2026-11-15',
     items: [

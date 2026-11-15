@@ -69,3 +69,21 @@ test('Nachgetragene Trakt-Historie (Streaming Scrobbler) wird gefunden, Symbol d
   const after = (await (await page.request.get('/api/dashboard?range=all')).json()).overview.views;
   expect(after).toBe(before + 2);
 });
+
+test('Videothek und Fernseher funktionieren auch nur mit Trakt (ohne Import)', async ({ page }, ti) => {
+  await newUser(page, ti);
+  await page.goto('/auth/trakt');
+  await page.waitForURL(/\/(\?|$)/);
+  await page.waitForSelector('body.ready');
+  await waitTmdb(page);
+  const st = await (await page.request.get('/api/status')).json();
+  expect(st.counts.sources).toEqual(['trakt']);
+  const c = await (await page.request.get('/api/collection')).json();
+  const mine = Object.values(c.shop.items).flat().filter((x) => !x.discover);
+  expect(mine.length).toBeGreaterThan(0);
+  const traktTitles = ['Dark', 'Oppenheimer', 'The Last of Us'];
+  expect(mine.every((x) => traktTitles.includes(x.name))).toBe(true);
+  expect(c.channels.map((x) => x.name).sort()).toEqual([...traktTitles].sort());
+  // „Erster Verlauf“ gibt es auch für den Trakt-Abgleich
+  expect(c.earn.find((e) => e.id === 'import').done).toBe(true);
+});
