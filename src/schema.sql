@@ -70,7 +70,10 @@ ALTER TABLE titles ADD COLUMN IF NOT EXISTS popularity real;
 ALTER TABLE titles ADD COLUMN IF NOT EXISTS vote_average real;
 ALTER TABLE titles ADD COLUMN IF NOT EXISTS vote_count integer;
 ALTER TABLE titles ADD COLUMN IF NOT EXISTS revenue bigint;
-ALTER TABLE titles ADD COLUMN IF NOT EXISTS stats_at timestamptz;   -- wann Kennzahlen aus den TMDB-Details übernommen wurden
+ALTER TABLE titles ADD COLUMN IF NOT EXISTS stats_at timestamptz;
+-- Wo der Titel im Abo läuft (TMDB, Region TMDB_REGION): alle Anbieter + eindeutiger Dienst für Trakt-Einträge
+ALTER TABLE titles ADD COLUMN IF NOT EXISTS providers text[];
+ALTER TABLE titles ADD COLUMN IF NOT EXISTS provider text;   -- wann Kennzahlen aus den TMDB-Details übernommen wurden
 CREATE UNIQUE INDEX IF NOT EXISTS titles_tmdb_uq ON titles (kind, tmdb_id) WHERE tmdb_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS titles_name_idx ON titles (lower(name));
 

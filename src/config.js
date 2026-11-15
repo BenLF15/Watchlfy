@@ -31,6 +31,8 @@ export const config = {
     apiKey: env('TMDB_API_KEY'), // v3-API-Key oder v4-Lesetoken (beginnt mit "eyJ")
     base: env('TMDB_API_BASE', 'https://api.themoviedb.org/3').replace(/\/$/, ''),
     imageBase: env('TMDB_IMAGE_BASE', 'https://image.tmdb.org/t/p').replace(/\/$/, ''),
+    // Land für „Wo läuft das?“ (Anbieter für Trakt-Einträge)
+    region: env('TMDB_REGION', 'DE').toUpperCase(),
     // Wie viele Titel pro Lauf im Hintergrund nachgeladen werden
     batch: int('TMDB_BATCH', 40),
   },

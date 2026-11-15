@@ -1736,6 +1736,8 @@ details.day-card[open] .hist-list { animation: fold-in 0.35s var(--ease-out) bot
 .st-item > .price-tag, .st-item > .owned-tag { order: 3; }
 .discover-note { margin: -2px auto 8px; font-size: 0.82rem; color: var(--cyan); }
 
+.via-trakt { font: 600 0.56rem/1 var(--osd); letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-3); padding: 3px 5px; border-radius: 5px; border: 1px solid var(--line); white-space: nowrap; }
+
 /* ================================================================== Bewegung reduzieren */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important; }

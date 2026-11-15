@@ -32,7 +32,10 @@ export const NOT_SUPERSEDED = `
  */
 export const BASE_SQL = `
   v AS (
-    SELECT v.id, v.source, v.profile, v.raw_title, v.raw_key, v.season, v.episode, v.episode_name, v.watched_at, v.time_known,
+    SELECT v.id,
+           -- Trakt meldet keinen Anbieter: eindeutigen Abo-Dienst aus TMDB übernehmen, sonst „trakt“
+           CASE WHEN v.source = 'trakt' AND t.provider IS NOT NULL THEN t.provider ELSE v.source END AS source,
+           v.source AS origin, v.profile, v.raw_title, v.raw_key, v.season, v.episode, v.episode_name, v.watched_at, v.time_known,
            v.device, v.duration_sec,
            COALESCE(t.kind, v.kind_hint) AS kind,
            COALESCE('t' || t.id, 'r' || md5(v.raw_key)) AS tkey,
@@ -275,7 +278,7 @@ export async function history(accountId, { before = null, q = '', limit = 60, gr
   const lim = Math.min(200, Math.max(10, Number(limit) || 60));
   const g = /^(week|\d{4}-\d{2})$/.test(String(group || '')) ? String(group) : null;
   return run(
-    `SELECT id, tkey, title_id, kind, name, raw_title, season, episode, episode_name, poster_path, source, profile, device,
+    `SELECT id, tkey, title_id, kind, name, raw_title, season, episode, episode_name, poster_path, source, origin, profile, device,
             watched_at, time_known, secs, estimated, match_state
        FROM v
       WHERE ($4::timestamptz IS NULL OR watched_at < $4::timestamptz)
@@ -309,7 +312,7 @@ export async function historyGroups(accountId, { q = '' } = {}) {
 export async function titleDetail(accountId, { titleId = null, tkey = null } = {}) {
   const key = titleId ? `t${Number(titleId)}` : String(tkey || '');
   const views = await run(
-    `SELECT id, kind, name, raw_title, raw_key, season, episode, episode_name, source, profile, device, watched_at, time_known, secs, estimated,
+    `SELECT id, kind, name, raw_title, raw_key, season, episode, episode_name, source, origin, profile, device, watched_at, time_known, secs, estimated,
             match_state, title_id
        FROM v WHERE tkey = $4 ORDER BY watched_at`,
     accountId, null, [key],

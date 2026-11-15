@@ -40,6 +40,10 @@ const norm = (s) => s.normalize('NFKD').replace(/[̀-ͯ]/g, '').toLowerCase().re
 const REVENUE = { 496243: 262e6, 157336: 701e6, 329865: 203e6, 244786: 49e6, 194: 174e6, 545611: 143e6, 27205: 839e6, 693134: 714e6, 872585: 975e6, 346698: 1446e6, 603: 467e6, 120: 871e6, 324857: 384e6 };
 // Bewertungen gemischt (5,8–6,7), ein paar echte Klassiker darüber – damit es gewöhnliche bis mythische Stücke gibt
 const VOTE = { 'Breaking Bad': 8.9 };
+// Wo läuft was im Abo (DE) – für die Anbieter-Zuordnung von Trakt-Einträgen
+const PROV = { 1396: ['Netflix'], 70523: ['Netflix'], 66732: ['Netflix'], 93405: ['Netflix'], 63174: ['Netflix'], 71446: ['Netflix'], 76479: ['Amazon Prime Video'],
+  94997: ['WOW', 'Sky Go'], 100088: ['WOW', 'Sky Go'], 2316: ['Amazon Prime Video', 'Netflix'], 872585: ['Amazon Prime Video'], 693134: ['WOW'], 346698: ['WOW'], 27205: ['Netflix', 'Disney Plus'] };
+const providers = (id) => ({ results: { DE: { flatrate: (PROV[id] || []).map((provider_name, i) => ({ provider_id: i + 1, provider_name })) } } });
 const voteAvg = (name) => VOTE[name] ?? Math.round((5.8 + (hue(name) % 10) / 10) * 10) / 10;
 function tvResult(t) {
   return { vote_average: voteAvg(t.original_name), id: t.id, name: t.name, original_name: t.original_name, first_air_date: t.first_air_date, popularity: t.popularity, vote_count: t.vote_count, poster_path: `/p-${slug(t.original_name)}.svg`, backdrop_path: `/b-${slug(t.original_name)}.svg`, overview: `Überblick zu ${t.name}.`, original_language: 'en' };
@@ -107,13 +111,13 @@ http.createServer(async (req, res) => {
       ...tvResult(t), genres: t.genres.map((name, i) => ({ id: i, name })), origin_country: t.country, episode_run_time: [t.runtime],
       number_of_episodes: t.seasons.reduce((a, b) => a + b, 0), status: t.id === 1396 ? 'Ended' : 'Returning Series',
       seasons: [{ season_number: 0, episode_count: 2, name: 'Specials' }, ...t.seasons.map((c, i) => ({ season_number: i + 1, episode_count: c, name: `Staffel ${i + 1}` }))],
-      credits: { cast: t.cast.map((name) => ({ name })) },
+      credits: { cast: t.cast.map((name) => ({ name })) }, 'watch/providers': providers(t.id),
     });
   }
   if ((m = /^\/3\/movie\/(\d+)$/.exec(p))) {
     const x = MOVIES.find((y) => y.id === Number(m[1]));
     if (!x) return send(res, 404, { status_code: 34 });
-    return send(res, 200, { ...movieResult(x), genres: x.genres.map((name, i) => ({ id: i, name })), production_countries: x.country.map((c) => ({ iso_3166_1: c })), runtime: x.runtime, credits: { cast: x.cast.map((name) => ({ name })) } });
+    return send(res, 200, { ...movieResult(x), genres: x.genres.map((name, i) => ({ id: i, name })), production_countries: x.country.map((c) => ({ iso_3166_1: c })), runtime: x.runtime, credits: { cast: x.cast.map((name) => ({ name })) }, 'watch/providers': providers(x.id) });
   }
   if ((m = /^\/t\/p\/\w+\/([pb])-([a-z0-9-]+)\.svg$/.exec(p))) return send(res, 200, svg(m[2].replace(/-/g, ' '), m[1] === 'b'), 'image/svg+xml');
 

@@ -107,3 +107,20 @@ test('Abgleich ohne Neues erklärt, was schon aus Importen bekannt ist', async (
   await page.click('[data-trakt-sync]');
   await expect(page.locator('#toast')).toContainText('1 kennt es bereits aus deinen Importen');
 });
+
+test('Trakt-Einträge bekommen ihren Anbieter (Prime, WOW …) aus TMDB, eindeutig oder gar nicht', async ({ page }, ti) => {
+  await newUser(page, ti);
+  await page.goto('/auth/trakt');
+  await page.waitForURL(/\/(\?|$)/);
+  await page.waitForSelector('body.ready');
+  await waitTmdb(page);
+  const ov = (await (await page.request.get('/api/dashboard?range=all')).json()).overview;
+  const by = Object.fromEntries(ov.services.map((x) => [x.source, Number(x.views)]));
+  // Dark (2 Folgen) → Netflix, Oppenheimer → Prime Video, The Last of Us → WOW
+  expect(by).toEqual({ netflix: 2, prime: 1, wow: 1 });
+  const h = (await (await page.request.get('/api/history?limit=20')).json()).items;
+  expect(h.every((v) => v.origin === 'trakt')).toBe(true);
+  await goPanel(page, 'history');
+  await expect(page.locator('#history .via-trakt').first()).toBeVisible();
+  await shot(page, ti, 'trakt-providers');
+});

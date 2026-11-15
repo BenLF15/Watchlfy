@@ -7,6 +7,17 @@
    Danach den Cache-Parameter ?v=… in public/*.html hochzählen. */
 window.WatchlfyNews = [
   {
+    id: '2026-11-15l',
+    date: '2026-11-15',
+    items: [
+      {
+        icon: '📺', go: 'overview',
+        t: ['Trakt-Einträge mit Anbieter', 'Trakt entries with their service', 'Entrées Trakt avec leur service', 'Entradas de Trakt con su plataforma', 'Voci Trakt con il loro servizio', 'Trakt-poster med tjänst', 'Trakt-poster med tjeneste'],
+        d: ['Was über Trakt kommt, zählt jetzt bei Prime Video, Disney+, Max, WOW … – sofern der Titel eindeutig nur dort läuft.', 'Whatever comes via Trakt now counts towards Prime Video, Disney+, Max, WOW … – if the title only streams there.', 'Ce qui vient de Trakt compte désormais pour Prime Video, Disney+, Max, WOW… si le titre n’est que là.', 'Lo que llega por Trakt cuenta ahora para Prime Video, Disney+, Max, WOW…, si el título solo está allí.', 'Ciò che arriva da Trakt ora conta per Prime Video, Disney+, Max, WOW… se il titolo è solo lì.', 'Det som kommer via Trakt räknas nu till Prime Video, Disney+, Max, WOW … om titeln bara finns där.', 'Det, der kommer via Trakt, tæller nu for Prime Video, Disney+, Max, WOW … hvis titlen kun findes der.'],
+      },
+    ],
+  },
+  {
     id: '2026-11-15k',
     date: '2026-11-15',
     items: [

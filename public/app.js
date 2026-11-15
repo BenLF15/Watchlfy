@@ -114,6 +114,7 @@
     max: { name: 'Max', color: '#2c4cff', icon: 'M' },
     disney: { name: 'Disney+', color: '#0f6ad8', icon: 'D' },
     apple: { name: 'Apple TV+', color: '#6e7378', icon: 'A' },
+    wow: { name: 'WOW', color: '#8e3df5', icon: 'W' },
     other: { name: null, color: '#8a7f8f', icon: '…' },
     trakt: { name: 'Trakt', color: '#ed2224', icon: 'T' },
   };
@@ -869,6 +870,8 @@
     const r = await api(`/api/history?group=${encodeURIComponent(grp)}&limit=120${before ? `&before=${encodeURIComponent(before)}` : ''}${hist.q ? `&q=${encodeURIComponent(hist.q)}` : ''}`);
     hist.lists[grp] = { items: [...(more ? cur.items : []), ...r.items], done: r.items.length < 120 };
   }
+  /** Anbieter wurde aus TMDB hergeleitet, der Eintrag selbst kam über Trakt. */
+  const viaTrakt = (v) => (v.origin === 'trakt' && v.source !== 'trakt' ? `<span class="via-trakt" title="${esc(t('via.trakt'))}">${esc(t('via.traktShort'))}</span>` : '');
   const epLabel = (v) => (v.kind === 'tv' ? [v.season ? t('ep.s', { n: v.season }) : '', v.episode ? t('ep.e', { n: v.episode }) : '', v.episode_name || ''].filter(Boolean).join(' · ') : '');
   const groupLabel = (g) => (g.grp === 'week' ? t('history.week') : new Intl.DateTimeFormat(LOCALE, { month: 'long', year: 'numeric' }).format(new Date(`${g.grp}-15T12:00:00`)));
   function groupBody(grp) {
@@ -891,7 +894,7 @@
           <li class="hist" ${v.title_id ? `data-title-id="${v.title_id}"` : `data-title-key="${esc(v.tkey)}"`}>
             <div class="cover poster-mini">${poster(v.poster_path, v.name, 'w92')}</div>
             <div class="hist-main"><b>${esc(v.name)}</b><small>${esc(epLabel(v) || (v.kind === 'movie' ? t('kind.movie') : ''))}</small></div>
-            <div class="hist-meta">${serviceDot(v.source)}<small>${v.time_known ? esc(timeFmt.format(new Date(v.watched_at))) : ''}<br>${esc(dur(v.secs))}${v.estimated ? '*' : ''}</small></div>
+            <div class="hist-meta">${viaTrakt(v)}${serviceDot(v.source)}<small>${v.time_known ? esc(timeFmt.format(new Date(v.watched_at))) : ''}<br>${esc(dur(v.secs))}${v.estimated ? '*' : ''}</small></div>
           </li>`).join('')}</ul>
       </details>`;
     }).join('') + (l.done ? '' : `<button type="button" class="btn btn-ghost btn-xs hg-more" data-hg-more="${esc(grp)}">${esc(t('history.more'))}</button>`);
@@ -992,7 +995,7 @@
   }
   /** Verlauf eines Titels: Serien je Staffel einklappbar (neueste offen), Filme mit den letzten Einträgen und Rest zum Aufklappen. */
   function detailViewsHtml(d) {
-    const row = (v) => `<li><span>${esc(v.time_known ? dateTimeFmt.format(new Date(v.watched_at)) : dateFmtYear.format(new Date(v.watched_at)))}</span><b>${esc(epLabel(v) || d.name)}</b><small>${serviceDot(v.source)} ${esc(dur(v.secs))}${v.estimated ? '*' : ''}</small></li>`;
+    const row = (v) => `<li><span>${esc(v.time_known ? dateTimeFmt.format(new Date(v.watched_at)) : dateFmtYear.format(new Date(v.watched_at)))}</span><b>${esc(epLabel(v) || d.name)}</b><small>${viaTrakt(v)}${serviceDot(v.source)} ${esc(dur(v.secs))}${v.estimated ? '*' : ''}</small></li>`;
     const views = d.views; // vom Server schon neueste zuerst
     const bySeason = new Map();
     for (const v of views) {
