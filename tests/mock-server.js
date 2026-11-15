@@ -61,6 +61,8 @@ function traktHistory() {
 }
 
 const stats = { music: 0 };
+const BOOT = new Date().toISOString();
+const backfill = new Map();
 
 function send(res, status, body, type = 'application/json') {
   res.writeHead(status, { 'Content-Type': type });
@@ -143,7 +145,7 @@ http.createServer(async (req, res) => {
       if (!ch && body.client_secret !== 'secret') return send(res, 401, { error: 'invalid_client' });
       trakt.lastGrant = { pkce: Boolean(ch), secret: Boolean(body.client_secret) };
     }
-    const tok = `tok-${Date.now()}`;
+    const tok = `tok-${Date.now()}-${crypto.randomBytes(4).toString("hex")}`;
     trakt.tokens.add(tok);
     return send(res, 200, { access_token: tok, refresh_token: `ref-${tok}`, expires_in: 7776000, created_at: Math.floor(Date.now() / 1000), token_type: 'bearer', scope: 'public' });
   }
@@ -156,14 +158,33 @@ http.createServer(async (req, res) => {
       const started = new Date(Date.now() - 20 * 60e3).toISOString();
       return send(res, 200, { expires_at: new Date(Date.now() + 35 * 60e3).toISOString(), started_at: started, action: 'scrobble', type: 'episode', episode: { season: 2, number: 2, title: 'Lügen', runtime: 55 }, show: { title: 'Dark', year: 2017, ids: { tmdb: 70523 } } });
     }
+    const tok = (req.headers.authorization || '').slice(7);
+    if (p === '/sync/last_activities') {
+      const at = backfill.get(tok)?.at || BOOT;
+      return send(res, 200, { all: at, episodes: { watched_at: at }, movies: { watched_at: BOOT } });
+    }
     if (p === '/sync/history') {
+      // wie Trakt: start_at filtert nach dem Schauzeitpunkt
       const page = Number(u.searchParams.get('page') || 1);
+      const since = u.searchParams.get('start_at');
+      const all = [...traktHistory(), ...(backfill.get(tok)?.items || [])].filter((x) => !since || x.watched_at >= since);
+      if (backfill.get(tok)) await new Promise((r) => setTimeout(r, 900)); // sichtbar „lädt“
       res.writeHead(200, { 'Content-Type': 'application/json', 'X-Pagination-Page-Count': '1' });
-      return res.end(JSON.stringify(page === 1 ? traktHistory() : []));
+      return res.end(JSON.stringify(page === 1 ? all : []));
     }
     if (p === '/sync/ratings') return send(res, 200, [{ rated_at: new Date().toISOString(), rating: 9, type: 'show', show: { title: 'Dark', ids: { tmdb: 70523 } } }, { rated_at: new Date().toISOString(), rating: 8, type: 'movie', movie: { title: 'Oppenheimer', ids: { tmdb: 872585 } } }]);
   }
   if (p === '/mock/last-grant') return send(res, 200, trakt.lastGrant || {});
+  // Trakt Streaming Scrobbler simulieren: alte Historie wird mit ihrem ursprünglichen (alten) Datum nachgetragen
+  if (p === '/mock/backfill') {
+    const tok = u.searchParams.get('token');
+    const old = (d) => new Date(Date.now() - d * 864e5).toISOString();
+    backfill.set(tok, { at: new Date().toISOString(), items: [
+      { id: 9101, watched_at: old(200), action: 'watch', type: 'episode', episode: { season: 1, number: 1, title: 'Rotes Licht, grünes Licht', ids: { trakt: 101 } }, show: { title: 'Squid Game', year: 2021, ids: { trakt: 50, tmdb: 93405 } } },
+      { id: 9102, watched_at: old(150), action: 'watch', type: 'movie', movie: { title: 'Barbie', year: 2023, ids: { trakt: 60, tmdb: 346698 } } },
+    ] });
+    return send(res, 200, { ok: true });
+  }
   if (p === '/mock/watching') { trakt.watching = u.searchParams.get('on') !== '0'; return send(res, 200, { ok: true }); }
   send(res, 404, { status_code: 34, status_message: 'not found' });
 }).listen(port, () => console.log(`[mock] TMDB/Trakt-Mock auf Port ${port}`));

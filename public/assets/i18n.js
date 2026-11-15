@@ -779,6 +779,8 @@
     'range.long.all': ['aller Zeiten', 'all time', 'de tous les temps', 'de todos los tiempos', 'di sempre', 'genom tiderna', 'nogensinde'],
 
     // ------------------------------------------------------------ Kanal-Design, Verlauf, Musik, Wohnzimmer
+    'trakt.syncing': ['Gleiche ab …', 'Syncing …', 'Synchronisation …', 'Sincronizando…', 'Sincronizzazione…', 'Synkar …', 'Synkroniserer …'],
+    'trakt.checked': ['({t} bei Trakt geprüft, der Rest war schon da)', '({t} checked on Trakt, the rest was already here)', '({t} vérifiées sur Trakt, le reste y était déjà)', '({t} revisadas en Trakt, el resto ya estaba)', '({t} controllate su Trakt, il resto c’era già)', '({t} kontrollerade på Trakt, resten fanns redan)', '({t} tjekket på Trakt, resten var her allerede)'],
     'fold.more.one': ['1 weiteren anzeigen', 'Show 1 more', 'Afficher 1 de plus', 'Mostrar 1 más', 'Mostra 1 altro', 'Visa 1 till', 'Vis 1 mere'],
     'fold.more.other': ['{n} weitere anzeigen', 'Show {n} more', 'Afficher {n} de plus', 'Mostrar {n} más', 'Mostra altri {n}', 'Visa {n} till', 'Vis {n} mere'],
     'progress.seasonShort': ['Staffel {s}', 'Season {s}', 'Saison {s}', 'Temporada {s}', 'Stagione {s}', 'Säsong {s}', 'Sæson {s}'],

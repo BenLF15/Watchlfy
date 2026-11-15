@@ -156,6 +156,9 @@ CREATE TABLE IF NOT EXISTS trakt_tokens (
   updated_at     timestamptz NOT NULL DEFAULT now()
 );
 
+-- Trakt meldet über /sync/last_activities, wann sich der Verlauf zuletzt geändert hat (auch bei nachgetragener Historie)
+ALTER TABLE trakt_tokens ADD COLUMN IF NOT EXISTS last_activity text;
+
 CREATE TABLE IF NOT EXISTS ratings (
   account_id  bigint NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
   kind        text NOT NULL,

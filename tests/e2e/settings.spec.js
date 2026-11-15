@@ -4,12 +4,18 @@ import { newUser, shot, goPanel, loginAs, watchErrors } from './helpers.js';
 test('Darstellung, Liquid Glass und Sprache werden gespeichert', async ({ page }, ti) => {
   await newUser(page, ti);
   await goPanel(page, 'profile');
+  // Jede Einstellung erst speichern lassen, bevor die nächste kommt (der Sprachwechsel lädt die Seite neu)
+  const saved = () => page.waitForResponse((r) => r.url().endsWith('/api/me/settings') && r.request().method() === 'POST');
+  let wait = saved();
   await page.click('[data-theme-mode="light"]');
+  await wait;
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+  wait = saved();
   await page.click('#glass-switch');
+  await wait;
   await expect(page.locator('html')).toHaveAttribute('data-glass', '1');
   await shot(page, ti, 'profile-light-glass');
-  await page.click('#lang-picker [data-lang="en"]');
+  await Promise.all([page.waitForEvent('load'), page.click('#lang-picker [data-lang="en"]')]);
   await page.waitForSelector('body.ready');
   await expect(page.locator('#panel-tabs [data-panel="overview"] span')).toHaveText('Overview');
   const st = await (await page.request.get('/api/status')).json();

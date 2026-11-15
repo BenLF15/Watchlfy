@@ -1706,11 +1706,18 @@ details.day-card[open] .hist-list { animation: fold-in 0.35s var(--ease-out) bot
 .day-card { padding-top: 10px; }
 .day-title { font-size: 0.72rem; }
 
+/* ------------------------------------------------------------------ Abgleich-Knopf: Symbol dreht sich während des Abgleichs */
+.sync-btn .sync-ico { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.5s var(--ease-spring); }
+.sync-btn:hover .sync-ico { transform: rotate(60deg); }
+.sync-btn.is-syncing { opacity: 1; cursor: progress; border-color: rgba(var(--cyan-rgb), 0.6); box-shadow: 0 0 20px -6px rgba(var(--cyan-rgb), 0.8); }
+.sync-btn.is-syncing .sync-ico { color: var(--cyan); animation: spin 0.9s linear infinite; }
+
 /* ================================================================== Bewegung reduzieren */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important; }
   .horizon::after, body::before, .power-on, .osd-zap { display: none !important; }
   .holo, .holo-slot, .box3d { animation: none !important; }
+  .sync-btn.is-syncing .sync-ico { animation: spin 1.6s linear infinite !important; animation-iteration-count: infinite !important; animation-duration: 1.6s !important; }
   img.poster-img { filter: none; transform: none; }
   .hero-bg img { transform: none !important; }
 }

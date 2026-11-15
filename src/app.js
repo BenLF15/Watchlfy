@@ -483,7 +483,8 @@ admin.post('/restore', express.raw({ type: () => true, limit: '300mb' }), wrap(a
 api.use('/admin', admin);
 
 // ---------------------------------------------------------------- Trakt
-api.post('/trakt/sync', wrap(async (req, res) => res.json(await trakt.syncAccount(req.account.id))));
+// Von Hand: immer den ganzen Verlauf holen (findet auch nachgetragene Historie)
+api.post('/trakt/sync', wrap(async (req, res) => res.json(await trakt.syncAccount(req.account.id, { full: true }))));
 api.post('/trakt/disconnect', wrap(async (req, res) => {
   await trakt.disconnect(req.account.id);
   res.json({ ok: true });

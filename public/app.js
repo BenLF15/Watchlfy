@@ -1333,7 +1333,7 @@
     el.innerHTML = `<dl class="sys-list"><dt>${esc(t('trakt.user'))}</dt><dd>${esc(tr.username || '–')}</dd>
       <dt>${esc(t('trakt.lastSync'))}</dt><dd>${tr.last_sync ? esc(relTime(tr.last_sync)) : '–'}</dd>
       ${tr.error ? `<dt>${esc(t('trakt.error'))}</dt><dd class="danger">${esc(tr.error)}</dd>` : ''}</dl>
-      <div class="profile-actions"><button type="button" class="btn btn-ghost" data-trakt-sync>↻ ${esc(t('trakt.syncNow'))}</button>
+      <div class="profile-actions"><button type="button" class="btn btn-ghost sync-btn" data-trakt-sync><svg class="sync-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 0 1-14.3 4.9M4 12a8 8 0 0 1 14.3-4.9"/><path d="M18.5 3v4.2h-4.2M5.5 21v-4.2h4.2"/></svg><span>${esc(t('trakt.syncNow'))}</span></button>
       <button type="button" class="btn btn-ghost btn-danger" data-trakt-disconnect>${esc(t('trakt.disconnect'))}</button></div>`;
   }
 
@@ -2049,8 +2049,23 @@
         try { const r = await api(`/api/sources/${ds.dataset.deleteSource}`, { method: 'DELETE' }); toast(t('imports.removed', { n: fmt(r.removed) })); invalidate(); await loadStatus(); renderProfile(); } catch (err) { toast(errMsg(err), true); }
         return;
       }
-      if (e.target.closest('[data-trakt-sync]')) {
-        try { const r = await postJSON('/api/trakt/sync', {}); toast(t('trakt.synced', { n: fmt(r.added || 0) })); invalidate(); await loadStatus(); renderProfile(); } catch (err) { toast(errMsg(err), true); }
+      const syncBtn = e.target.closest('[data-trakt-sync]');
+      if (syncBtn) {
+        if (syncBtn.classList.contains('is-syncing')) return;
+        // Symbol dreht sich, solange abgeglichen wird
+        syncBtn.classList.add('is-syncing');
+        syncBtn.disabled = true;
+        syncBtn.setAttribute('aria-busy', 'true');
+        $('span', syncBtn).textContent = t('trakt.syncing');
+        try {
+          const r = await postJSON('/api/trakt/sync', {});
+          toast(t('trakt.synced', { n: fmt(r.added || 0) }) + (r.fetched ? ` ${t('trakt.checked', { t: fmt(r.fetched) })}` : ''));
+          invalidate(); await loadStatus(); renderProfile();
+        } catch (err) { toast(errMsg(err), true); }
+        syncBtn.classList.remove('is-syncing');
+        syncBtn.disabled = false;
+        syncBtn.removeAttribute('aria-busy');
+        if (syncBtn.isConnected) $('span', syncBtn).textContent = t('trakt.syncNow');
         return;
       }
       if (e.target.closest('[data-trakt-disconnect]')) {

@@ -7,6 +7,17 @@
    Danach den Cache-Parameter ?v=… in public/*.html hochzählen. */
 window.WatchlfyNews = [
   {
+    id: '2026-11-15e',
+    date: '2026-11-15',
+    items: [
+      {
+        icon: '🔄', go: 'profile',
+        t: ['Trakt findet nachgetragene Historie', 'Trakt finds back-filled history', 'Trakt trouve l’historique ajouté après coup', 'Trakt encuentra el historial añadido después', 'Trakt trova la cronologia aggiunta dopo', 'Trakt hittar efterregistrerad historik', 'Trakt finder eftertilføjet historik'],
+        d: ['Was der Trakt Streaming Scrobbler nachträglich einträgt, kommt jetzt an. Beim Abgleichen dreht sich das Symbol.', 'Whatever Trakt’s Streaming Scrobbler adds later now arrives. The icon spins while syncing.', 'Ce que le Streaming Scrobbler de Trakt ajoute après coup arrive désormais. L’icône tourne pendant la synchro.', 'Lo que el Streaming Scrobbler de Trakt añade después ahora llega. El icono gira al sincronizar.', 'Ciò che lo Streaming Scrobbler di Trakt aggiunge dopo ora arriva. L’icona gira durante la sincronizzazione.', 'Det som Trakts Streaming Scrobbler lägger till i efterhand kommer nu fram. Ikonen snurrar vid synk.', 'Det, Trakts Streaming Scrobbler tilføjer bagefter, kommer nu frem. Ikonet drejer under synk.'],
+      },
+    ],
+  },
+  {
     id: '2026-11-15d',
     date: '2026-11-15',
     items: [

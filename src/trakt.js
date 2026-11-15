@@ -151,16 +151,38 @@ function toView(item) {
   };
 }
 
-/** Holt neuen Verlauf (inkrementell ab dem letzten Eintrag) und speichert ihn. */
+/** Zeitpunkt der letzten Verlaufsänderung bei Trakt (Folgen oder Filme). */
+async function lastActivity(token) {
+  try {
+    const { data } = await traktFetch(token, '/sync/last_activities');
+    return [data?.episodes?.watched_at, data?.movies?.watched_at].filter(Boolean).sort().pop() || data?.all || null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Holt den Verlauf und speichert Neues.
+ * Trakt filtert /sync/history nur nach dem Schauzeitpunkt. Nachgetragene Historie (z. B. vom Trakt Streaming Scrobbler,
+ * der alte Netflix-/Prime-/Max-/Disney+-Einträge mit ihrem ursprünglichen Datum einträgt) würde ein „ab dem letzten
+ * Eintrag“-Abgleich nie sehen. Deshalb: Hat sich laut /sync/last_activities etwas geändert (oder wird von Hand
+ * abgeglichen), wird der ganze Verlauf geholt – Doppeltes fällt über dedupe_key bzw. den Abgleich mit Importen raus.
+ */
 export async function syncAccount(accountId, { full = false } = {}) {
   const log = await query(`INSERT INTO sync_log (account_id, job) VALUES ($1, 'trakt') RETURNING id`, [accountId]);
   try {
     const token = await accessToken(accountId);
-    const { rows } = await query('SELECT last_history_at FROM trakt_tokens WHERE account_id = $1', [accountId]);
-    const since = !full && rows[0]?.last_history_at ? new Date(new Date(rows[0].last_history_at).getTime() + 1000).toISOString() : null;
+    const { rows } = await query('SELECT last_history_at, last_activity FROM trakt_tokens WHERE account_id = $1', [accountId]);
+    const activity = await lastActivity(token);
+    const changed = full || !rows[0]?.last_activity || !activity || activity !== rows[0].last_activity;
+    if (!changed) {
+      await query('UPDATE trakt_tokens SET last_sync_at = now(), last_error = NULL WHERE account_id = $1', [accountId]);
+      await query('UPDATE sync_log SET finished_at = now(), ok = true, message = $2 WHERE id = $1', [log.rows[0].id, 'keine Änderung bei Trakt']);
+      return { added: 0, fetched: 0, unchanged: true };
+    }
     const items = [];
-    for (let page = 1; page <= 100; page++) {
-      const { data, res } = await traktFetch(token, '/sync/history', { params: { page, limit: 100, start_at: since || undefined, extended: 'full' } });
+    for (let page = 1; page <= 200; page++) {
+      const { data, res } = await traktFetch(token, '/sync/history', { params: { page, limit: 100, extended: 'full' } });
       items.push(...(data || []));
       const pages = Number(res.headers.get('x-pagination-page-count') || 1);
       if (!data?.length || page >= pages) break;
@@ -184,9 +206,9 @@ export async function syncAccount(accountId, { full = false } = {}) {
     } catch { /* Bewertungen sind optional */ }
     const newest = items.reduce((a, i) => (!a || i.watched_at > a ? i.watched_at : a), null);
     await query(
-      `UPDATE trakt_tokens SET last_sync_at = now(), last_error = NULL,
+      `UPDATE trakt_tokens SET last_sync_at = now(), last_error = NULL, last_activity = $3,
               last_history_at = GREATEST(COALESCE(last_history_at, $2::timestamptz), COALESCE($2::timestamptz, last_history_at)) WHERE account_id = $1`,
-      [accountId, newest],
+      [accountId, newest, activity],
     );
     await query('UPDATE sync_log SET finished_at = now(), ok = true, message = $2 WHERE id = $1', [log.rows[0].id, `${added} neu`]);
     if (added) tmdb.enrich().catch(() => {});

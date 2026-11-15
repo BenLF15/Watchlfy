@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { newUser, importFile, waitTmdb, shot, goPanel } from './helpers.js';
+import pg from 'pg';
 
 test('Mit Trakt verbinden (OAuth), Verlauf holen, „Läuft gerade“, keine Doppelzählung', async ({ page }, ti) => {
   await newUser(page, ti);
@@ -43,4 +44,28 @@ test('Trakt-Eintrag wird übersprungen, wenn dieselbe Folge schon aus Netflix ko
   await expect.poll(async () => (await (await page.request.get('/api/status')).json()).counts.views, { timeout: 20_000 }).toBe(11);
   const st = await (await page.request.get('/api/status')).json();
   expect(st.counts.sources.sort()).toEqual(['netflix', 'trakt']);
+});
+
+test('Nachgetragene Trakt-Historie (Streaming Scrobbler) wird gefunden, Symbol dreht sich beim Abgleich', async ({ page }, ti) => {
+  const user = await newUser(page, ti);
+  await page.goto('/auth/trakt');
+  await page.waitForURL(/\/(\?|$)/);
+  await page.waitForSelector('body.ready');
+  const before = (await (await page.request.get('/api/dashboard?range=all')).json()).overview.views;
+  // Trakt trägt alte Einträge mit ihrem ursprünglichen Datum nach – älter als alles bisher Bekannte
+  const db = new pg.Client({ connectionString: process.env.TEST_DATABASE_URL || 'postgres://postgres@127.0.0.1:5433/watchlfy_test' });
+  await db.connect();
+  const { rows } = await db.query('SELECT t.access_token FROM trakt_tokens t JOIN accounts a ON a.id = t.account_id WHERE a.username = $1', [user]);
+  await db.end();
+  expect((await page.request.get(`http://127.0.0.1:4199/mock/backfill?token=${encodeURIComponent(rows[0].access_token)}`)).ok()).toBeTruthy();
+  await goPanel(page, 'profile');
+  const btn = page.locator('[data-trakt-sync]');
+  await btn.click();
+  await expect(btn).toHaveClass(/is-syncing/);
+  await expect(btn).toHaveAttribute('aria-busy', 'true');
+  await shot(page, ti, 'trakt-syncing');
+  await expect(page.locator('#toast')).toContainText('2 neue Einträge');
+  await expect(page.locator('[data-trakt-sync]')).not.toHaveClass(/is-syncing/);
+  const after = (await (await page.request.get('/api/dashboard?range=all')).json()).overview.views;
+  expect(after).toBe(before + 2);
 });
