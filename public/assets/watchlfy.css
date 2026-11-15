@@ -354,10 +354,6 @@ body::before { /* Polarlicht oben */
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
   animation: spin-border 8s linear infinite; }
 @keyframes spin-border { to { --spin: 360deg; } }
-.remote-ir { display: flex; align-self: stretch; height: 3px; border-radius: 3px; margin: 0 8px 2px; background: var(--line); overflow: hidden; }
-.remote-ir::after { content: ''; width: 30%; background: var(--grad); border-radius: 3px; animation: ir-scan 3.2s ease-in-out infinite; }
-@keyframes ir-scan { 0% { transform: translateX(-100%); } 100% { transform: translateX(340%); } }
-body.zapping .remote-ir::after { animation-duration: 0.6s; }
 .remote-keys { position: relative; display: flex; flex-direction: column; gap: 3px; overflow-y: auto; scrollbar-width: none; padding: 2px; }
 .remote-keys::-webkit-scrollbar { display: none; }
 .remote-keys button {
@@ -374,8 +370,6 @@ body.zapping .remote-ir::after { animation-duration: 0.6s; }
 .remote-keys button[aria-selected='true'] kbd { color: #fff; background: var(--grad); border-color: transparent; }
 .remote-keys button[aria-selected='true'] svg { color: var(--cyan); filter: drop-shadow(0 0 6px rgba(var(--cyan-rgb), 0.7)); }
 .remote-keys button[data-badge]:not([data-badge=''])::after { content: attr(data-badge); position: absolute; right: 10px; top: 50%; transform: translateY(-50%); min-width: 20px; height: 20px; padding: 0 6px; border-radius: 10px; display: grid; place-items: center; font: 800 0.68rem/1 var(--text-font); background: var(--magenta); color: #fff; }
-.remote-brand { align-self: center; margin-top: 2px; font: 600 0.58rem/1 var(--osd); letter-spacing: 0.4em; color: var(--text-3); }
-.remote-brand::before { content: 'SYS · '; color: var(--cyan); }
 
 /* ------------------------------------------------------------------ Kanalwechsel: HUD-Einblendung */
 .osd-zap { position: fixed; z-index: 130; top: calc(var(--top-h) + var(--safe-top) + 16px); right: calc(var(--gutter) + var(--safe-right)); display: flex; flex-direction: column; align-items: flex-end; gap: 4px; pointer-events: none;
