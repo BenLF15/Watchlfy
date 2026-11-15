@@ -7,6 +7,17 @@
    Danach den Cache-Parameter ?v=… in public/*.html hochzählen. */
 window.WatchlfyNews = [
   {
+    id: '2026-11-15i',
+    date: '2026-11-15',
+    items: [
+      {
+        icon: '🌊', go: 'overview',
+        t: ['Spürbar flüssiger', 'Noticeably smoother', 'Nettement plus fluide', 'Notablemente más fluida', 'Decisamente più fluida', 'Märkbart smidigare', 'Mærkbart mere flydende'],
+        d: ['Weichere Übergänge ohne Nachfedern, Bereiche sind vorgeladen und öffnen ohne Warten – bei gleichem Look.', 'Softer transitions without bounce, sections are preloaded and open instantly – same look.', 'Transitions plus douces sans rebond, sections préchargées qui s’ouvrent sans attendre – même look.', 'Transiciones más suaves sin rebote; las secciones se precargan y abren al instante, con el mismo aspecto.', 'Transizioni più morbide senza rimbalzo, sezioni precaricate che si aprono subito – stesso look.', 'Mjukare övergångar utan studs, sektioner förladdas och öppnas direkt – samma utseende.', 'Blødere overgange uden fjedren, sektioner forudindlæses og åbner med det samme – samme look.'],
+      },
+    ],
+  },
+  {
     id: '2026-11-15h',
     date: '2026-11-15',
     items: [

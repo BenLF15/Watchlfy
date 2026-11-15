@@ -307,7 +307,22 @@
       watchTmdb();
     }, 15000);
   }
-  function invalidate() { state.dashboard = null; state.top = null; state.times = null; state.progress = null; hist.items = null; hist.groups = null; hist.lists = {}; }
+  function invalidate() { state.dashboard = null; state.top = null; state.times = null; state.progress = null; hist.items = null; hist.groups = null; hist.lists = {}; prefetch(); }
+  /** Daten der übrigen Bereiche im Leerlauf vorladen – der Wechsel ist dann sofort da, ohne Warten und Nachspringen. */
+  function prefetch() {
+    clearTimeout(prefetch.timer);
+    const idle = window.requestIdleCallback || ((f) => setTimeout(f, 600));
+    prefetch.timer = setTimeout(() => idle(async () => {
+      if (!state.account || !hasData()) return;
+      try {
+        if (!state.dashboard) await loadDashboard();
+        if (!state.top) await loadTop();
+        if (!state.times) await loadTimes();
+        if (!state.progress) await loadProgress();
+        if (!hist.groups) await loadHistory(true);
+      } catch { /* beim Öffnen wird ohnehin neu geladen */ }
+    }, { timeout: 4000 }), 900);
+  }
 
   // ================================================================ Darstellung & Sprache
   function seasonText() {
@@ -2102,6 +2117,7 @@
       state.range = r; store.set('range', r);
       state.dashboard = null; state.top = null; state.times = null;
       renderPanel(state.panel);
+      prefetch();
     });
     segmented($('#top-kind'), 'kind', state.topKind, (k) => { state.topKind = k; store.set('topKind', k); renderPanel('top'); });
     segmented($('#progress-filter'), 'filter', state.progressFilter, (f) => { state.progressFilter = f; renderProgress(); });
@@ -2164,6 +2180,7 @@
     await renderPanel(state.panel);
     watchTmdb();
     document.body.classList.add('ready');
+    prefetch();
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();
