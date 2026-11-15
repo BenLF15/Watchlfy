@@ -2,7 +2,7 @@
 
 Schwesterprojekt von Spotlfy. Gleicher Stack: Node 22 (ESM) · Express · PostgreSQL (`pg`) · Vanilla-JS ·
 Chart.js · Render. Übernommen aus Spotlfy: Konten/Login, Sessions, Themes (Hell/Dunkel/System/Jahreszeit,
-Liquid Glass), i18n-Mechanik, Changelog-Pop-up, Profilbild, Datenschutz, Export, Backup/Restore, Noten-Wirtschaft.
+Liquid Glass), i18n-Mechanik, Changelog-Pop-up, Profilbild, Datenschutz, Export, Backup/Restore, Kino-Kasse (Filmmeter & Goldtickets).
 
 ## Architektur
 
@@ -19,7 +19,8 @@ src/
   trakt.js       OAuth, Verlauf-Sync (30 Min.), „Läuft gerade“, Bewertungen
   stats.js       Übersicht, Top-Listen, Schauzeiten, Binges, Fortschritt, Verlauf
   features.js    Rückblick, Freunde, Export
-  collection.js  Noten, Videothek, Sammlung, Vorführraum-Quiz, Veredeln, Geschenke
+  soundtrack.js  Filmmusik für den Rückblick (iTunes-Suche, Audio-Proxy, Cache)
+  collection.js  Filmmeter/Goldtickets, Videothek, Sammlung, Vorführraum-Quiz, Veredeln, Geschenke
   scheduler.js   Trakt-Sync, TMDB-Nachladen
 public/          index.html, app.js, login, Datenschutz, assets (i18n, theme, changelog, styles)
 tests/           Playwright (Handy + Desktop) + node:test-Unit-Tests für Parser; Mock-Server für TMDB/Trakt
@@ -40,7 +41,7 @@ tests/           Playwright (Handy + Desktop) + node:test-Unit-Tests für Parser
 | `trakt_tokens` | OAuth-Tokens pro Konto, Trakt-Benutzername, letzter Sync, Fehler |
 | `ratings` | Trakt-Bewertungen (optional) |
 | `friendships` | Anfrage/angenommen (wie Spotlfy) |
-| `note_ledger` | Noten-Buchungen Bronze/Silber/Gold/Platin, einmalige Belohnungen über eindeutigen `key` |
+| `note_ledger` | Buchungen in Filmmetern (`meters`) und Goldtickets (`tickets`; alte Bronze/Silber/Gold/Platin-Spalten werden einmalig umgerechnet), einmalige Belohnungen über eindeutigen `key` |
 | `collection` | Sammlerstücke: Format (dvd/bluray/poster), Seltenheit, Edition (Steelbook, signiert, holografisch …), Titel |
 | `screening_sessions` | tägliches Vorführraum-Quiz (Runden, Fortschritt, Punkte) |
 

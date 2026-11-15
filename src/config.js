@@ -43,6 +43,13 @@ export const config = {
     userAgent: env('TRAKT_USER_AGENT', 'Watchlfy/1.0 (self-hosted watch statistics)'),
     redirectUri: env('TRAKT_REDIRECT_URI', `${externalUrl || `http://127.0.0.1:${port}`}/auth/trakt/callback`),
   },
+  // Filmmusik im Rückblick: Hörproben über die öffentliche iTunes-Suche (kein Schlüssel)
+  music: {
+    enabled: bool('MUSIC_PREVIEWS', true),
+    base: env('ITUNES_API_BASE', 'https://itunes.apple.com').replace(/\/$/, ''),
+    country: env('MUSIC_COUNTRY', 'DE'),
+    userAgent: env('TRAKT_USER_AGENT', 'Watchlfy/1.0 (self-hosted watch statistics)'),
+  },
   allowRegistration: bool('ALLOW_REGISTRATION', true),
   // Neue Konten pro IP in 15 Minuten
   registerLimit: Math.max(1, int('REGISTER_LIMIT', 10)),

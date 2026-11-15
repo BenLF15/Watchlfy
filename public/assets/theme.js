@@ -41,7 +41,7 @@
     if (mode === 'season') return seasonOf(effectiveDate());
     return media.matches ? 'light' : 'dark'; // system
   }
-  const THEME_COLOR = { dark: '#0b0c12', light: '#f4efe4', spring: '#f7f1f4', summer: '#fff8e8', autumn: '#140d08', winter: '#0b1018' };
+  const THEME_COLOR = { dark: '#12100d', light: '#efe6d4', spring: '#f2e6e8', summer: '#f3e8cf', autumn: '#120b07', winter: '#0a0e14' };
 
   function apply(mode) {
     const m = mode || get('theme') || 'dark';

@@ -50,6 +50,50 @@ test.describe('Statistik', () => {
     await shot(page, ti, 'detail');
   });
 
+  test('Fortschritt: erst 5 Serien, Rest aufklappbar', async ({ page }, ti) => {
+    // ein paar weitere Serien, damit es mehr als 5 sind
+    const d = new Date(Date.now() - 3 * 864e5);
+    const dmy = `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getFullYear()).slice(2)}`;
+    const csv = `Title,Date\n${['Squid Game: Staffel 1: Folge 1', 'Lucifer: Staffel 1: Folge 1', 'Haus des Geldes: Teil 1: Folge 1', 'Dark: Staffel 1: Geheimnisse'].map((x) => `"${x}","${dmy}"`).join('\n')}\n`;
+    const pv = await (await page.request.post('/api/import/preview?source=netflix', { headers: { 'Content-Type': 'application/octet-stream', 'X-Filename': 'NetflixViewingHistory.csv' }, data: Buffer.from(csv) })).json();
+    expect((await page.request.post('/api/import/commit', { data: { token: pv.token } })).ok()).toBeTruthy();
+    await waitTmdb(page);
+    await page.reload();
+    await page.waitForSelector('body.ready');
+    await goPanel(page, 'progress');
+    await page.click('#progress-filter [data-filter="all"]');
+    const total = (await (await page.request.get('/api/progress')).json()).series.length;
+    expect(total).toBeGreaterThan(5);
+    await expect(page.locator('#progress-list .prog')).toHaveCount(5);
+    await expect(page.locator('#progress-toggle')).toContainText(String(total - 5));
+    await page.click('#progress-toggle');
+    await expect(page.locator('#progress-list .prog')).toHaveCount(total);
+    await expect(page.locator('#progress-toggle')).toHaveAttribute('aria-expanded', 'true');
+    await shot(page, ti, 'progress-open');
+    await page.click('#progress-toggle');
+    await expect(page.locator('#progress-list .prog')).toHaveCount(5);
+  });
+
+  test('Verlauf: letzte Woche offen, Monate zugeklappt und aufklappbar', async ({ page }, ti) => {
+    await goPanel(page, 'history');
+    const groups = (await (await page.request.get('/api/history/groups')).json()).groups;
+    expect(groups.length).toBeGreaterThan(1);
+    expect(groups.every((g, i) => i === 0 || /^\d{4}-\d{2}$/.test(g.grp))).toBe(true);
+    const first = page.locator('#history .hist-group').first();
+    await expect(first).toHaveClass(/open/);
+    await expect(first.locator('.hist').first()).toBeVisible();
+    const month = page.locator('#history .hist-group').nth(1);
+    await expect(month).not.toHaveClass(/open/);
+    await expect(month.locator('.hg-title')).not.toHaveText('');
+    await month.locator('.hg-head').click();
+    await expect(month).toHaveClass(/open/);
+    await expect(month.locator('.hist').first()).toBeVisible();
+    expect(await month.locator('.hist').count()).toBe(groups[1].n);
+    await shot(page, ti, 'history-groups');
+    await month.locator('.hg-head').click();
+    await expect(month).not.toHaveClass(/open/);
+  });
+
   test('Verlauf mit Suche', async ({ page }, ti) => {
     await goPanel(page, 'history');
     await expect(page.locator('#history .day-card').first()).toBeVisible();
@@ -107,4 +151,14 @@ test('Kino-Ansicht: Hero-Karussell, gläserne Leiste, Poster gleitet ins Detail'
   await goPanel(page, 'history');
   await expect(page.locator('#hero')).toBeHidden();
   await expect(page.locator('#page-title')).toHaveText('Verlauf');
+  // Kanal wechseln: Desktop per Zifferntaste, Handy per Zapper
+  if ((page.viewportSize()?.width || 1000) >= 700) {
+    await page.keyboard.press('3');
+    await expect(page.locator('#page-title')).toHaveText('Schauzeiten');
+    await expect(page.locator('#panel-tabs [data-panel="times"]')).toHaveAttribute('aria-selected', 'true');
+  } else {
+    await page.click('#zapper [data-zap="1"]');
+    await expect(page.locator('#page-title')).toHaveText('Rückblick');
+    await expect(page.locator('#zap-ch')).toHaveText('06');
+  }
 });

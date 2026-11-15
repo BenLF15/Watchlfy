@@ -60,6 +60,8 @@ function traktHistory() {
   ];
 }
 
+const stats = { music: 0 };
+
 function send(res, status, body, type = 'application/json') {
   res.writeHead(status, { 'Content-Type': type });
   res.end(typeof body === 'string' ? body : JSON.stringify(body));
@@ -94,6 +96,30 @@ http.createServer(async (req, res) => {
     return send(res, 200, { ...movieResult(x), genres: x.genres.map((name, i) => ({ id: i, name })), production_countries: x.country.map((c) => ({ iso_3166_1: c })), runtime: x.runtime, credits: { cast: x.cast.map((name) => ({ name })) } });
   }
   if ((m = /^\/t\/p\/\w+\/([pb])-([a-z0-9-]+)\.svg$/.exec(p))) return send(res, 200, svg(m[2].replace(/-/g, ' '), m[1] === 'b'), 'image/svg+xml');
+
+  // ---------------- iTunes-Suche (Filmmusik im Rückblick) + Hörprobe als kurzes WAV
+  if (p === '/itunes/search') {
+    stats.music += 1;
+    const term = (u.searchParams.get('term') || '').replace(/ (soundtrack|theme|score)$/i, '');
+    const all = [...TV.map((t) => t.original_name), ...TV.map((t) => t.name), ...MOVIES.map((x) => x.original_title || x.title), ...MOVIES.map((x) => x.title)];
+    const hit = all.find((n) => norm(n) === norm(term));
+    if (!hit) return send(res, 200, { resultCount: 0, results: [] });
+    const id = 9000 + hue(hit);
+    return send(res, 200, { resultCount: 2, results: [
+      { trackId: id + 1, trackName: 'Karaoke Version', artistName: 'Cover Band', collectionName: `${hit} Hits`, previewUrl: `http://127.0.0.1:${port}/itunes/preview/${id + 1}.wav`, trackNumber: 4 },
+      { trackId: id, trackName: 'Main Title', artistName: 'Mock Orchestra', collectionName: `${hit} (Original Soundtrack)`, previewUrl: `http://127.0.0.1:${port}/itunes/preview/${id}.wav`, trackViewUrl: `https://music.example/${id}`, trackNumber: 1 },
+    ] });
+  }
+  if (/^\/itunes\/preview\/\d+\.wav$/.test(p)) {
+    const rate = 8000; const n = rate; // 1 s leiser Ton
+    const buf = Buffer.alloc(44 + n);
+    buf.write('RIFF', 0); buf.writeUInt32LE(36 + n, 4); buf.write('WAVEfmt ', 8); buf.writeUInt32LE(16, 16); buf.writeUInt16LE(1, 20); buf.writeUInt16LE(1, 22);
+    buf.writeUInt32LE(rate, 24); buf.writeUInt32LE(rate, 28); buf.writeUInt16LE(1, 32); buf.writeUInt16LE(8, 34); buf.write('data', 36); buf.writeUInt32LE(n, 40);
+    for (let i = 0; i < n; i++) buf[44 + i] = 128 + Math.round(6 * Math.sin((i / rate) * 2 * Math.PI * 440));
+    res.writeHead(200, { 'Content-Type': 'audio/wav' });
+    return res.end(buf);
+  }
+  if (p === '/mock/stats') return send(res, 200, stats);
 
   // ---------------- Trakt
   const ua = String(req.headers['user-agent'] || '');

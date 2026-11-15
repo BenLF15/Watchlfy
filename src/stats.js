@@ -266,18 +266,43 @@ export async function progress(accountId) {
 }
 
 // ---------------------------------------------------------------- Verlauf
-export async function history(accountId, { before = null, q = '', limit = 60 } = {}) {
+/** Gruppe eines Eintrags: die letzten 7 Tage als „Woche“, davor Kalendermonate (JJJJ-MM). */
+const GROUP_SQL = `CASE WHEN local_at::date > (now() AT TIME ZONE $3)::date - 7 THEN 'week' ELSE to_char(local_at, 'YYYY-MM') END`;
+const SEARCH_SQL = (n) => `($${n} = '' OR name ILIKE '%' || $${n} || '%' OR raw_title ILIKE '%' || $${n} || '%' OR episode_name ILIKE '%' || $${n} || '%')`;
+const cleanTerm = (q) => String(q || '').trim().slice(0, 100);
+
+export async function history(accountId, { before = null, q = '', limit = 60, group = null } = {}) {
   const lim = Math.min(200, Math.max(10, Number(limit) || 60));
-  const term = String(q || '').trim().slice(0, 100);
+  const g = /^(week|\d{4}-\d{2})$/.test(String(group || '')) ? String(group) : null;
   return run(
     `SELECT id, tkey, title_id, kind, name, raw_title, season, episode, episode_name, poster_path, source, profile, device,
             watched_at, time_known, secs, estimated, match_state
        FROM v
       WHERE ($4::timestamptz IS NULL OR watched_at < $4::timestamptz)
-        AND ($5 = '' OR name ILIKE '%' || $5 || '%' OR raw_title ILIKE '%' || $5 || '%' OR episode_name ILIKE '%' || $5 || '%')
+        AND ${SEARCH_SQL(5)}
+        AND ($7::text IS NULL OR ${GROUP_SQL} = $7::text)
       ORDER BY watched_at DESC, id DESC LIMIT $6`,
-    accountId, null, [before, term, lim],
+    accountId, null, [before, cleanTerm(q), lim, g],
   );
+}
+
+/** Verlauf zusammengefasst: letzte Woche, danach monatsweise – mit Summe und den meistgesehenen Titeln. */
+export async function historyGroups(accountId, { q = '' } = {}) {
+  const rows = await run(
+    `, g AS (SELECT ${GROUP_SQL} AS grp, * FROM v WHERE ${SEARCH_SQL(4)}),
+       tops AS (
+         SELECT grp, tkey, max(name) AS name, max(poster_path) AS poster_path, sum(secs) AS secs,
+                row_number() OVER (PARTITION BY grp ORDER BY sum(secs) DESC, max(name)) AS rn
+           FROM g GROUP BY grp, tkey)
+     SELECT g.grp, count(*)::int AS n, sum(g.secs)::bigint AS secs, count(DISTINCT g.tkey)::int AS titles,
+            count(*) FILTER (WHERE g.kind = 'tv')::int AS episodes, count(*) FILTER (WHERE g.kind = 'movie')::int AS movies,
+            min(g.local_at::date) AS first_day, max(g.local_at::date) AS last_day,
+            (SELECT json_agg(json_build_object('name', t.name, 'poster_path', t.poster_path) ORDER BY t.rn) FROM tops t WHERE t.grp = g.grp AND t.rn <= 4) AS top
+       FROM g GROUP BY g.grp
+      ORDER BY (g.grp = 'week') DESC, g.grp DESC`,
+    accountId, null, [cleanTerm(q)],
+  );
+  return rows.map((r) => ({ ...r, secs: Number(r.secs) }));
 }
 
 /** Detailansicht eines Titels (über title_id oder Roh-Schlüssel). */

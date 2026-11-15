@@ -20,6 +20,17 @@ test('Rückblick: Jahresübersicht und Story mit Folien, Wischen schließt', asy
   await page.click('#story .st-nav.next');
   await expect(page.locator('#story .st-slide.active h2')).toHaveText('Breaking Bad');
   await shot(page, ti, 'story-series');
+  // Filmmusik: Soundtrack zur Serie, Hörprobe kommt über den eigenen Server, stummschaltbar
+  await expect(page.locator('#st-credit')).toContainText('Main Title');
+  await expect(page.locator('#story .st-mute')).toBeVisible();
+  const tr = (await (await page.request.get('/api/soundtrack?title=Breaking%20Bad&kind=tv')).json()).track;
+  expect(tr.album).toContain('Soundtrack');
+  const audio = await page.request.get(tr.audio);
+  expect(audio.ok()).toBeTruthy();
+  expect(audio.headers()['content-type']).toMatch(/^audio\//);
+  expect((await page.request.get('/api/soundtrack/audio/123')).status()).toBe(404);
+  await page.click('#story .st-mute');
+  await expect(page.locator('#story .st-mute')).toHaveAttribute('aria-pressed', 'true');
   // bis zum Abspann
   for (let i = 0; i < 10 && !(await page.locator('#story .st-slide.active.st-outro').count()); i++) await page.click('#story .st-nav.next');
   await expect(page.locator('#story .st-slide.active')).toHaveClass(/st-outro/);

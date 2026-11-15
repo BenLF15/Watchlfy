@@ -107,6 +107,8 @@ Ob TMDB und Trakt erkannt wurden, siehst du als Admin unter **Admin → System**
 | `TMDB_LANGUAGE` | `de-DE` | Sprache der TMDB-Daten |
 | `TRAKT_REDIRECT_URI` | aus `RENDER_EXTERNAL_URL` | nur bei eigener Domain nötig |
 | `TRAKT_USER_AGENT` | `Watchlfy/1.0 (self-hosted watch statistics)` | Kennung gegenüber Trakt; ohne eigenen User-Agent blockt Trakt mit 403 |
+| `MUSIC_PREVIEWS` | `true` | Filmmusik im Rückblick (Hörproben über die iTunes-Suche); `false` schaltet sie ab |
+| `MUSIC_COUNTRY` | `DE` | Store-Land für die Musiksuche |
 | `KEEP_ALIVE` | an (auf Render) | Selbst-Ping gegen Einschlafen |
 | `CRON_SECRET` | – | erlaubt externen Anstoß über `/cron/run?key=…` |
 | `INTERNAL_SCHEDULER` | `true` | interner Zeitplan an/aus |

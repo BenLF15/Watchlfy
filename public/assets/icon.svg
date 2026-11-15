@@ -1,18 +1,26 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Watchlfy: Röhrenfernseher mit Antenne, auf dem Bildschirm die VHS-Streifen -->
   <defs>
-    <radialGradient id="bg" cx="50%" cy="20%" r="90%"><stop offset="0" stop-color="#2a2238"/><stop offset="1" stop-color="#0b0c12"/></radialGradient>
-    <linearGradient id="reel" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffd58c"/><stop offset=".55" stop-color="#ffb547"/><stop offset="1" stop-color="#e07a1f"/></linearGradient>
-    <linearGradient id="beam" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#ffe2a6" stop-opacity=".55"/><stop offset="1" stop-color="#ffe2a6" stop-opacity="0"/></linearGradient>
+    <linearGradient id="body" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff7448"/><stop offset="1" stop-color="#e2401a"/></linearGradient>
+    <radialGradient id="scr" cx="45%" cy="35%" r="80%"><stop offset="0" stop-color="#1f2b25"/><stop offset="1" stop-color="#070b09"/></radialGradient>
+    <clipPath id="clip"><rect x="92" y="196" width="250" height="196" rx="34"/></clipPath>
   </defs>
-  <rect width="512" height="512" rx="116" fill="url(#bg)"/>
-  <path d="M300 256 L470 150 L470 362 Z" fill="url(#beam)"/>
-  <circle cx="226" cy="256" r="150" fill="url(#reel)"/>
-  <circle cx="226" cy="256" r="150" fill="none" stroke="#3a2410" stroke-width="10"/>
-  <g fill="#0b0c12">
-    <circle cx="226" cy="166" r="34"/><circle cx="226" cy="346" r="34"/>
-    <circle cx="136" cy="256" r="34"/><circle cx="316" cy="256" r="34"/>
-    <circle cx="162" cy="192" r="22"/><circle cx="290" cy="320" r="22"/><circle cx="162" cy="320" r="22"/><circle cx="290" cy="192" r="22"/>
+  <rect width="512" height="512" rx="112" fill="#12100d"/>
+  <path d="M256 168 190 82M256 168l86-104" stroke="#f4ead8" stroke-width="16" stroke-linecap="round"/>
+  <circle cx="190" cy="82" r="16" fill="#f4ead8"/><circle cx="342" cy="64" r="16" fill="#f4ead8"/>
+  <rect x="56" y="160" width="400" height="268" rx="54" fill="url(#body)"/>
+  <rect x="56" y="160" width="400" height="268" rx="54" fill="none" stroke="#160803" stroke-opacity=".25" stroke-width="6"/>
+  <rect x="92" y="196" width="250" height="196" rx="34" fill="url(#scr)"/>
+  <g clip-path="url(#clip)" transform="rotate(-24 217 294)">
+    <rect x="40" y="300" width="400" height="20" fill="#ff5a2c"/>
+    <rect x="40" y="320" width="400" height="20" fill="#ff9a1f"/>
+    <rect x="40" y="340" width="400" height="20" fill="#ffc83a"/>
+    <rect x="40" y="360" width="400" height="20" fill="#2ec4b6"/>
   </g>
-  <circle cx="226" cy="256" r="26" fill="#3a2410"/>
-  <path d="M214 240v32l26-16z" fill="#ffe2a6"/>
+  <path d="M168 238v74l60-37z" fill="#f4ead8"/>
+  <rect x="92" y="196" width="250" height="196" rx="34" fill="none" stroke="#000" stroke-opacity=".5" stroke-width="8"/>
+  <circle cx="400" cy="230" r="22" fill="#160803" fill-opacity=".85"/><circle cx="400" cy="230" r="8" fill="#ffc83a"/>
+  <circle cx="400" cy="292" r="22" fill="#160803" fill-opacity=".85"/><circle cx="406" cy="286" r="7" fill="#f4ead8"/>
+  <rect x="376" y="336" width="48" height="8" rx="4" fill="#160803" fill-opacity=".6"/><rect x="376" y="354" width="48" height="8" rx="4" fill="#160803" fill-opacity=".6"/>
+  <rect x="120" y="428" width="44" height="22" rx="6" fill="#e2401a"/><rect x="348" y="428" width="44" height="22" rx="6" fill="#e2401a"/>
 </svg>

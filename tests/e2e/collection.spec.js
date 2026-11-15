@@ -16,7 +16,9 @@ test('Videothek betreten, Stück anheben, zurücklegen, kaufen → im Regal', as
   const errors = watchErrors(page);
   await setup(page, ti);
   await goPanel(page, 'collection');
-  await expect(page.locator('.col-head .balance .coin')).toHaveCount(4);
+  await expect(page.locator('.col-head .balance .coin')).toHaveCount(2);
+  await expect(page.locator('.living .crt-screen')).toBeVisible();
+  await expect(page.locator('.living .cobweb').first()).toBeVisible();
   await page.click('[data-coltab="store"]');
   await expect(page.locator('.store-front .sf-sign')).toBeVisible();
   await shot(page, ti, 'store-front');
@@ -24,7 +26,7 @@ test('Videothek betreten, Stück anheben, zurücklegen, kaufen → im Regal', as
   await expect(page.locator('.store-room .st-shelf')).toHaveCount(3);
   // günstigstes bezahlbares Stück suchen (Bronze)
   const before = await bal(page);
-  const item = page.locator('.st-item:has(.coin-bronze)').first();
+  const item = page.locator('.st-item:has(.coin-meters)').first();
   await item.click();
   await expect(page.locator('#item-dialog')).toHaveAttribute('open', '');
   await expect(item).toHaveClass(/lifted/);
@@ -35,10 +37,17 @@ test('Videothek betreten, Stück anheben, zurücklegen, kaufen → im Regal', as
   await page.click('[data-buy]');
   await expect(page.locator('#toast')).toContainText('steht jetzt in deinem Regal');
   const after = await bal(page);
-  expect(Number(after.bronze)).toBeLessThan(Number(before.bronze) + 3);
+  expect(Number(after.meters)).toBeLessThan(Number(before.meters));
   await page.click('[data-coltab="shelf"]');
   await expect(page.locator('#col-body [data-own]')).toHaveCount(1);
   await shot(page, ti, 'shelf');
+  // Fernseher: umschalten per Knopf, Bild öffnet die Detailansicht
+  const ch0 = await page.locator('.crt-count').textContent();
+  await page.click('[data-tv-zap="1"]');
+  await expect(page.locator('.crt-count')).not.toHaveText(ch0);
+  await page.click('.crt-screen');
+  await expect(page.locator('#detail-dialog')).toHaveAttribute('open', '');
+  await page.keyboard.press('Escape');
   // nochmal kaufen geht nicht
   const id = await page.locator('#col-body [data-own]').first().getAttribute('data-own');
   const r = await page.request.post('/api/collection/buy', { data: { id } });
@@ -46,15 +55,18 @@ test('Videothek betreten, Stück anheben, zurücklegen, kaufen → im Regal', as
   expect(errors).toEqual([]);
 });
 
-test('Noten tauschen und Verdienst-Liste', async ({ page }, ti) => {
+test('Kinokasse: Filmmeter gegen Goldticket und Verdienst-Liste', async ({ page }, ti) => {
   await setup(page, ti);
   await goPanel(page, 'collection');
   await page.click('[data-coltab="notes"]');
   await expect(page.locator('.earn-list li')).not.toHaveCount(0);
   await expect(page.locator('.earn-list li.done').first()).toBeVisible();
   const b0 = await bal(page);
-  await page.click('[data-exchange="bronze"]');
-  await expect.poll(async () => Number((await bal(page)).silver)).toBe(Number(b0.silver) + 1);
+  expect(Number(b0.meters)).toBeGreaterThanOrEqual(200);
+  await expect(page.locator('.bo-wallet')).toBeVisible();
+  await page.click('[data-exchange="1"]');
+  await expect.poll(async () => Number((await bal(page)).tickets)).toBe(Number(b0.tickets) + 1);
+  expect(Number((await bal(page)).meters)).toBe(Number(b0.meters) - 200);
   await shot(page, ti, 'notes');
 });
 
@@ -87,15 +99,14 @@ test('Vorführraum: Standbild wird schärfer, Antworten, Belohnung', async ({ pa
 test('Veredeln (Admin-Gratismodus) und verstecktes Geschenk', async ({ page }, ti) => {
   await setup(page, ti);
   const shop = (await (await page.request.get('/api/collection')).json()).shop.items;
-  const it = [...shop.tv, ...shop.movie, ...shop.poster].find((x) => x.rarity === 'common' && x.price.tier === 'bronze');
+  const it = [...shop.tv, ...shop.movie, ...shop.poster].find((x) => x.rarity === 'common' && x.price.cur === 'meters');
   expect(it).toBeTruthy();
   expect((await page.request.post('/api/collection/buy', { data: { id: it.id } })).ok()).toBeTruthy();
   await goPanel(page, 'collection');
   await page.click('[data-coltab="screening"]');
-  // genug Noten für „selten“? Sonst Silber durch Tausch holen
-  let b = await bal(page);
-  while (Number(b.silver) < 2 && Number(b.bronze) >= 4) { await page.request.post('/api/collection/exchange', { data: { from: 'bronze' } }); b = await bal(page); }
-  test.skip(Number(b.silver) < 2, 'nicht genug Noten zum Veredeln');
+  // Veredeln zu „selten“ kostet 80 Filmmeter
+  const b = await bal(page);
+  test.skip(Number(b.meters) < 80, 'nicht genug Filmmeter zum Veredeln');
   await page.reload(); await page.waitForSelector('body.ready');
   await page.click('[data-coltab="screening"]');
   await page.click(`.refine-list [data-refine="${it.id}"]`);

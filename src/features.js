@@ -11,7 +11,7 @@ export async function exportData(accountId) {
     one(`SELECT al.raw_name, al.kind_hint, al.state, t.kind, t.tmdb_id, t.name FROM title_aliases al LEFT JOIN titles t ON t.id = al.title_id WHERE al.account_id = $1`),
     one(`SELECT kind, tmdb_id, rating, rated_at FROM ratings WHERE account_id = $1`),
     one(`SELECT a.username, f.status, f.created_at FROM friendships f JOIN accounts a ON a.id = CASE WHEN f.requester_id = $1 THEN f.addressee_id ELSE f.requester_id END WHERE $1 IN (f.requester_id, f.addressee_id)`),
-    one(`SELECT key, bronze, silver, gold, platinum, created_at FROM note_ledger WHERE account_id = $1 ORDER BY created_at`),
+    one(`SELECT key, meters, tickets, created_at FROM note_ledger WHERE account_id = $1 ORDER BY created_at`),
     one(`SELECT item_id, format, rarity, edition, name, year, acquired_at FROM collection WHERE account_id = $1 ORDER BY acquired_at`),
   ]);
   return { format: 'watchlfy-export', version: 1, exported_at: new Date().toISOString(), account: account[0], views, imports, titles: aliases, ratings, friends, notes, collection };

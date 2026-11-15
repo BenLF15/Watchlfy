@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
-  <meta name="theme-color" content="#0b0c12" />
+  <meta name="theme-color" content="#12100d" />
   <meta name="color-scheme" content="dark" />
   <meta name="robots" content="noindex, nofollow" />
   <meta name="view-transition" content="same-origin" />
@@ -16,58 +16,66 @@
   <link rel="icon" href="/assets/icon.svg" type="image/svg+xml" />
   <link rel="icon" href="/assets/favicon-32.png" type="image/png" sizes="32x32" />
   <title>Watchlfy</title>
-  <script src="/assets/theme.js?v=20261115b"></script>
-  <script src="/assets/i18n.js?v=20261115b"></script>
-  <link rel="stylesheet" href="/assets/watchlfy.css?v=20261115b" />
-  <script src="/assets/changelog.js?v=20261115b" defer></script>
+  <script src="/assets/theme.js?v=20261115c"></script>
+  <script src="/assets/i18n.js?v=20261115c"></script>
+  <link rel="stylesheet" href="/assets/watchlfy.css?v=20261115c" />
+  <script src="/assets/changelog.js?v=20261115c" defer></script>
   <script src="/vendor/chart.umd.min.js" defer></script>
-  <script src="/app.js?v=20261115b" defer></script>
-  <script src="/assets/extras.js?v=20261115b" defer></script>
-  <script src="/assets/collection.js?v=20261115b" defer></script>
+  <script src="/app.js?v=20261115c" defer></script>
+  <script src="/assets/extras.js?v=20261115c" defer></script>
+  <script src="/assets/collection.js?v=20261115c" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#main" data-i18n="aria.skip">Zum Inhalt</a>
-  <div class="leader" id="leader" hidden aria-hidden="true"><div class="leader-ring"><span class="leader-sweep"></span><b class="leader-num">3</b></div></div>
-  <div class="grain" aria-hidden="true"></div>
+  <div class="power-on" id="leader" hidden aria-hidden="true"><i></i></div>
+  <div class="scanlines" aria-hidden="true"></div>
+  <div class="osd-zap" id="osd-zap" aria-hidden="true" hidden><b id="osd-ch"></b><span id="osd-name"></span></div>
 
-  <!-- Seitenleiste (Desktop) bzw. Kopfzeile (Handy) -->
-  <aside class="sidebar" id="appbar">
+  <!-- Kopfzeile: Marke, Import, Profil -->
+  <header class="topbar" id="appbar">
     <a class="brand" href="/" data-goto="overview" data-i18n-attr="aria-label:aria.toOverview">
-      <span class="brand-reel" aria-hidden="true"><img src="/assets/logo-animated.svg" alt="" width="34" height="34" /></span>
-      <span class="brand-word"><strong>Watchlfy</strong><small data-i18n="brand.tagline">Lichtspielhaus</small></span>
+      <img class="brand-logo" src="/assets/logo-animated.svg" alt="" width="40" height="40" />
+      <span class="brand-word">Watchlfy</span>
     </a>
-    <nav class="side-nav" id="panel-tabs" role="tablist" data-i18n-attr="aria-label:nav.main">
-      <button role="tab" data-panel="overview"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H4z"/><path d="M8 20h8M12 16v4"/><path d="m10 8 4 2.5-4 2.5z" fill="currentColor"/></svg><span data-i18n="nav.overview"></span></button>
-      <button role="tab" data-panel="top"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V11h4v10M10 21V4h4v17M15 21v-7h4v7"/></svg><span data-i18n="nav.top"></span></button>
-      <button role="tab" data-panel="times"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9 2h6"/></svg><span data-i18n="nav.times"></span></button>
-      <button role="tab" data-panel="progress"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="1"/><path d="M3 9h18M3 15h18M7 6v3M12 6v3M17 6v3M7 15v3M12 15v3M17 15v3"/></svg><span data-i18n="nav.progress"></span></button>
-      <button role="tab" data-panel="history"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.3-5.6M4 4v4h4"/><path d="M12 8v4l3 2"/></svg><span data-i18n="nav.history"></span></button>
-      <button role="tab" data-panel="wrapped"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h16v12H4zM2 4h20v4H2zM12 4v16"/><path d="M12 4c-1.5-2.5-5-2.5-4 0M12 4c1.5-2.5 5-2.5 4 0"/></svg><span data-i18n="nav.wrapped"></span></button>
-      <button role="tab" data-panel="friends"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5"/><circle cx="17.5" cy="9" r="2.5"/><path d="M16.5 14.6c2.6.2 4.4 1.9 5 4.9"/></svg><span data-i18n="nav.friends"></span></button>
-      <button role="tab" data-panel="collection"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="5" height="16" rx="1"/><rect x="10" y="4" width="5" height="16" rx="1"/><path d="m17 5 3.5 1-3.5 14"/></svg><span data-i18n="nav.collection"></span></button>
-      <button role="tab" data-panel="admin" id="admin-tab" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4 6v6c0 4.5 3.4 8.2 8 9 4.6-.8 8-4.5 8-9V6z"/><path d="m9 12 2 2 4-4"/></svg><span data-i18n="nav.admin"></span></button>
+    <div class="topbar-actions">
+      <button id="import-open" class="btn btn-rec" type="button">
+        <i class="rec-dot" aria-hidden="true"></i><span data-i18n="btn.import">Importieren</span>
+      </button>
+      <button id="profile-btn" class="profile-btn" type="button" data-i18n-attr="aria-label:aria.openProfile;title:aria.openProfile">
+        <span class="sp-avatar"><img id="avatar" alt="" hidden /><span id="avatar-initials" aria-hidden="true"></span></span>
+        <span class="sp-text"><b id="user-line"></b></span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Fernbedienung (Desktop): jede Taste ist ein Kanal, Ziffern 1–9 schalten um -->
+  <aside class="remote" id="remote">
+    <span class="remote-ir" aria-hidden="true"></span>
+    <nav class="remote-keys" id="panel-tabs" role="tablist" data-i18n-attr="aria-label:nav.main">
+      <button role="tab" data-panel="overview" data-ch="1"><kbd aria-hidden="true">1</kbd><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18v12H3z"/><path d="M8 21h8M9 3l3 3 3-3"/></svg><span data-i18n="nav.overview"></span></button>
+      <button role="tab" data-panel="top" data-ch="2"><kbd aria-hidden="true">2</kbd><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V11h4v10M10 21V4h4v17M15 21v-7h4v7"/></svg><span data-i18n="nav.top"></span></button>
+      <button role="tab" data-panel="times" data-ch="3"><kbd aria-hidden="true">3</kbd><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9 2h6"/></svg><span data-i18n="nav.times"></span></button>
+      <button role="tab" data-panel="progress" data-ch="4"><kbd aria-hidden="true">4</kbd><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17h2v-3H3zM7 17h2V11H7zM11 17h2V8h-2zM15 17h2V5h-2zM19 17h2V3h-2z"/></svg><span data-i18n="nav.progress"></span></button>
+      <button role="tab" data-panel="history" data-ch="5"><kbd aria-hidden="true">5</kbd><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.3-5.6M4 4v4h4"/><path d="M12 8v4l3 2"/></svg><span data-i18n="nav.history"></span></button>
+      <button role="tab" data-panel="wrapped" data-ch="6"><kbd aria-hidden="true">6</kbd><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="1"/><circle cx="8.5" cy="12" r="2.2"/><circle cx="15.5" cy="12" r="2.2"/><path d="M8.5 14.2h7"/></svg><span data-i18n="nav.wrapped"></span></button>
+      <button role="tab" data-panel="friends" data-ch="7"><kbd aria-hidden="true">7</kbd><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5"/><circle cx="17.5" cy="9" r="2.5"/><path d="M16.5 14.6c2.6.2 4.4 1.9 5 4.9"/></svg><span data-i18n="nav.friends"></span></button>
+      <button role="tab" data-panel="collection" data-ch="8"><kbd aria-hidden="true">8</kbd><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="5" height="16"/><rect x="10" y="4" width="5" height="16"/><path d="m17 5 3.5 1-3.5 14"/></svg><span data-i18n="nav.collection"></span></button>
+      <button role="tab" data-panel="admin" data-ch="0" id="admin-tab" hidden><kbd aria-hidden="true">0</kbd><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4 6v6c0 4.5 3.4 8.2 8 9 4.6-.8 8-4.5 8-9V6z"/><path d="m9 12 2 2 4-4"/></svg><span data-i18n="nav.admin"></span></button>
     </nav>
-    <button id="import-open" class="side-import" type="button">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
-      <span data-i18n="btn.import">Importieren</span>
-    </button>
-    <button id="profile-btn" class="side-profile" type="button" data-i18n-attr="aria-label:aria.openProfile;title:aria.openProfile">
-      <span class="sp-avatar"><img id="avatar" alt="" hidden /><span id="avatar-initials" aria-hidden="true"></span></span>
-      <span class="sp-text"><b id="user-line"></b><small data-i18n="nav.profile"></small></span>
-    </button>
+    <span class="remote-brand" aria-hidden="true">WATCHLFY</span>
   </aside>
 
-  <!-- Handy: Dock unten mit Import in der Mitte -->
-  <nav class="bottom-nav" id="bottom-nav" data-i18n-attr="aria-label:nav.main">
-    <button type="button" data-bn="overview"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H4z"/><path d="M8 20h8M12 16v4"/><path d="m10 8 4 2.5-4 2.5z" fill="currentColor"/></svg><span data-i18n="nav.overview">Übersicht</span></button>
-    <button type="button" data-bn="top"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V11h4v10M10 21V4h4v17M15 21v-7h4v7"/></svg><span data-i18n="nav.top">Top-Listen</span></button>
-    <button type="button" data-bn="import" class="dock-fab" data-i18n-attr="aria-label:btn.import"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
-    <button type="button" data-bn="collection"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="5" height="16" rx="1"/><rect x="10" y="4" width="5" height="16" rx="1"/><path d="m17 5 3.5 1-3.5 14"/></svg><span data-i18n="nav.collection">Sammlung</span></button>
-    <button type="button" data-bn="more" aria-haspopup="dialog"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg><span class="bn-more-label" data-i18n="nav.more">Mehr</span></button>
+  <!-- Handy: Zapper unten – Kanal zurück, Programmführer, Kanal weiter -->
+  <nav class="zapper" id="zapper" data-i18n-attr="aria-label:nav.main">
+    <button type="button" class="zap-btn" data-zap="-1" data-i18n-attr="aria-label:nav.prev"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg></button>
+    <button type="button" class="zap-display" id="zap-display" aria-haspopup="dialog">
+      <b class="zap-ch" id="zap-ch">01</b><span class="zap-name" id="zap-name"></span><small data-i18n="nav.guide">Programm</small>
+    </button>
+    <button type="button" class="zap-btn" data-zap="1" data-i18n-attr="aria-label:nav.next"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button>
   </nav>
-  <dialog id="more-sheet" class="dialog more-sheet" aria-labelledby="more-title">
-    <h2 id="more-title" class="sr-only" data-i18n="nav.more">Mehr</h2>
-    <div class="ms-grid" id="more-grid"></div>
+  <dialog id="guide" class="dialog guide" aria-labelledby="guide-title">
+    <header class="guide-head"><h2 id="guide-title" data-i18n="nav.guide">Programm</h2><span class="guide-clock" id="guide-clock"></span></header>
+    <div class="guide-list" id="guide-list"></div>
   </dialog>
 
   <main class="container" id="main">

@@ -66,6 +66,79 @@
   // ---------------------------------------------------------------- Story (Vollbild, Folien, wischen zum Schließen)
   const story = { i: 0, slides: [], raf: 0, start: 0, elapsed: 0, paused: false, prev: null };
   const STORY_MS = 6500;
+
+  // ---------------------------------------------------------------- Filmmusik: offizielle 30-s-Hörproben, weich überblendet, stummschaltbar
+  const music = {
+    muted: store.get('storyMuted') === '1',
+    cache: new Map(),
+    cur: null, // { key, audio }
+    key: (x) => (x?.name ? `${x.name}|${x.kind || (x.episodes ? 'tv' : '')}` : null),
+    async lookup(x) {
+      const k = music.key(x);
+      if (!k) return null;
+      if (!music.cache.has(k)) {
+        const kind = x.kind || (x.episodes ? 'tv' : 'movie');
+        music.cache.set(k, api(`/api/soundtrack?title=${encodeURIComponent(x.name)}&kind=${kind}${x.year ? `&year=${x.year}` : ''}`).then((r) => r.track).catch(() => null));
+      }
+      return music.cache.get(k);
+    },
+    prefetch(slides) { slides.forEach((sl) => { if (sl.music) music.lookup(sl.music); }); },
+    fade(audio, to, ms = 700, done) {
+      const from = audio.volume;
+      const t0 = performance.now();
+      const step = (now) => {
+        const p = Math.min(1, (now - t0) / ms);
+        audio.volume = Math.max(0, Math.min(1, from + (to - from) * p));
+        if (p < 1) requestAnimationFrame(step); else done?.();
+      };
+      requestAnimationFrame(step);
+    },
+    async forSlide(slide) {
+      const want = slide?.music;
+      const k = music.key(want);
+      if (!k || music.cur?.key === k) return; // ohne passenden Titel läuft die bisherige Musik weiter
+      const track = await music.lookup(want);
+      if (!track || !$('#story').open || story.slides[story.i] !== slide) return;
+      if (music.cur?.track?.id === track.id) { music.cur.key = k; return; }
+      const old = music.cur;
+      const audio = new Audio(track.audio);
+      audio.loop = true;
+      audio.volume = 0;
+      audio.muted = music.muted;
+      music.cur = { key: k, audio, track };
+      if (old) music.fade(old.audio, 0, 600, () => { old.audio.pause(); old.audio.src = ''; });
+      audio.play().then(() => music.fade(audio, 0.8, 900)).catch(() => {});
+      music.paint();
+    },
+    paint() {
+      const b = $('#story .st-mute');
+      const c = $('#st-credit');
+      if (!b || !c) return;
+      const tr = music.cur?.track;
+      b.hidden = !tr;
+      b.setAttribute('aria-pressed', String(music.muted));
+      b.setAttribute('aria-label', t(music.muted ? 'story.unmute' : 'story.mute'));
+      b.innerHTML = music.muted
+        ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="m17 9 5 6M22 9l-5 6"/></svg>'
+        : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg>';
+      c.hidden = !tr;
+      if (tr) {
+        c.innerHTML = `<span class="st-eq${music.muted ? ' off' : ''}" aria-hidden="true"><i></i><i></i><i></i></span><span>${esc(tr.track)} · ${esc(tr.artist)}</span><small>${esc(t('story.preview'))}</small>`;
+        if (tr.link) c.href = tr.link; else c.removeAttribute('href');
+      }
+    },
+    toggle() {
+      music.muted = !music.muted;
+      store.set('storyMuted', music.muted ? '1' : '0');
+      if (music.cur) music.cur.audio.muted = music.muted;
+      music.paint();
+    },
+    stop() {
+      const c = music.cur;
+      music.cur = null;
+      if (c) music.fade(c.audio, 0, 400, () => { c.audio.pause(); c.audio.src = ''; });
+    },
+  };
   const num = (n, unit) => `<div class="st-num" data-count="${n}">0</div>${unit ? `<p class="st-unit">${esc(unit)}</p>` : ''}`;
   const stPoster = (x, cls = '') => `<div class="st-poster ${cls}">${poster(x?.poster_path, x?.name || '', 'w342')}</div>`;
 
@@ -76,13 +149,13 @@
     const gTotal = g.reduce((a, x) => a + x.secs, 0) || 1;
     const bestM = d.months.indexOf(Math.max(...d.months)) + 1;
     const slides = [
-      { cls: 'st-intro', tr: 'zoom', html: `<div class="st-logo"><img src="/assets/logo-animated.svg" alt="" width="110" height="110" /></div><p class="st-kicker">Watchlfy · ${d.year}</p><h2 id="story-title">${esc(t('story.intro', { year: d.year }))}</h2><p class="st-text">${esc(t('story.introText'))}</p>` },
-      { cls: 'st-minutes', tr: 'rise', html: `<p class="st-kicker">${esc(t('story.timeKicker'))}</p>${num(hoursOf(d.secs), t('kpi.hoursUnit'))}<p class="st-text">${esc(t('story.timeText', { d: W.nf1.format(d.secs / 86400), e: fmt(d.episodes), m: fmt(d.movies) }))}</p>${d.estimatedShare > 0.2 ? `<p class="st-pill">${esc(t('est.label', { p: Math.round(d.estimatedShare * 100) }))}</p>` : ''}` },
+      { cls: 'st-intro', tr: 'zoom', music: s1 || m1, html: `<div class="st-logo"><img src="/assets/logo-animated.svg" alt="" width="110" height="110" /></div><p class="st-kicker">Watchlfy · ${d.year}</p><h2 id="story-title">${esc(t('story.intro', { year: d.year }))}</h2><p class="st-text">${esc(t('story.introText'))}</p>` },
+      { cls: 'st-minutes', tr: 'rise', music: s1 || m1, html: `<p class="st-kicker">${esc(t('story.timeKicker'))}</p>${num(hoursOf(d.secs), t('kpi.hoursUnit'))}<p class="st-text">${esc(t('story.timeText', { d: W.nf1.format(d.secs / 86400), e: fmt(d.episodes), m: fmt(d.movies) }))}</p>${d.estimatedShare > 0.2 ? `<p class="st-pill">${esc(t('est.label', { p: Math.round(d.estimatedShare * 100) }))}</p>` : ''}` },
     ];
-    if (s1) slides.push({ cls: 'st-artist', tr: 'iris', bg: tmdbImg(s1.backdrop_path, 'w780'), html: `<p class="st-kicker">${esc(t('story.seriesKicker'))}</p>${stPoster(s1, 'big')}<h2>${esc(s1.name)}</h2><p class="st-text">${esc(t('story.seriesText', { e: fmt(s1.episodes), h: dur(s1.secs, { short: true }) }))}</p>${d.topSeries.length > 1 ? `<ol class="st-mini">${d.topSeries.slice(1, 5).map((x, i) => `<li style="--i:${i}"><span>${i + 2}</span>${poster(x.poster_path, x.name, 'w92')}<b>${esc(x.name)}</b><small>${esc(dur(x.secs, { short: true }))}</small></li>`).join('')}</ol>` : ''}` });
-    if (m1) slides.push({ cls: 'st-song', tr: 'wipe', html: `<p class="st-kicker">${esc(t('story.movieKicker'))}</p>${stPoster(m1, 'big tilt')}<h2>${esc(m1.name)}</h2><p class="st-text">${esc(m1.views > 1 ? t('story.movieTextRe', { n: m1.views }) : t('story.movieText', { n: fmt(d.movies) }))}</p>` });
-    if (g.length) slides.push({ cls: 'st-genres', tr: 'drop', html: `<p class="st-kicker">${esc(t('story.genreKicker'))}</p><h2>${esc(g[0].name)}</h2><ul class="st-bars">${g.map((x, i) => `<li style="--i:${i}"><span>${esc(x.name)}</span><i><b style="width:${Math.max(4, (x.secs / gTotal) * 100)}%;background:hsl(${(i * 47 + 10) % 360} 85% 62%)"></b></i><em>${Math.round((x.secs / gTotal) * 100)} %</em></li>`).join('')}</ul>${d.actors[0] ? `<p class="st-pill">⭐ ${esc(t('story.actor', { a: d.actors[0].name }))}</p>` : ''}` });
-    if (d.binge) slides.push({ cls: 'st-rhythm', tr: 'burst', html: `<p class="st-kicker">${esc(t('story.bingeKicker'))}</p>${num(d.binge.episodes, t('binge.inARow'))}<h2>${esc(d.binge.name)}</h2><p class="st-text">${esc(dateFmtYear.format(new Date(d.binge.start)))}${d.binge.timed ? ` · ${esc(dur(d.binge.secs))}` : ''}</p>` });
+    if (s1) slides.push({ cls: 'st-artist', tr: 'iris', music: s1, bg: tmdbImg(s1.backdrop_path, 'w780'), html: `<p class="st-kicker">${esc(t('story.seriesKicker'))}</p>${stPoster(s1, 'big')}<h2>${esc(s1.name)}</h2><p class="st-text">${esc(t('story.seriesText', { e: fmt(s1.episodes), h: dur(s1.secs, { short: true }) }))}</p>${d.topSeries.length > 1 ? `<ol class="st-mini">${d.topSeries.slice(1, 5).map((x, i) => `<li style="--i:${i}"><span>${i + 2}</span>${poster(x.poster_path, x.name, 'w92')}<b>${esc(x.name)}</b><small>${esc(dur(x.secs, { short: true }))}</small></li>`).join('')}</ol>` : ''}` });
+    if (m1) slides.push({ cls: 'st-song', tr: 'wipe', music: m1, html: `<p class="st-kicker">${esc(t('story.movieKicker'))}</p>${stPoster(m1, 'big tilt')}<h2>${esc(m1.name)}</h2><p class="st-text">${esc(m1.views > 1 ? t('story.movieTextRe', { n: m1.views }) : t('story.movieText', { n: fmt(d.movies) }))}</p>` });
+    if (g.length) slides.push({ cls: 'st-genres', tr: 'drop', music: d.topSeries[1] || d.topMovies[1] || null, html: `<p class="st-kicker">${esc(t('story.genreKicker'))}</p><h2>${esc(g[0].name)}</h2><ul class="st-bars">${g.map((x, i) => `<li style="--i:${i}"><span>${esc(x.name)}</span><i><b style="width:${Math.max(4, (x.secs / gTotal) * 100)}%;background:hsl(${(i * 47 + 10) % 360} 85% 62%)"></b></i><em>${Math.round((x.secs / gTotal) * 100)} %</em></li>`).join('')}</ul>${d.actors[0] ? `<p class="st-pill">⭐ ${esc(t('story.actor', { a: d.actors[0].name }))}</p>` : ''}` });
+    if (d.binge) slides.push({ cls: 'st-rhythm', tr: 'burst', music: d.binge ? { name: d.binge.name, kind: 'tv' } : null, html: `<p class="st-kicker">${esc(t('story.bingeKicker'))}</p>${num(d.binge.episodes, t('binge.inARow'))}<h2>${esc(d.binge.name)}</h2><p class="st-text">${esc(dateFmtYear.format(new Date(d.binge.start)))}${d.binge.timed ? ` · ${esc(dur(d.binge.secs))}` : ''}</p>` });
     slides.push({ cls: 'st-streak', tr: 'spin', html: `<p class="st-kicker">${esc(t('story.rhythmKicker'))}</p><div class="st-tiles">
         <div style="--i:0"><span>${esc(t('insight.favTime'))}</span><b>${d.favHour !== null ? esc(hourRange(d.favHour)) : '–'}</b></div>
         <div style="--i:1"><span>${esc(t('insight.streak'))}</span><b>${esc(tn('unit.day', d.streak, { n: d.streak }))}</b></div>
@@ -92,8 +165,8 @@
       const tot = d.services.reduce((a, s) => a + s.secs, 0) || 1;
       slides.push({ cls: 'st-first', tr: 'ripple', html: `<p class="st-kicker">${esc(t('services.title'))}</p><h2>${esc(serviceName(d.services[0].source))}</h2><ul class="st-bars">${d.services.map((s, i) => `<li style="--i:${i}"><span>${esc(serviceName(s.source))}</span><i><b style="width:${Math.max(4, (s.secs / tot) * 100)}%;background:${SERVICES[s.source]?.color}"></b></i><em>${Math.round((s.secs / tot) * 100)} %</em></li>`).join('')}</ul>` });
     }
-    if (d.first) slides.push({ cls: 'st-first', tr: 'rise', html: `<p class="st-kicker">${esc(t('story.firstKicker', { year: d.year }))}</p>${stPoster(d.first)}<h2>${esc(d.first.name)}</h2><p class="st-text">${esc(dateFmtYear.format(new Date(d.first.watched_at)))}</p>` });
-    slides.push({ cls: 'st-outro', tr: 'zoom', outro: true, html: `<div class="st-fx"></div><p class="st-kicker">Watchlfy · ${d.year}</p><h2>${esc(t('story.outro'))}</h2>
+    if (d.first) slides.push({ cls: 'st-first', tr: 'rise', music: d.first, html: `<p class="st-kicker">${esc(t('story.firstKicker', { year: d.year }))}</p>${stPoster(d.first)}<h2>${esc(d.first.name)}</h2><p class="st-text">${esc(dateFmtYear.format(new Date(d.first.watched_at)))}</p>` });
+    slides.push({ cls: 'st-outro', tr: 'zoom', outro: true, music: s1 || m1, html: `<div class="st-fx"></div><p class="st-kicker">Watchlfy · ${d.year}</p><h2>${esc(t('story.outro'))}</h2>
       <div class="st-summary"><div><span>${esc(t('kpi.watchtime'))}</span><b>${fmt(hoursOf(d.secs))} h</b></div><div><span>${esc(t('kpi.episodes'))}</span><b>${fmt(d.episodes)}</b></div>
         <div class="wide"><span>${esc(t('overview.topSeries'))}</span><b>${esc(s1?.name || '–')}</b></div><div class="wide"><span>${esc(t('story.movieKicker'))}</span><b>${esc(m1?.name || '–')}</b></div></div>
       <div class="st-actions"><button type="button" class="btn btn-primary" data-story="share">${esc(t('story.share'))}</button><button type="button" class="btn btn-ghost st-ghost" data-story="restart">${esc(t('story.restart'))}</button></div>` });
@@ -107,11 +180,14 @@
     $('#story-body').innerHTML = `
       <div class="st-bars-top">${story.slides.map(() => '<span><i></i></span>').join('')}</div>
       <button type="button" class="st-close" data-close-dialog aria-label="${esc(t('btn.close'))}">✕</button>
+      <button type="button" class="st-mute" data-story="mute" aria-pressed="${music.muted}" hidden></button>
+      <a class="st-credit" id="st-credit" target="_blank" rel="noopener" hidden></a>
       <div class="st-stage">${story.slides.map((s, i) => `<section class="st-slide ${s.cls}" data-i="${i}" aria-hidden="true"><div class="st-blobs" aria-hidden="true"><i></i><i></i><i></i></div>${s.bg ? `<div class="st-backdrop" style="background-image:url('${s.bg}')"></div>` : ''}<div class="st-content">${s.html}</div></section>`).join('')}</div>
       <button type="button" class="st-nav prev" data-story="prev" aria-label="${esc(t('story.back'))}"></button>
       <button type="button" class="st-nav next" data-story="next" aria-label="${esc(t('story.next'))}"></button>`;
     $('#story').showModal();
     story.prev = null;
+    music.prefetch(story.slides);
     storyGo(0);
   }
 
@@ -142,6 +218,7 @@
     });
     $$('#story .st-bars-top i').forEach((b, k) => { b.style.width = k < story.i ? '100%' : '0%'; });
     const slide = $(`#story .st-slide[data-i="${story.i}"]`);
+    music.forSlide(cur);
     $$('.st-num', slide).forEach(countUp);
     if (cur.outro) {
       setTimeout(() => confetti($('.st-fx', slide), 50), 300);
@@ -178,7 +255,7 @@
     let swallow = false;
     const reset = (snap) => { inner.classList.toggle('st-snap', snap); inner.style.setProperty('--dy', '0px'); inner.style.setProperty('--ds', '1'); dlg.style.removeProperty('--dim'); };
     dlg.addEventListener('pointerdown', (e) => {
-      if (!e.isPrimary || e.target.closest('.st-actions, .st-close')) return;
+      if (!e.isPrimary || e.target.closest('.st-actions, .st-close, .st-mute, .st-credit')) return;
       g = { x: e.clientX, y: e.clientY, t: performance.now(), id: e.pointerId, drag: false };
       if (e.target.closest('.st-nav')) story.paused = true;
     });
@@ -222,12 +299,14 @@
       else if (act === 'prev') storyGo(story.i - 1);
       else if (act === 'share') shareWrapped();
       else if (act === 'restart') storyGo(0);
+      else if (act === 'mute') music.toggle();
     }, true);
     dlg.addEventListener('keydown', (e) => {
       if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); storyGo(story.i + 1); }
       if (e.key === 'ArrowLeft') storyGo(story.i - 1);
+      if (e.key === 'm' || e.key === 'M') music.toggle();
     });
-    dlg.addEventListener('close', () => { cancelAnimationFrame(story.raf); reset(false); });
+    dlg.addEventListener('close', () => { cancelAnimationFrame(story.raf); reset(false); music.stop(); });
   }
 
   // Hinweis im Dezember/Januar: „Dein Jahr in Serien ist da“

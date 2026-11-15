@@ -7,6 +7,32 @@
    Danach den Cache-Parameter ?v=… in public/*.html hochzählen. */
 window.WatchlfyNews = [
   {
+    id: '2026-11-15b',
+    date: '2026-11-15',
+    items: [
+      {
+        icon: '📺', go: 'overview',
+        t: ['Neues Gesicht: Kanal-Design', 'New look: channel design', 'Nouveau look : design chaînes', 'Nuevo aspecto: diseño de canales', 'Nuovo look: design a canali', 'Ny look: kanaldesign', 'Nyt look: kanaldesign'],
+        d: ['Neues Logo, Röhrenfernseher, Fernbedienung zum Umschalten (Tasten 1–9) und am Handy ein Zapper mit Programmführer.', 'New logo, a tube TV, a remote to switch channels (keys 1–9) and a zapper with TV guide on your phone.', 'Nouveau logo, téléviseur cathodique, télécommande (touches 1–9) et zappeur avec programme sur mobile.', 'Nuevo logo, televisor de tubo, mando para cambiar de canal (teclas 1–9) y zapeador con guía en el móvil.', 'Nuovo logo, TV a tubo, telecomando per cambiare canale (tasti 1–9) e zapper con guida sul telefono.', 'Ny logga, tjock-tv, fjärrkontroll för att byta kanal (tangent 1–9) och zapper med tablå på mobilen.', 'Nyt logo, billedrørs-tv, fjernbetjening til at skifte kanal (tast 1–9) og zapper med programoversigt på mobilen.'],
+      },
+      {
+        icon: '🎞️', go: 'collection',
+        t: ['Wohnzimmer & neue Währung', 'Living room & new currency', 'Salon & nouvelle monnaie', 'Salón y nueva moneda', 'Soggiorno e nuova valuta', 'Vardagsrum & ny valuta', 'Stue & ny valuta'],
+        d: ['Poster an der Wand, Hüllen im Fernsehschrank, zappen am Fernseher. Bezahlt wird mit Filmmetern und Goldtickets.', 'Posters on the wall, cases in the TV cabinet, zap through the TV. You pay with film metres and golden tickets.', 'Affiches au mur, boîtiers dans le meuble TV, zapping sur le téléviseur. On paie en mètres de pellicule et tickets dorés.', 'Pósters en la pared, cajas en el mueble de la tele y zapeo en el televisor. Se paga con metros de película y entradas doradas.', 'Poster al muro, custodie nel mobile TV, zapping sulla TV. Si paga con metri di pellicola e biglietti d’oro.', 'Affischer på väggen, fodral i tv-bänken, zappa på tv:n. Du betalar med filmmeter och guldbiljetter.', 'Plakater på væggen, covers i tv-skabet, zap på tv’et. Du betaler med filmmeter og guldbilletter.'],
+      },
+      {
+        icon: '🎵', go: 'wrapped',
+        t: ['Rückblick mit Filmmusik', 'Review with film music', 'Rétrospective en musique', 'Resumen con música de cine', 'Riepilogo con colonna sonora', 'Återblick med filmmusik', 'Tilbageblik med filmmusik'],
+        d: ['Zu jeder passenden Folie läuft der Soundtrack – mit einem Tipp stumm.', 'Each matching slide plays its soundtrack – mute it with one tap.', 'Chaque diapo adaptée joue sa bande originale – coupe-la d’un geste.', 'Cada diapositiva adecuada suena con su banda sonora; se silencia con un toque.', 'Ogni slide adatta ha la sua colonna sonora – disattivala con un tocco.', 'Varje passande bild spelar sitt soundtrack – stäng av med ett tryck.', 'Hvert passende dias spiller sit soundtrack – slå det fra med et tryk.'],
+      },
+      {
+        icon: '🗂️', go: 'history',
+        t: ['Aufgeräumter Verlauf', 'Tidier history', 'Historique plus clair', 'Historial más ordenado', 'Cronologia più ordinata', 'Snyggare historik', 'Mere overskuelig historik'],
+        d: ['Letzte Woche, danach Monate zum Aufklappen. Im Fortschritt zuerst nur die Top 5.', 'Last week, then months to expand. Progress shows the top 5 first.', 'La semaine passée, puis les mois à déplier. La progression montre d’abord le top 5.', 'La última semana y luego meses desplegables. El progreso muestra primero el top 5.', 'L’ultima settimana, poi i mesi da espandere. Il progresso mostra prima la top 5.', 'Senaste veckan, sedan månader att fälla ut. Framsteg visar först topp 5.', 'Sidste uge, derefter måneder at folde ud. Fremskridt viser først top 5.'],
+      },
+    ],
+  },
+  {
     id: '2026-11-15a',
     date: '2026-11-15',
     items: [

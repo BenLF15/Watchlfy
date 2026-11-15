@@ -307,7 +307,7 @@
       watchTmdb();
     }, 15000);
   }
-  function invalidate() { state.dashboard = null; state.top = null; state.times = null; state.progress = null; hist.items = null; }
+  function invalidate() { state.dashboard = null; state.top = null; state.times = null; state.progress = null; hist.items = null; hist.groups = null; hist.lists = {}; }
 
   // ================================================================ Darstellung & Sprache
   function seasonText() {
@@ -577,6 +577,7 @@
       return `<article class="hero-slide${i === 0 ? ' on' : ''}" data-i="${i}" aria-hidden="${i !== 0}">
         <div class="hero-bg">${back ? `<img class="poster-img" src="${back}" alt="" decoding="async" data-ph="${esc(x.name)}" ${i ? 'loading="lazy"' : 'fetchpriority="high"'} />` : ''}</div>
         <div class="hero-shade" aria-hidden="true"></div>
+        <div class="hero-osd" aria-hidden="true"><span>CH ${String(i + 1).padStart(2, '0')}</span><span class="osd-play">▶ PLAY</span><span class="osd-time">${esc(dur(x.secs, { short: true }))}</span></div>
         <div class="hero-body">
           <p class="hero-kicker">${esc(t(i === 0 ? 'hero.top' : isTv ? 'hero.series' : 'hero.movie', { r: t(`range.long.${state.range}`) }))}</p>
           <h2 class="hero-title">${esc(x.name)}</h2>
@@ -599,6 +600,7 @@
     const el = $('#hero');
     if (!el || !hero.items.length) return;
     hero.i = (i + hero.items.length) % hero.items.length;
+    if (!reduceMotion) { el.classList.remove('zap'); void el.offsetWidth; el.classList.add('zap'); }
     $$('.hero-slide', el).forEach((sl, k) => { sl.classList.toggle('on', k === hero.i); sl.setAttribute('aria-hidden', String(k !== hero.i)); });
     $$('.hero-dots button', el).forEach((b, k) => { b.classList.toggle('on', k === hero.i); });
   }
@@ -790,14 +792,18 @@
 
   // ================================================================ Serien-Fortschritt
   async function loadProgress() { state.progress = await api('/api/progress'); }
+  const PROGRESS_PREVIEW = 5;
   function renderProgress() {
     const d = state.progress;
     if (!d) return;
     $('#progress-continue').innerHTML = d.continue.length ? d.continue.map(continueCard).join('') : `<p class="empty">${esc(t('continue.none'))}</p>`;
     const f = state.progressFilter;
-    const list = d.series.filter((s) => f === 'all' || (f === 'done' ? s.pct === 1 : s.pct !== 1));
+    const all = d.series.filter((s) => f === 'all' || (f === 'done' ? s.pct === 1 : s.pct !== 1));
+    const open = state.progressOpen === f;
+    const list = open ? all : all.slice(0, PROGRESS_PREVIEW);
+    const rest = all.length - PROGRESS_PREVIEW;
     $('#progress-list').innerHTML = list.length ? list.map((s, i) => `
-      <li class="prog" data-title-id="${s.title_id}" style="--i:${Math.min(i, 20)}">
+      <li class="prog${i >= PROGRESS_PREVIEW ? ' unfold' : ''}" data-title-id="${s.title_id}" style="--i:${Math.min(i >= PROGRESS_PREVIEW ? i - PROGRESS_PREVIEW : i, 20)}">
         <div class="cover poster-mini">${poster(s.poster_path, s.name, 'w92')}</div>
         <div class="prog-main">
           <div class="prog-head"><b>${esc(s.name)}</b><span>${s.total ? `${fmt(s.seen)} / ${fmt(s.total)}` : esc(tn('unit.episode', s.seen, { n: fmt(s.seen) }))}</span></div>
@@ -805,34 +811,45 @@
           <div class="prog-seasons">${s.seasons.map((x) => `<span class="ps${x.total && x.seen >= x.total ? ' full' : x.seen ? ' part' : ''}" title="${esc(t('progress.season', { s: x.season, a: x.seen, b: x.total }))}">${x.season}</span>`).join('')}</div>
           <small class="muted">${esc(s.pct === 1 ? t('progress.complete') : s.next ? t('continue.next', { s: s.next.season, e: s.next.episode }) : '')}${s.status === 'Ended' || s.status === 'Canceled' ? ` · ${esc(t('progress.ended'))}` : ''} · ${esc(relTime(s.last))}${s.unnumbered ? ` · ${esc(t('progress.unnumbered', { n: s.unnumbered }))}` : ''}</small>
         </div>
-      </li>`).join('') : `<li class="empty">${esc(state.status?.tmdb?.enabled ? t('progress.none') : t('top.needsTmdb'))}</li>`;
+      </li>`).join('') + (rest > 0 ? `<li class="prog-more"><button type="button" class="btn btn-ghost btn-xs" id="progress-toggle" aria-expanded="${open}">${esc(open ? t('progress.less') : tn('progress.more', rest, { n: rest }))}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button></li>` : '')
+      : `<li class="empty">${esc(state.status?.tmdb?.enabled ? t('progress.none') : t('top.needsTmdb'))}</li>`;
     growBars($('#progress-list'), '.prog-bar span');
   }
 
   // ================================================================ Verlauf
-  const hist = { items: null, done: false, q: '' };
+  // Zusammengefasst: „Letzte 7 Tage“, danach Kalendermonate. Einträge werden erst beim Aufklappen geladen.
+  const hist = { items: null, groups: null, open: new Set(['week']), lists: {}, q: '' };
   async function loadHistory(reset = false) {
-    if (reset) { hist.items = null; hist.done = false; }
-    const before = hist.items?.length ? hist.items[hist.items.length - 1].watched_at : '';
-    const r = await api(`/api/history?limit=60${before ? `&before=${encodeURIComponent(before)}` : ''}${hist.q ? `&q=${encodeURIComponent(hist.q)}` : ''}`);
-    hist.items = [...(hist.items || []), ...r.items];
-    hist.done = r.items.length < 60;
+    if (reset) { hist.groups = null; hist.lists = {}; }
+    const r = await api(`/api/history/groups${hist.q ? `?q=${encodeURIComponent(hist.q)}` : ''}`);
+    hist.groups = r.groups;
+    hist.items = r.groups; // „geladen“-Merker für invalidate()
+    if (hist.q) hist.open = new Set(r.groups.slice(0, 2).map((g) => g.grp));
+    else if (![...hist.open].some((k) => r.groups.some((g) => g.grp === k)) && r.groups[0]) hist.open = new Set([r.groups[0].grp]);
+    await Promise.all([...hist.open].filter((k) => r.groups.some((g) => g.grp === k)).map((k) => loadGroup(k)));
+  }
+  async function loadGroup(grp, more = false) {
+    const cur = hist.lists[grp];
+    if (cur && !more) return;
+    const before = more && cur?.items.length ? cur.items[cur.items.length - 1].watched_at : '';
+    const r = await api(`/api/history?group=${encodeURIComponent(grp)}&limit=120${before ? `&before=${encodeURIComponent(before)}` : ''}${hist.q ? `&q=${encodeURIComponent(hist.q)}` : ''}`);
+    hist.lists[grp] = { items: [...(more ? cur.items : []), ...r.items], done: r.items.length < 120 };
   }
   const epLabel = (v) => (v.kind === 'tv' ? [v.season ? t('ep.s', { n: v.season }) : '', v.episode ? t('ep.e', { n: v.episode }) : '', v.episode_name || ''].filter(Boolean).join(' · ') : '');
-  function renderHistory() {
-    const el = $('#history');
-    if (!hist.items) return;
-    if (!hist.items.length) { el.innerHTML = `<p class="empty card">${esc(hist.q ? t('search.none') : t('empty.range'))}</p>`; $('#history-more').hidden = true; return; }
+  const groupLabel = (g) => (g.grp === 'week' ? t('history.week') : new Intl.DateTimeFormat(LOCALE, { month: 'long', year: 'numeric' }).format(new Date(`${g.grp}-15T12:00:00`)));
+  function groupBody(grp) {
+    const l = hist.lists[grp];
+    if (!l) return '<div class="hg-loading"><span class="spinner"></span></div>';
     const byDay = new Map();
-    for (const v of hist.items) {
+    for (const v of l.items) {
       const k = isoDay(new Date(v.watched_at));
       if (!byDay.has(k)) byDay.set(k, []);
       byDay.get(k).push(v);
     }
-    el.innerHTML = [...byDay].map(([day, items]) => {
+    return [...byDay].map(([day, items]) => {
       const secs = items.reduce((a, v) => a + v.secs, 0);
-      return `<section class="card day-card" data-day="${day}">
-        <header class="day-head"><h3 class="day-title">${esc(longDayFmt.format(parseDay(day)))}</h3><span class="muted small">${esc(dur(secs))} · ${esc(tn('unit.entry', items.length, { n: items.length }))}</span></header>
+      return `<section class="day-card" data-day="${day}">
+        <header class="day-head"><h4 class="day-title">${esc(longDayFmt.format(parseDay(day)))}</h4><span class="muted small">${esc(dur(secs))} · ${esc(tn('unit.entry', items.length, { n: items.length }))}</span></header>
         <ul class="hist-list">${items.map((v) => `
           <li class="hist" ${v.title_id ? `data-title-id="${v.title_id}"` : `data-title-key="${esc(v.tkey)}"`}>
             <div class="cover poster-mini">${poster(v.poster_path, v.name, 'w92')}</div>
@@ -840,9 +857,43 @@
             <div class="hist-meta">${serviceDot(v.source)}<small>${v.time_known ? esc(timeFmt.format(new Date(v.watched_at))) : ''}<br>${esc(dur(v.secs))}${v.estimated ? '*' : ''}</small></div>
           </li>`).join('')}</ul>
       </section>`;
-    }).join('') + (hist.items.some((v) => v.estimated) ? `<p class="muted small est-note">* ${esc(t('est.tooltip'))}</p>` : '');
-    $('#history-more').hidden = hist.done;
+    }).join('') + (l.done ? '' : `<button type="button" class="btn btn-ghost btn-xs hg-more" data-hg-more="${esc(grp)}">${esc(t('history.more'))}</button>`);
+  }
+  function renderHistory() {
+    const el = $('#history');
+    $('#history-more').hidden = true;
+    if (!hist.groups) return;
+    if (!hist.groups.length) { el.innerHTML = `<p class="empty card">${esc(hist.q ? t('search.none') : t('empty.range'))}</p>`; return; }
+    el.innerHTML = hist.groups.map((g, i) => {
+      const open = hist.open.has(g.grp);
+      return `<section class="card hist-group${open ? ' open' : ''}${g.grp === 'week' ? ' is-week' : ''}" data-grp="${esc(g.grp)}" style="--i:${Math.min(i, 12)}">
+        <button type="button" class="hg-head" aria-expanded="${open}" aria-controls="hg-${esc(g.grp)}">
+          <span class="hg-stack" aria-hidden="true">${(g.top || []).slice(0, 3).map((x) => `<span class="cover poster-mini">${poster(x.poster_path, x.name, 'w92')}</span>`).join('')}</span>
+          <span class="hg-text"><b class="hg-title">${esc(groupLabel(g))}</b>
+            <small>${esc(dur(g.secs))} · ${esc(tn('unit.entry', g.n, { n: fmt(g.n) }))} · ${esc(tn('history.titles', g.titles, { n: fmt(g.titles) }))}</small>
+            ${(g.top || []).length ? `<small class="hg-top">${esc(g.top.slice(0, 3).map((x) => x.name).join(' · '))}</small>` : ''}</span>
+          <span class="hg-chev" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></span>
+        </button>
+        <div class="hg-body" id="hg-${esc(g.grp)}"><div class="hg-inner">${open ? groupBody(g.grp) : ''}</div></div>
+      </section>`;
+    }).join('') + (Object.values(hist.lists).some((l) => l.items.some((v) => v.estimated)) ? `<p class="muted small est-note">* ${esc(t('est.tooltip'))}</p>` : '');
     decoratePanel('history');
+  }
+  async function toggleGroup(sec) {
+    const grp = sec.dataset.grp;
+    const open = !hist.open.has(grp);
+    const head = $('.hg-head', sec);
+    head.setAttribute('aria-expanded', String(open));
+    if (open) {
+      hist.open.add(grp);
+      sec.classList.add('open');
+      const inner = $('.hg-inner', sec);
+      if (!hist.lists[grp]) { inner.innerHTML = groupBody(grp); try { await loadGroup(grp); } catch (err) { toast(errMsg(err), true); } }
+      inner.innerHTML = groupBody(grp);
+    } else {
+      hist.open.delete(grp);
+      sec.classList.remove('open');
+    }
   }
   function bindHistory() {
     let timer;
@@ -850,14 +901,21 @@
       clearTimeout(timer);
       timer = setTimeout(async () => {
         hist.q = e.target.value.trim();
+        if (!hist.q) hist.open = new Set(['week']);
         await loadHistory(true).catch((err) => toast(errMsg(err), true));
         renderHistory();
       }, 280);
     });
-    $('#history-more').addEventListener('click', async (e) => {
-      e.target.disabled = true;
-      try { await loadHistory(); renderHistory(); } catch (err) { toast(errMsg(err), true); }
-      e.target.disabled = false;
+    $('#history').addEventListener('click', async (e) => {
+      const head = e.target.closest('.hg-head');
+      if (head) { toggleGroup(head.closest('.hist-group')); return; }
+      const more = e.target.closest('[data-hg-more]');
+      if (more) {
+        more.disabled = true;
+        try { await loadGroup(more.dataset.hgMore, true); } catch (err) { toast(errMsg(err), true); }
+        const sec = more.closest('.hist-group');
+        $('.hg-inner', sec).innerHTML = groupBody(sec.dataset.grp);
+      }
     });
   }
 
@@ -1711,65 +1769,76 @@
   }
 
   // ================================================================ Navigation
-  const BN_MAIN = ['overview', 'top', 'collection'];
-  const BN_MORE = [
-    ['history', '🕰️', 'nav.history'], ['times', '⏰', 'nav.times'], ['progress', '🎞️', 'nav.progress'], ['wrapped', '🎁', 'nav.wrapped'],
-    ['friends', '👥', 'nav.friends'], ['profile', '👤', 'nav.profile'], ['admin', '🛠️', 'nav.admin'],
-  ];
-  function paintBottomNav() {
-    const nav = $('#bottom-nav');
-    const inMore = !BN_MAIN.includes(state.panel);
-    $$('[data-bn]', nav).forEach((b) => {
-      const on = b.dataset.bn === state.panel || (b.dataset.bn === 'more' && inMore);
-      b.classList.toggle('on', on);
-      b.setAttribute('aria-current', on ? 'page' : 'false');
-    });
-    const more = BN_MORE.find(([k]) => k === state.panel);
-    $('.bn-more-label', nav).textContent = inMore && more ? t(more[2]) : t('nav.more');
+  /** Kanäle in Reihenfolge der Fernbedienung (Admin liegt auf der 0). */
+  const channels = () => [...$$('#panel-tabs [data-panel]')].filter((b) => !b.hidden).map((b) => ({ panel: b.dataset.panel, ch: b.dataset.ch, icon: $('svg', b)?.outerHTML || '' }));
+  const chNo = (panel) => String($(`#panel-tabs [data-panel="${panel}"]`)?.dataset.ch ?? '').padStart(2, '0');
+  function paintZapper() {
+    const p = state.panel === 'profile' ? null : state.panel;
+    $('#zap-ch').textContent = p ? chNo(p) : 'AV';
+    $('#zap-name').textContent = t(PANEL_TITLE[state.panel] || 'nav.overview');
   }
-  function bindBottomNav() {
-    const nav = $('#bottom-nav');
-    nav.addEventListener('click', (e) => {
-      const b = e.target.closest('[data-bn]');
-      if (!b) return;
-      if (b.dataset.bn === 'import') { openImport(null); return; }
-      if (b.dataset.bn === 'more') {
-        const items = BN_MORE.filter(([k]) => k !== 'admin' || state.account?.is_admin);
-        $('#more-grid').innerHTML = items.map(([k, ico, key], i) => `<button type="button" class="ms-item${k === state.panel ? ' on' : ''}" data-ms="${k}" style="--i:${i}"><span>${ico}</span><b>${esc(t(key))}</b></button>`).join('');
-        $('#more-sheet').showModal();
-        return;
-      }
-      if (b.dataset.bn === state.panel) { window.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' }); return; }
-      showPanel(b.dataset.bn);
+  /** Kanalwechsel-Einblendung oben rechts wie beim Röhrenfernseher. */
+  function zapOsd(panel) {
+    const el = $('#osd-zap');
+    if (!el || reduceMotion) return;
+    $('#osd-ch').textContent = panel === 'profile' ? 'AV' : `CH ${chNo(panel)}`;
+    $('#osd-name').textContent = t(PANEL_TITLE[panel] || 'nav.overview');
+    el.hidden = false;
+    el.classList.remove('show'); void el.offsetWidth; el.classList.add('show');
+    clearTimeout(zapOsd.timer);
+    zapOsd.timer = setTimeout(() => { el.hidden = true; }, 1600);
+  }
+  function zap(dir) {
+    const list = channels().filter((c) => c.panel !== 'admin');
+    const i = list.findIndex((c) => c.panel === state.panel);
+    const next = list[(i < 0 ? 0 : i + dir + list.length) % list.length];
+    showPanel(next.panel);
+  }
+  function openGuide() {
+    const now = new Date();
+    $('#guide-clock').textContent = new Intl.DateTimeFormat(LOCALE, { hour: '2-digit', minute: '2-digit' }).format(now);
+    $('#guide-list').innerHTML = channels().map((c, i) => `<button type="button" class="guide-item${c.panel === state.panel ? ' on' : ''}" data-guide="${c.panel}" style="--i:${i}">
+        <b class="guide-ch">${esc(String(c.ch).padStart(2, '0'))}</b>${c.icon}<span>${esc(t(PANEL_TITLE[c.panel]))}</span>${c.panel === state.panel ? `<em>${esc(t('nav.onAir'))}</em>` : ''}</button>`).join('')
+      + `<button type="button" class="guide-item${state.panel === 'profile' ? ' on' : ''}" data-guide="profile" style="--i:9"><b class="guide-ch">AV</b><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4.5 4.2-7 8-7s7 2.5 8 7"/></svg><span>${esc(t('nav.profile'))}</span></button>`;
+    $('#guide').showModal();
+  }
+  function bindZapper() {
+    $('#zapper').addEventListener('click', (e) => {
+      const z = e.target.closest('[data-zap]');
+      if (z) { zap(Number(z.dataset.zap)); return; }
+      if (e.target.closest('#zap-display')) openGuide();
     });
-    const sheet = $('#more-sheet');
-    sheet.addEventListener('click', (e) => {
-      const it = e.target.closest('[data-ms]');
-      if (it) { sheet.close(); showPanel(it.dataset.ms); return; }
-      if (e.target === sheet) sheet.close();
+    const guide = $('#guide');
+    guide.addEventListener('click', (e) => {
+      const it = e.target.closest('[data-guide]');
+      if (it) { guide.close(); showPanel(it.dataset.guide); return; }
+      if (e.target === guide) guide.close();
     });
     let y0 = null;
-    sheet.addEventListener('touchstart', (e) => { y0 = e.touches[0].clientY; }, { passive: true });
-    sheet.addEventListener('touchmove', (e) => { if (y0 != null) { const dy = Math.max(0, e.touches[0].clientY - y0); sheet.style.transform = dy ? `translateY(${dy}px)` : ''; } }, { passive: true });
-    sheet.addEventListener('touchend', (e) => { const dy = (e.changedTouches[0]?.clientY ?? y0) - (y0 ?? 0); sheet.style.transform = ''; y0 = null; if (dy > 80) sheet.close(); });
+    guide.addEventListener('touchstart', (e) => { y0 = e.touches[0].clientY; }, { passive: true });
+    guide.addEventListener('touchmove', (e) => { if (y0 != null) { const dy = Math.max(0, e.touches[0].clientY - y0); guide.style.transform = dy ? `translateY(${dy}px)` : ''; } }, { passive: true });
+    guide.addEventListener('touchend', (e) => { const dy = (e.changedTouches[0]?.clientY ?? y0) - (y0 ?? 0); guide.style.transform = ''; y0 = null; if (dy > 80) guide.close(); });
+    // Ziffern 1–9 / 0 auf der Tastatur schalten um wie auf der Fernbedienung
+    document.addEventListener('keydown', (e) => {
+      if (e.ctrlKey || e.metaKey || e.altKey || !/^[0-9]$/.test(e.key)) return;
+      if (e.target.closest?.('input, textarea, select, [contenteditable]') || document.querySelector('dialog[open]')) return;
+      const b = $(`#panel-tabs [data-ch="${e.key}"]`);
+      if (b && !b.hidden) showPanel(b.dataset.panel);
+    });
     document.addEventListener('focusin', (e) => { if (e.target.matches('input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]), textarea, select')) document.body.classList.add('kb-open'); });
     document.addEventListener('focusout', () => setTimeout(() => { if (!document.activeElement?.matches?.('input, textarea, select')) document.body.classList.remove('kb-open'); }, 50));
   }
   function setupTabs() {
     const tabs = $('#panel-tabs');
-    const ink = document.createElement('span');
-    ink.className = 'tab-ink';
-    tabs.prepend(ink);
-    const place = (animate) => {
-      const btn = $(`button[data-panel="${state.panel}"]`, tabs);
-      $$('button', tabs).forEach((b) => b.setAttribute('aria-selected', String(b === btn)));
-      if (!btn || btn.hidden) { ink.style.width = '0'; return; }
-      ink.style.transition = animate ? '' : 'none';
-      ink.style.height = `${btn.offsetHeight}px`;
-      ink.style.transform = `translateY(${btn.offsetTop}px)`;
+    const place = () => {
+      $$('button', tabs).forEach((b) => {
+        const on = b.dataset.panel === state.panel;
+        b.setAttribute('aria-selected', String(on));
+        if (on && b.animate && !reduceMotion && place.last !== state.panel) b.animate([{ transform: 'translateY(2px) scale(0.97)' }, { transform: 'none' }], { duration: 260, easing: 'cubic-bezier(.3,1.6,.6,1)' });
+      });
+      place.last = state.panel;
     };
     tabs.addEventListener('click', (e) => { const b = e.target.closest('button[data-panel]'); if (b) showPanel(b.dataset.panel); });
-    window.addEventListener('resize', () => place(false));
     tabs.place = place;
   }
   const PANEL_TITLE = { overview: 'nav.overview', top: 'nav.top', times: 'nav.times', progress: 'nav.progress', history: 'nav.history', wrapped: 'nav.wrapped', friends: 'nav.friends', collection: 'nav.collection', admin: 'nav.admin', profile: 'nav.profile' };
@@ -1799,7 +1868,7 @@
     paintPageHead();
     placeHeroChrome();
     $('#panel-tabs').place?.(true);
-    paintBottomNav();
+    paintZapper();
     if (empty) $('#empty-services').innerHTML = servicesGrid(false);
     requestAnimationFrame(() => $$('.segmented').forEach((s) => s.realign?.()));
   }
@@ -1813,6 +1882,7 @@
       return;
     }
     if (changed) window.dispatchEvent(new CustomEvent('watchlfy:leave', { detail: state.panel }));
+    if (changed) zapOsd(panel);
     state.panel = panel;
     session.set('panel', panel);
     applyView();
@@ -1834,7 +1904,7 @@
       if (panel === 'top') { if (!state.top || state.top.kind !== state.topKind) await loadTop(); return renderTop(); }
       if (panel === 'times') { if (!state.times) await loadTimes(); return renderTimes(); }
       if (panel === 'progress') { showSkeleton('#progress-list'); if (!state.progress) await loadProgress(); return renderProgress(); }
-      if (panel === 'history') { if (!hist.items) await loadHistory(true); return renderHistory(); }
+      if (panel === 'history') { if (!hist.groups) await loadHistory(true); return renderHistory(); }
     } catch (err) {
       console.error(err);
       toast(errMsg(err), true);
@@ -1974,6 +2044,7 @@
     });
     segmented($('#top-kind'), 'kind', state.topKind, (k) => { state.topKind = k; store.set('topKind', k); renderPanel('top'); });
     segmented($('#progress-filter'), 'filter', state.progressFilter, (f) => { state.progressFilter = f; renderProgress(); });
+    $('#progress-list').addEventListener('click', (e) => { if (!e.target.closest('#progress-toggle')) return; state.progressOpen = state.progressOpen === state.progressFilter ? null : state.progressFilter; renderProgress(); if (!state.progressOpen) $('#progress-list').scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' }); });
     // Nach Trakt-OAuth zurück
     const q = new URLSearchParams(location.search);
     if (q.get('trakt')) {
@@ -2003,20 +2074,14 @@
     upd();
   }
 
+  /** Gimmick beim ersten Öffnen: die Röhre geht an (Lichtstreifen öffnet sich zum Bild). */
   function playLeader() {
     const el = $('#leader');
     if (!el || reduceMotion || navigator.webdriver || session.get('leader')) return;
     session.set('leader', '1');
     el.hidden = false;
-    const num = $('.leader-num', el);
-    let n = 3;
-    const tick = setInterval(() => {
-      n -= 1;
-      if (n > 0) { num.textContent = String(n); num.classList.remove('pop'); void num.offsetWidth; num.classList.add('pop'); return; }
-      clearInterval(tick);
-      el.classList.add('done');
-      setTimeout(() => { el.hidden = true; }, 600);
-    }, 420);
+    el.classList.add('on');
+    setTimeout(() => { el.hidden = true; }, 1100);
   }
 
   async function init() {
@@ -2025,7 +2090,7 @@
     bindAppbar();
     bindHero();
     setupTabs();
-    bindBottomNav();
+    bindZapper();
     bindGlobal();
     bindImport();
     bindHistory();

@@ -199,6 +199,17 @@ CREATE TABLE IF NOT EXISTS note_ledger (
   platinum    integer NOT NULL DEFAULT 0,
   created_at  timestamptz NOT NULL DEFAULT now()
 );
+-- Währung v2: Filmmeter (m) + Goldtickets (t) statt Bronze/Silber/Gold/Platin. Alte Buchungen werden einmalig umgerechnet.
+ALTER TABLE note_ledger ADD COLUMN IF NOT EXISTS meters integer NOT NULL DEFAULT 0;
+ALTER TABLE note_ledger ADD COLUMN IF NOT EXISTS tickets integer NOT NULL DEFAULT 0;
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM app_meta WHERE key = 'currency_v2') THEN
+    UPDATE note_ledger SET meters = meters + bronze * 10 + silver * 40, tickets = tickets + gold + platinum * 4,
+      bronze = 0, silver = 0, gold = 0, platinum = 0
+     WHERE bronze <> 0 OR silver <> 0 OR gold <> 0 OR platinum <> 0;
+    INSERT INTO app_meta (key, value) VALUES ('currency_v2', 'done') ON CONFLICT (key) DO NOTHING;
+  END IF;
+END $$;
 CREATE UNIQUE INDEX IF NOT EXISTS note_ledger_key_uq ON note_ledger (account_id, key) WHERE key IS NOT NULL;
 CREATE INDEX IF NOT EXISTS note_ledger_account_idx ON note_ledger (account_id, created_at DESC);
 
@@ -228,3 +239,12 @@ CREATE TABLE IF NOT EXISTS screening_sessions (
   created_at  timestamptz NOT NULL DEFAULT now(),
   PRIMARY KEY (account_id, day)
 );
+
+-- ---------------------------------------------------------------- Filmmusik (Rückblick)
+CREATE TABLE IF NOT EXISTS soundtrack_cache (
+  key         text PRIMARY KEY,
+  track_id    text,
+  data        jsonb,
+  fetched_at  timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS soundtrack_cache_track_idx ON soundtrack_cache (track_id);

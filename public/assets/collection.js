@@ -1,19 +1,20 @@
-/* Watchlfy – Sammlung: DVD-/Blu-ray-Wand, Filmplakat-Galerie, begehbare Retro-Videothek, Vorführraum, Noten, Geschenke. */
+/* Watchlfy – Sammlung: Wohnzimmerwand mit Fernseher, Fernsehschrank und Postern, begehbare Retro-Videothek, Vorführraum, Kinokasse (Filmmeter & Goldtickets), Geschenke. */
 (() => {
   'use strict';
   const W = window.Watchlfy;
   if (!W) return;
   const { api, postJSON, t, tn, esc, fmt, toast, errMsg, $, $$, poster, tmdbImg, reduceMotion, confetti, CLOSE_BTN, store, session } = W;
 
-  const TIERS = ['bronze', 'silver', 'gold', 'platinum'];
+  const CUR = ['meters', 'tickets'];
   const RAR = ['common', 'rare', 'epic', 'legendary', 'mythic'];
-  const col = { data: null, tab: session.get('colTab') || 'shelf', entered: false, round: null };
+  const col = { data: null, tab: session.get('colTab') || 'shelf', entered: false, round: null, ch: Number(session.get('tvCh') || 0) };
 
   // ---------------------------------------------------------------- Bausteine
-  const coin = (tier, n, cls = '') => `<span class="coin coin-${tier} ${cls}" title="${esc(t(`notes.${tier}`))}"><i aria-hidden="true"></i><b>${fmt(n)}</b><span class="sr-only">${esc(t(`notes.${tier}`))}</span></span>`;
-  const price = (p, free = false) => (free ? `<span class="price-tag free">${esc(t('shop.free'))}</span>` : `<span class="price-tag">${coin(p.tier, p.amount)}</span>`);
-  const costHtml = (r) => TIERS.filter((x) => r[x]).map((x) => coin(x, r[x])).join('') || '0';
-  const balanceHtml = (b) => `<div class="balance" aria-label="${esc(t('notes.title'))}">${TIERS.map((x) => coin(x, b[x])).join('')}</div>`;
+  /** Filmmeter (aufgespulte Rolle) oder Goldticket. */
+  const coin = (cur, n, cls = '') => `<span class="coin coin-${cur} ${cls}" title="${esc(t(`cur.${cur}`))}"><i aria-hidden="true"></i><b>${fmt(n)}</b><small aria-hidden="true">${esc(t(`cur.${cur}Short`))}</small><span class="sr-only">${esc(t(`cur.${cur}`))}</span></span>`;
+  const price = (p, free = false) => (free ? `<span class="price-tag free">${esc(t('shop.free'))}</span>` : `<span class="price-tag">${coin(p.cur, p.amount)}</span>`);
+  const costHtml = (r) => CUR.filter((x) => r[x]).map((x) => coin(x, r[x])).join('') || '0';
+  const balanceHtml = (b) => `<div class="balance" aria-label="${esc(t('notes.title'))}">${CUR.map((x) => coin(x, b[x])).join('')}</div>`;
 
   /** DVD-/Blu-ray-Hülle oder Filmplakat. */
   function caseHtml(it, { size = '', tag = 'div', attrs = '' } = {}) {
@@ -67,28 +68,85 @@
     if (col.tab === 'store') body.innerHTML = storeHtml();
     else if (col.tab === 'screening') body.innerHTML = screeningHtml();
     else if (col.tab === 'notes') body.innerHTML = notesHtml();
-    else body.innerHTML = shelfHtml(col.data.items);
+    else body.innerHTML = shelfHtml(col.data.items, { channels: col.data.channels || [] });
     if (col.tab === 'screening' && col.data.session && !col.data.session.done) bindScreeningImage();
   }
 
-  // ---------------------------------------------------------------- Regal: DVD-/Blu-ray-Wand + Plakat-Galerie
-  function shelfHtml(items, { readonly = false } = {}) {
+  // ---------------------------------------------------------------- Wohnzimmer: Wand mit Postern, Fernseher, Fernsehschrank
+  const COBWEB = '<svg class="cobweb" viewBox="0 0 100 100" aria-hidden="true"><path d="M0 0 100 100M0 0 50 100M0 0 100 50M0 0 0 100M0 0 100 0M0 0 80 100M0 0 100 80"/><path d="M0 22Q12 13 22 0M0 42Q24 27 42 0M0 64Q38 40 64 0M0 86Q52 54 86 0"/></svg>';
+  const dust = (n = 14) => `<span class="dust" aria-hidden="true">${Array.from({ length: n }, (_, i) => `<i style="--x:${(i * 37) % 100}%;--y:${(i * 53) % 100}%;--d:${6 + (i % 5) * 1.7}s;--dl:${-(i * 0.9)}s;--s:${1 + (i % 3)}px"></i>`).join('')}</span>`;
+
+  /** Rücken einer DVD/Blu-ray im Fernsehschrank. */
+  const spine = (it, k) => `<button type="button" class="spine f-${it.format} r-${it.rarity}" data-own="${esc(it.id)}" style="--hue:${it.hue};--i:${k};--h:${it.format === 'bluray' ? 86 : 96}px" aria-label="${esc(`${it.name} – ${t(`fmt.${it.format}`)}`)}">
+      <span class="spine-band">${it.format === 'bluray' ? 'BD' : 'DVD'}</span><span class="spine-name">${esc(it.name)}</span>${it.rarity !== 'common' ? '<span class="spine-gem" aria-hidden="true"></span>' : ''}</button>`;
+
+  function tvHtml(channels) {
+    if (!channels.length) {
+      return `<div class="crt off"><div class="crt-screen"><div class="crt-snow" aria-hidden="true"></div><p class="crt-nosignal">${esc(t('tv.noSignal'))}</p></div>${tvControls(0)}</div>`;
+    }
+    const i = ((col.ch % channels.length) + channels.length) % channels.length;
+    const c = channels[i];
+    const img = tmdbImg(c.backdrop_path, 'w780') || tmdbImg(c.poster_path, 'w500');
+    return `<div class="crt" data-tv>
+      <div class="crt-screen" data-title-id="${c.id}" role="button" tabindex="0" aria-label="${esc(t('tv.open', { n: c.name }))}">
+        ${img ? `<img class="poster-img crt-img" src="${img}" alt="" decoding="async" data-ph="${esc(c.name)}" />` : ''}
+        <span class="crt-osd"><b>CH ${String(i + 1).padStart(2, '0')}</b><span>${esc(t(c.kind === 'movie' ? 'kind.movie' : 'kind.tv'))}</span></span>
+        <span class="crt-title"><b>${esc(c.name)}</b>${c.year ? `<small>${c.year}</small>` : ''}</span>
+        <span class="crt-glass" aria-hidden="true"></span>
+      </div>
+      ${tvControls(channels.length, i)}
+    </div>`;
+  }
+  const tvControls = (n, i = 0) => `<div class="crt-panel">
+      <span class="crt-brand" aria-hidden="true">WATCHLFY</span>
+      <button type="button" class="knob" data-tv-zap="-1" ${n > 1 ? '' : 'disabled'} aria-label="${esc(t('nav.prev'))}"><span>‹</span></button>
+      <span class="crt-count" aria-live="polite">${n ? `${i + 1}/${n}` : '–'}</span>
+      <button type="button" class="knob" data-tv-zap="1" ${n > 1 ? '' : 'disabled'} aria-label="${esc(t('nav.next'))}"><span>›</span></button>
+      <span class="crt-led${n ? ' on' : ''}" aria-hidden="true"></span>
+    </div>`;
+
+  function shelfHtml(items, { readonly = false, channels = [] } = {}) {
     const discs = items.filter((i) => i.format !== 'poster');
     const posters = items.filter((i) => i.format === 'poster');
-    if (!items.length) {
-      return `<section class="card empty-shelf"><div class="es-art" aria-hidden="true">📼</div><h3>${esc(t(readonly ? 'col.friendEmpty' : 'col.empty'))}</h3>${readonly ? '' : `<p class="muted">${esc(t('col.emptyText'))}</p><button type="button" class="btn btn-primary" data-coltab-go="store">🏪 ${esc(t('col.toStore'))}</button>`}</section>`;
-    }
-    const rows = [];
-    for (let i = 0; i < discs.length; i += 8) rows.push(discs.slice(i, i + 8));
-    return `
-      <section class="card wall-card">
-        <header class="card-head"><div><h3>${esc(t('col.wall'))}</h3><p class="muted small">${esc(tn('col.wallSub', discs.length, { n: discs.length }))}</p></div></header>
-        <div class="disc-wall">${rows.map((r) => `<div class="shelf-row">${r.map((it, k) => caseHtml(it, { tag: 'button', attrs: `type="button" data-own="${esc(it.id)}" style="--i:${k}" aria-label="${esc(it.name)}"` })).join('')}</div>`).join('') || `<p class="muted small">${esc(t('col.noDiscs'))}</p>`}</div>
-      </section>
-      <section class="card gallery-card">
-        <header class="card-head"><div><h3>${esc(t('col.gallery'))}</h3><p class="muted small">${esc(tn('col.gallerySub', posters.length, { n: posters.length }))}</p></div></header>
-        <div class="poster-wall">${posters.map((it, k) => caseHtml(it, { tag: 'button', attrs: `type="button" data-own="${esc(it.id)}" style="--i:${k};--tilt:${((it.hue % 7) - 3) * 0.6}deg" aria-label="${esc(it.name)}"` })).join('') || `<p class="muted small">${esc(t('col.noPosters'))}</p>`}</div>
-      </section>`;
+    const shelves = [];
+    for (let i = 0; i < discs.length; i += 14) shelves.push(discs.slice(i, i + 14));
+    while (shelves.length < 2) shelves.push([]);
+    const wall = posters.length
+      ? `<div class="wall-posters">${posters.map((it, k) => `<div class="hang" style="--i:${k};--tilt:${((it.hue % 9) - 4) * 0.7}deg"><span class="nail" aria-hidden="true"></span>${caseHtml(it, { tag: 'button', attrs: `type="button" data-own="${esc(it.id)}" aria-label="${esc(it.name)}"` })}</div>`).join('')}</div>`
+      : `<div class="wall-empty">${COBWEB}<span class="ghost-frame" aria-hidden="true"></span><span class="ghost-frame b" aria-hidden="true"></span><p>${esc(t(readonly ? 'col.friendEmpty' : 'col.noPosters'))}</p></div>`;
+    return `<section class="living${items.length ? '' : ' is-empty'}">
+      <div class="wallpaper" aria-hidden="true"></div>
+      <span class="lamp" aria-hidden="true"></span>
+      ${posters.length ? '' : dust(18)}
+      <h3 class="sr-only">${esc(t('col.gallery'))}</h3>
+      ${wall}
+      <div class="tv-unit">
+        ${readonly ? '' : tvHtml(channels)}
+        <div class="cabinet${discs.length ? '' : ' is-empty'}">
+          <h3 class="sr-only">${esc(t('col.wall'))}</h3>
+          <span class="cab-top" aria-hidden="true"></span>
+          ${shelves.map((row, r) => `<div class="cab-shelf">${row.map((it, k) => spine(it, k + r * 14)).join('')}${row.length ? '' : `${r === 0 ? COBWEB : ''}${dust(6)}`}</div>`).join('')}
+          ${discs.length ? '' : `<p class="cab-empty">${esc(t(readonly ? 'col.friendEmpty' : 'col.noDiscs'))}</p>`}
+          <span class="cab-glass" aria-hidden="true"></span>
+          <span class="cab-feet" aria-hidden="true"><i></i><i></i></span>
+        </div>
+      </div>
+      <div class="floor" aria-hidden="true"></div>
+      <p class="living-sum">${esc(tn('col.wallSub', discs.length, { n: discs.length }))} · ${esc(tn('col.gallerySub', posters.length, { n: posters.length }))}</p>
+      ${!readonly && !items.length ? `<div class="living-cta"><p class="muted">${esc(t('col.emptyText'))}</p><button type="button" class="btn btn-primary" data-coltab-go="store">🏪 ${esc(t('col.toStore'))}</button></div>` : ''}
+    </section>`;
+  }
+
+  function zapTv(dir) {
+    const ch = col.data?.channels || [];
+    if (ch.length < 2) return;
+    col.ch = (col.ch + dir + ch.length) % ch.length;
+    session.set('tvCh', String(col.ch));
+    const tv = $('[data-tv]');
+    if (!tv) return;
+    tv.outerHTML = tvHtml(ch);
+    const fresh = $('[data-tv]');
+    if (fresh && !reduceMotion) fresh.classList.add('zap');
   }
 
   function openOwned(id, list = col.data.items, readonly = false) {
@@ -161,7 +219,7 @@
     if (!it) return;
     btn?.classList.add('lifted');
     $('#item-dialog').dataset.lifted = id;
-    const can = col.data.freeShop || (col.data.balance[it.price.tier] || 0) >= it.price.amount;
+    const can = col.data.freeShop || (col.data.balance[it.price.cur] || 0) >= it.price.amount;
     $('#item-body').innerHTML = `${CLOSE_BTN()}
       <div class="item-stage lift">${caseHtml(it, { size: 'lg' })}</div>
       <h2 id="item-title">${itemTitle(it)}</h2>
@@ -273,24 +331,37 @@
     } catch (err) { toast(errMsg(err), true); btn.disabled = false; }
   }
 
-  // ---------------------------------------------------------------- Noten
+  // ---------------------------------------------------------------- Kinokasse
   function notesHtml() {
     const d = col.data;
     const rew = (r) => `<span class="earn-rew">+${costHtml(r)}</span>`;
-    return `<section class="card notes-card"><header class="card-head"><div><h3>${esc(t('notes.title'))}</h3><p class="muted small">${esc(t('notes.sub'))}</p></div></header>
-        ${balanceHtml(d.balance)}
-        <div class="exchange">${TIERS.slice(0, 3).map((tier, i) => `<button type="button" class="btn btn-ghost btn-xs" data-exchange="${tier}" ${d.balance[tier] >= d.exchangeRate ? '' : 'disabled'}>${coin(tier, d.exchangeRate)} → ${coin(TIERS[i + 1], 1)}</button>`).join('')}</div>
+    const tp = d.ticketPrice || 200;
+    const can = Math.floor(Number(d.balance.meters) / tp);
+    return `<section class="card box-office">
+        <div class="bo-window">
+          <p class="bo-sign">${esc(t('notes.title'))}</p>
+          <div class="bo-wallet">
+            <div class="bo-reel"><span class="reel-ico" aria-hidden="true"></span><b>${fmt(d.balance.meters)}</b><small>${esc(t('cur.meters'))}</small></div>
+            <div class="bo-ticket"><span class="ticket-ico" aria-hidden="true"></span><b>${fmt(d.balance.tickets)}</b><small>${esc(t('cur.tickets'))}</small></div>
+          </div>
+          <p class="muted small">${esc(t('notes.sub', { n: tp }))}</p>
+          <div class="exchange">
+            <button type="button" class="btn btn-primary btn-xs" data-exchange="1" ${can >= 1 ? '' : 'disabled'}>${coin('meters', tp)} → ${coin('tickets', 1)}</button>
+            ${can >= 5 ? `<button type="button" class="btn btn-ghost btn-xs" data-exchange="5">${coin('meters', tp * 5)} → ${coin('tickets', 5)}</button>` : ''}
+          </div>
+        </div>
       </section>
       <section class="card"><header class="card-head"><div><h3>${esc(t('earn.title'))}</h3><p class="muted small">${esc(t('earn.sub'))}</p></div></header>
-        <ul class="earn-list">${d.earn.map((e) => `<li class="${e.done ? 'done' : ''}"><span class="earn-ico">${e.done ? '✓' : { visit: '📅', import: '📥', trakt: '🔗', friend: '👥', birthday: '🎂', hours: '⏱️', streak: '🔥', complete: '🏁', quiz: '📽️', gift: '🎁', wrapped: '🎬' }[e.id] || '•'}</span>
+        <ul class="earn-list">${d.earn.map((e) => `<li class="${e.done ? 'done' : ''}"><span class="earn-ico">${e.done ? '✓' : { reel: '🎞️', visit: '📅', import: '📥', trakt: '🔗', friend: '👥', birthday: '🎂', hours: '⏱️', streak: '🔥', complete: '🏁', quiz: '📽️', gift: '🎁', wrapped: '🎬' }[e.id] || '•'}</span>
           <div><b>${esc(t(`earn.${e.id}`, { n: e.n ?? '' }))}</b><small>${esc(t(`earn.${e.id}Sub`, { n: e.n ?? '', h: e.have ?? '' }))}${e.repeat ? ` · ${esc(t('earn.repeat'))}` : ''}</small></div>${rew(e.reward)}</li>`).join('')}</ul></section>`;
   }
 
   // ---------------------------------------------------------------- Noten-Einblendung
   function noteToast(fresh) {
     const el = $('#note-toast');
-    const sum = { bronze: 0, silver: 0, gold: 0, platinum: 0 };
-    fresh.forEach((f) => TIERS.forEach((x) => { sum[x] += f[x] || 0; }));
+    const sum = { meters: 0, tickets: 0 };
+    fresh.forEach((f) => CUR.forEach((x) => { sum[x] += f[x] || 0; }));
+    if (!sum.meters && !sum.tickets) return;
     const label = fresh.map((f) => t(`earned.${f.label}`)).filter((x, i, a) => a.indexOf(x) === i).slice(0, 2).join(' · ');
     el.innerHTML = `<span class="nt-coins">+${costHtml(sum)}</span><span>${esc(label)}</span>`;
     el.hidden = false;
@@ -361,13 +432,15 @@
     if (rf) { refine(rf.dataset.refine, rf); return; }
     const ex = e.target.closest('[data-exchange]');
     if (ex) {
-      try { const r = await postJSON('/api/collection/exchange', { from: ex.dataset.exchange }); col.data.balance = r.balance; render(); } catch (err) { toast(errMsg(err), true); }
+      try { const r = await postJSON('/api/collection/exchange', { count: Number(ex.dataset.exchange) }); col.data.balance = r.balance; toast(t('notes.exchanged', { n: ex.dataset.exchange })); render(); } catch (err) { toast(errMsg(err), true); }
       return;
     }
     if (e.target.closest('[data-scr-start]')) { if (await scrAction('/api/screening/start', {})) renderBody(); return; }
     if (e.target.closest('[data-scr-reveal]')) { if (await scrAction('/api/screening/reveal', { round: col.round })) renderBody(); return; }
     const an = e.target.closest('[data-scr-answer]');
     if (an) { answer(an.dataset.scrAnswer, an); return; }
+    const z = e.target.closest('[data-tv-zap]');
+    if (z) { zapTv(Number(z.dataset.tvZap)); return; }
     const g = e.target.closest('[data-gift]');
     if (g) { openGift(g); return; }
     const fc = e.target.closest('[data-friend-collection]');
@@ -379,6 +452,29 @@
         $('#item-dialog').showModal();
       } catch (err) { toast(errMsg(err), true); }
     }
+  });
+  // Am Fernseher wischen oder scrollen schaltet um
+  let tvX = null;
+  let wheelAt = 0;
+  document.addEventListener('touchstart', (e) => { tvX = e.target.closest?.('.crt-screen') ? e.touches[0].clientX : null; }, { passive: true });
+  document.addEventListener('touchend', (e) => {
+    if (tvX === null) return;
+    const dx = (e.changedTouches[0]?.clientX ?? tvX) - tvX;
+    tvX = null;
+    if (Math.abs(dx) > 40) zapTv(dx < 0 ? 1 : -1);
+  }, { passive: true });
+  document.addEventListener('wheel', (e) => {
+    if (!e.target.closest?.('.crt-screen')) return;
+    e.preventDefault();
+    const now = Date.now();
+    if (now - wheelAt < 350) return;
+    wheelAt = now;
+    zapTv((Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY) > 0 ? 1 : -1);
+  }, { passive: false });
+  document.addEventListener('keydown', (e) => {
+    if (!e.target.closest?.('.crt-screen')) return;
+    if (e.key === 'ArrowRight') zapTv(1);
+    if (e.key === 'ArrowLeft') zapTv(-1);
   });
   $('#item-dialog').addEventListener('close', () => { $$('.st-item.lifted').forEach((x) => x.classList.remove('lifted')); });
   $('#free-shop-switch')?.addEventListener('click', async (e) => {

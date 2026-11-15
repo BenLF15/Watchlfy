@@ -18,6 +18,7 @@ const env = {
   TMDB_API_KEY: 'test', TMDB_API_BASE: `http://127.0.0.1:${mockPort}/3`, TMDB_IMAGE_BASE: `http://127.0.0.1:${mockPort}/t/p`,
   TRAKT_CLIENT_ID: 'cid', TRAKT_API_BASE: `http://127.0.0.1:${mockPort}`, TRAKT_AUTH_BASE: `http://127.0.0.1:${mockPort}`,
   TRAKT_REDIRECT_URI: `http://127.0.0.1:${appPort}/auth/trakt/callback`,
+  ITUNES_API_BASE: `http://127.0.0.1:${mockPort}/itunes`,
 };
 const kids = [
   spawn(process.execPath, ['tests/mock-server.js', String(mockPort)], { env, stdio: 'inherit' }),

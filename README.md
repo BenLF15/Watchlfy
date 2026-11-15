@@ -15,15 +15,15 @@ Dienst selbst gibt.
 | **Übersicht** | Schauzeit, Ø pro Tag, Folgen, Filme, Serien, längste Serie (Tage am Stück), Lieblingszeit, bester Tag, Dienst-Verteilung, Weiterschauen, Top-Serien/-Filme, Zeitraum 7 T / 30 T / 90 T / 1 J / Alles |
 | **Top-Listen** | Serien, Filme, Genres, Schauspieler, Länder (Podium + Rangliste) |
 | **Schauzeiten** | Heatmap Wochentag × Uhrzeit, nach Stunde/Wochentag, Binge-Erkennung („5 Folgen am Stück“) |
-| **Fortschritt** | Pro Serie gesehene vs. alle Folgen (TMDB, ohne Specials), Staffel-Kacheln, „Weiterschauen“ mit nächster Folge |
-| **Verlauf** | Nach Tagen, Suche, Detailansicht mit Poster, Backdrop, Staffel-Raster, Besetzung, Gesamtzeit |
+| **Fortschritt** | Pro Serie gesehene vs. alle Folgen (TMDB, ohne Specials), Staffel-Kacheln, „Weiterschauen“ mit nächster Folge; zuerst die Top 5, Rest aufklappbar |
+| **Verlauf** | Letzte 7 Tage, danach Monate – jeweils aufklappbar (Einträge werden erst dann geladen), darin nach Tagen; Suche, Detailansicht mit Poster, Backdrop, Staffel-Raster, Besetzung, Gesamtzeit |
 | **TMDB** | Abgleich im Hintergrund mit Treffer-Sicherheit; unsichere Treffer im Profil (oder im Detail) korrigieren |
 | **Trakt.tv** | OAuth, Sync alle 30 Min., „Läuft gerade“ über Trakt-Scrobble, Bewertungen; Doppelungen mit Importen werden übersprungen |
-| **Rückblick** | „Dein Jahr in Serien“ als Vollbild-Story mit Übergängen, Wischen schließt, Teilen |
+| **Rückblick** | „Dein Jahr in Serien“ als Vollbild-Story mit Übergängen, Wischen schließt, Teilen; zu jeder passenden Folie läuft die Filmmusik (30-s-Hörprobe über die iTunes-Suche, weich überblendet, stummschaltbar, Taste M) |
 | **Freunde** | Anfrage per Benutzername, Match-Wert, gemeinsame Titel, Top-5-Vergleich, Sammlung ansehen |
-| **Sammlung** | Noten (Bronze/Silber/Gold/Platin), DVD-/Blu-ray-Wand, Filmplakat-Galerie, Seltenheiten gewöhnlich → selten (Steelbook) → episch (Collector’s Edition) → legendär (signiert) → mythisch (holografisch), begehbare Retro-Videothek mit Tagesangebot, versteckte Geschenke |
+| **Sammlung** | Wohnzimmerwand: Poster an der Wand, DVDs/Blu-rays im Fernsehschrank, Röhrenfernseher zum Durchzappen der eigenen Serien und Filme (Knöpfe, Wischen, Mausrad), leer mit Staub und Spinnweben. Währung: **Filmmeter** (5 m je geschauter Stunde, Belohnungen) und **Goldtickets** (Seltenes; 200 m = 1 Ticket an der Kinokasse); Seltenheiten gewöhnlich → selten (Steelbook) → episch (Collector’s Edition) → legendär (signiert) → mythisch (holografisch), begehbare Retro-Videothek mit Tagesangebot, versteckte Geschenke |
 | **Vorführraum** | Tägliches Quiz: Titel am unscharfen Standbild erraten (schärfer = weniger Punkte), Veredeln von Sammlerstücken |
-| **Komfort** | Konten mit Admin-Rolle, Profilbild (Upload, Zuschneiden, Vorlagen), Hell/Dunkel/System/Jahreszeit, Liquid Glass, festliche Effekte (inkl. geschmückter Videothek), View Transitions, „Neu in Watchlfy“, Zoom-Sperre, PWA, 7 Sprachen (de, en, fr, es, it, sv, da), „Bewegung reduzieren“ wird respektiert, Datenschutz-Seite, Datenexport, Admin-Backup/Restore |
+| **Komfort** | Konten mit Admin-Rolle, Profilbild (Upload, Zuschneiden, Vorlagen), Kanal-Design (Röhrenfernseher, Fernbedienung mit Tasten 1–9, am Handy Zapper + Programmführer), Hell/Dunkel/System/Jahreszeit, Liquid Glass, festliche Effekte (inkl. geschmückter Videothek), View Transitions, „Neu in Watchlfy“, Zoom-Sperre, PWA, 7 Sprachen (de, en, fr, es, it, sv, da), „Bewegung reduzieren“ wird respektiert, Datenschutz-Seite, Datenexport, Admin-Backup/Restore |
 
 ## So kommst du an deine Daten
 
@@ -86,7 +86,7 @@ Die E2E-Tests brauchen eine Wegwerf-Datenbank (`TEST_DATABASE_URL`, Standard
 ```
 src/         server.js (Start/Setup-Seite) · app.js (Routen, CSP, Sessions) · users.js · imports.js
              parse/ (csv, tables, detect, titles) · tmdb.js · trakt.js · stats.js · features.js (Rückblick, Freunde)
-             collection.js (Noten, Videothek, Vorführraum) · scheduler.js · backup.js · schema.sql
+             collection.js (Filmmeter/Goldtickets, Videothek, Vorführraum) · soundtrack.js (Filmmusik) · scheduler.js · backup.js · schema.sql
 public/      index.html · app.js · assets/ (watchlfy.css = Design-System, extras.js, collection.js, i18n.js, changelog.js, theme.js)
 tests/       unit/ · e2e/ · fixtures.js · mock-server.js · start-test-server.js
 docs/PLAN.md Datenmodell & Import-Formate
@@ -108,4 +108,7 @@ docs/PLAN.md Datenmodell & Import-Formate
   Zwischen zwei verschiedenen Streaming-Diensten (gleicher Titel bei Netflix und Prime) wird nicht zusammengeführt.
 - **Vorführraum:** Das Standbild wird serverseitig in kleiner Auflösung geliefert (echte Unschärfe); wer die
   Netzwerk-Tools öffnet, kann trotzdem schummeln.
+- **Filmmusik** im Rückblick: offizielle 30-Sekunden-Hörproben aus der öffentlichen iTunes-Suche (ohne Schlüssel), über den
+  eigenen Server durchgereicht. Gefunden wird nur, was als Soundtrack-Album unter dem Titel erscheint – bei Nischentiteln
+  bleibt die Folie still bzw. die vorige Musik läuft weiter. Abschaltbar mit `MUSIC_PREVIEWS=false`.
 - Poster, Backdrops und Metadaten stammen von TMDB. *This product uses the TMDB API but is not endorsed or certified by TMDB.*

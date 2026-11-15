@@ -14,6 +14,7 @@ import { lastBackup, restoreBackup, streamBackup } from './backup.js';
 import { registerJob, runAllJobs, startScheduler } from './scheduler.js';
 import * as trakt from './trakt.js';
 import * as collection from './collection.js';
+import * as soundtrack from './soundtrack.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const publicDir = path.join(root, 'public');
@@ -141,7 +142,8 @@ app.get('/vendor/chart.umd.min.js', (_req, res) =>
   res.sendFile(path.join(root, 'node_modules/chart.js/dist/chart.umd.min.js'), { maxAge: '7d' }),
 );
 // Watchlfy-Schriften: Plakatschrift (Überschriften) und Textschrift – selbst ausgeliefert (CSP: font-src 'self')
-app.use('/vendor/display', express.static(path.join(root, 'node_modules/@fontsource-variable/big-shoulders-display/files'), { maxAge: '30d' }));
+app.use('/vendor/display', express.static(path.join(root, 'node_modules/@fontsource-variable/unbounded/files'), { maxAge: '30d' }));
+app.use('/vendor/osd', express.static(path.join(root, 'node_modules/@fontsource/vt323/files'), { maxAge: '30d' }));
 app.use('/vendor/text', express.static(path.join(root, 'node_modules/@fontsource-variable/manrope/files'), { maxAge: '30d' }));
 // Optional: externer Trigger (z. B. cron-job.org), falls der interne Zeitplan nicht reicht.
 // Aufruf: GET /cron/run?key=<CRON_SECRET>
@@ -422,8 +424,9 @@ api.get('/times', wrap(async (req, res) => res.json(await stats.times(req.accoun
 api.get('/progress', wrap(async (req, res) => res.json(await stats.progress(req.account.id))));
 api.get('/history', wrap(async (req, res) => {
   const before = req.query.before && !Number.isNaN(Date.parse(req.query.before)) ? new Date(req.query.before).toISOString() : null;
-  res.json({ items: await stats.history(req.account.id, { before, q: req.query.q, limit: req.query.limit }) });
+  res.json({ items: await stats.history(req.account.id, { before, q: req.query.q, limit: req.query.limit, group: req.query.group }) });
 }));
+api.get('/history/groups', wrap(async (req, res) => res.json({ groups: await stats.historyGroups(req.account.id, { q: req.query.q }) })));
 api.get('/title', wrap(async (req, res) => {
   const d = await stats.titleDetail(req.account.id, { titleId: req.query.id || null, tkey: req.query.key || null });
   if (!d) throw new users.UserError('Nicht gefunden.', 404, 'notFound');
@@ -498,6 +501,12 @@ api.get('/wrapped', wrap(async (req, res) => {
   const year = yearParam(req.query.year) || years[0] || new Date().getFullYear();
   res.json({ years, ...(await features.wrapped(req.account.id, year)) });
 }));
+api.get('/soundtrack', wrap(async (req, res) => {
+  const title = String(req.query.title || '').trim().slice(0, 120);
+  const kind = req.query.kind === 'tv' || req.query.kind === 'movie' ? req.query.kind : null;
+  res.json({ enabled: soundtrack.available(), track: title ? await soundtrack.find(title, { kind, year: yearParam(req.query.year) }) : null });
+}));
+api.get('/soundtrack/audio/:id', wrap(soundtrack.audioProxy));
 
 // ---------------------------------------------------------------- Freunde
 api.get('/friends', wrap(async (req, res) => res.json(await features.listFriends(req.account.id))));
@@ -510,7 +519,7 @@ api.get('/friends/:id/compare', wrap(async (req, res) => res.json(await features
 const intParam = (v) => { const n = Number(v); if (!Number.isInteger(n) || n < 0 || n > 50) throw new users.UserError('Ungültig.', 400, 'quizRound'); return n; };
 api.get('/collection', wrap(async (req, res) => res.json(await collection.overviewFor(req.account))));
 api.post('/collection/buy', express.json({ limit: '1kb' }), wrap(async (req, res) => res.json(await collection.buy(req.account, req.body?.id))));
-api.post('/collection/exchange', express.json({ limit: '1kb' }), wrap(async (req, res) => res.json(await collection.exchange(req.account, req.body?.from))));
+api.post('/collection/exchange', express.json({ limit: '1kb' }), wrap(async (req, res) => res.json(await collection.exchange(req.account, req.body?.count))));
 api.post('/collection/refine', express.json({ limit: '1kb' }), wrap(async (req, res) => res.json(await collection.refine(req.account, req.body?.id))));
 api.post('/collection/gift', wrap(async (req, res) => res.json(await collection.openGift(req.account))));
 api.post('/collection/event', express.json({ limit: '1kb' }), wrap(async (req, res) => res.json(await collection.event(req.account, req.body || {}))));

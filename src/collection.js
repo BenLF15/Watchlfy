@@ -1,5 +1,6 @@
-// Sammlung & Noten-Wirtschaft:
-// - Noten (Bronze, Silber, Gold, Platin) verdienen – Buchungen in note_ledger, einmalige Belohnungen über eindeutigen Schlüssel.
+// Sammlung & Kino-Kasse:
+// - Währung: Filmmeter (m, Kleingeld – wächst mit jeder geschauten Stunde) und Goldtickets (t, für Seltenes).
+//   Buchungen in note_ledger (Spalten meters/tickets), einmalige Belohnungen über eindeutigen Schlüssel.
 // - Begehbare Retro-Videothek mit täglich neuem Angebot aus den eigenen Serien/Filmen (DVD, Blu-ray, Filmplakat).
 // - Seltenheiten: gewöhnlich → selten (Steelbook) → episch (Collector’s Edition) → legendär (signiert) → mythisch (holografisch).
 // - Vorführraum: tägliches Quiz (Standbild wird schärfer = weniger Punkte) und Veredeln von Sammlerstücken.
@@ -10,61 +11,81 @@ import { areFriends, wrappedYears } from './features.js';
 import * as stats from './stats.js';
 import { UserError } from './users.js';
 
-export const TIERS = ['bronze', 'silver', 'gold', 'platinum'];
+export const CURRENCIES = ['meters', 'tickets'];
 export const RARITIES = ['common', 'rare', 'epic', 'legendary', 'mythic'];
 const EDITIONS = {
   dvd: ['standard', 'steelbook', 'collector', 'signed', 'holo'],
   bluray: ['standard', 'steelbook', 'collector', 'signed', 'holo'],
   poster: ['print', 'teaser', 'vintage', 'signed', 'holo'],
 };
-const R = (bronze = 0, silver = 0, gold = 0, platinum = 0) => ({ bronze, silver, gold, platinum });
+/** Betrag: Filmmeter und Goldtickets. */
+const R = (meters = 0, tickets = 0) => ({ meters, tickets });
 
 // ---------------------------------------------------------------- Belohnungen
 const ONCE = {
-  starter: R(6, 2, 1),
-  import: R(0, 0, 1),
-  trakt: R(0, 2),
-  'friend-1': R(0, 1),
-  'friend-5': R(0, 0, 1),
-  'birthday-set': R(0, 1),
-  'collect-1': R(2),
-  'collect-10': R(0, 1),
-  'collect-25': R(0, 0, 1),
-  'collect-50': R(0, 0, 0, 1),
-  'mythic-1': R(0, 0, 0, 1),
+  starter: R(150, 1),
+  import: R(0, 1),
+  trakt: R(80),
+  'friend-1': R(40),
+  'friend-5': R(0, 1),
+  'birthday-set': R(40),
+  'collect-1': R(20),
+  'collect-10': R(40),
+  'collect-25': R(0, 1),
+  'collect-50': R(0, 3),
+  'mythic-1': R(0, 4),
 };
-const HOUR_STEPS = { 10: R(3), 25: R(0, 1), 50: R(0, 2), 100: R(0, 0, 1), 250: R(0, 0, 2), 500: R(0, 0, 0, 1), 1000: R(0, 0, 0, 2) };
-const STREAK_STEPS = { 3: R(2), 7: R(0, 1), 14: R(0, 2), 30: R(0, 0, 1), 60: R(0, 0, 0, 1) };
-const RECURRING = { visit: R(1), complete: R(0, 1), wrapped: R(0, 1), bday: R(0, 0, 1), gift: R(2) };
-const EXCHANGE_RATE = 4;
+/** Je geschauter Stunde spult sich Film auf die Rolle. */
+const METERS_PER_HOUR = 5;
+const HOUR_STEPS = { 25: R(0, 1), 100: R(0, 1), 250: R(0, 2), 500: R(0, 3), 1000: R(0, 4) };
+const STREAK_STEPS = { 3: R(20), 7: R(40), 14: R(80), 30: R(0, 1), 60: R(0, 4) };
+const RECURRING = { visit: R(10), complete: R(40), wrapped: R(40), bday: R(0, 1), gift: R(30) };
+/** Kinokasse: so viele Filmmeter kostet ein Goldticket. */
+const TICKET_PRICE = 200;
 
-const PRICE = { common: ['bronze', 2, 4], rare: ['silver', 1, 2], epic: ['gold', 1, 2], legendary: ['platinum', 1, 1], mythic: ['platinum', 3, 3] };
-const POSTER_PRICE = { common: ['bronze', 1, 2], rare: ['silver', 1, 1], epic: ['gold', 1, 1], legendary: ['gold', 3, 3], mythic: ['platinum', 2, 2] };
-const REFINE_COST = { rare: R(0, 2), epic: R(0, 0, 2), legendary: R(0, 0, 0, 1), mythic: R(0, 0, 0, 2) };
+// [Währung, min, max]
+const PRICE = { common: ['meters', 20, 40], rare: ['meters', 40, 80], epic: ['tickets', 1, 2], legendary: ['tickets', 4, 4], mythic: ['tickets', 12, 12] };
+const POSTER_PRICE = { common: ['meters', 10, 20], rare: ['meters', 40, 40], epic: ['tickets', 1, 1], legendary: ['tickets', 3, 3], mythic: ['tickets', 8, 8] };
+const REFINE_COST = { rare: R(80), epic: R(0, 2), legendary: R(0, 4), mythic: R(0, 8) };
 const ODDS = { common: 55, rare: 27, epic: 12, legendary: 5, mythic: 1 };
 const SHOP = { tv: 8, movie: 8, poster: 8 };
 
 const hashInt = (s) => crypto.createHash('sha256').update(s).digest().readUInt32BE(0);
 const localDate = (d = new Date()) => new Intl.DateTimeFormat('en-CA', { timeZone: config.timezone }).format(d);
 
-// ---------------------------------------------------------------- Noten-Konto
+// ---------------------------------------------------------------- Konto
 export async function balance(accountId, db = { query }) {
   const { rows } = await db.query(
-    `SELECT COALESCE(sum(bronze), 0) AS bronze, COALESCE(sum(silver), 0) AS silver, COALESCE(sum(gold), 0) AS gold, COALESCE(sum(platinum), 0) AS platinum
-       FROM note_ledger WHERE account_id = $1`,
+    'SELECT COALESCE(sum(meters), 0)::int AS meters, COALESCE(sum(tickets), 0)::int AS tickets FROM note_ledger WHERE account_id = $1',
     [accountId],
   );
   return rows[0];
 }
 
+const book = (db, accountId, r, sign = 1) => db.query('INSERT INTO note_ledger (account_id, meters, tickets) VALUES ($1, $2, $3)', [accountId, sign * r.meters, sign * r.tickets]);
+
 /** Einmalige Gutschrift (idempotent über key). Gibt true zurück, wenn neu. */
 async function grant(accountId, key, r, db = { query }) {
   const res = await db.query(
-    `INSERT INTO note_ledger (account_id, key, bronze, silver, gold, platinum) VALUES ($1, $2, $3, $4, $5, $6)
+    `INSERT INTO note_ledger (account_id, key, meters, tickets) VALUES ($1, $2, $3, $4)
      ON CONFLICT (account_id, key) WHERE key IS NOT NULL DO NOTHING`,
-    [accountId, key, r.bronze, r.silver, r.gold, r.platinum],
+    [accountId, key, r.meters, r.tickets],
   );
   return res.rowCount > 0;
+}
+
+/** Filmrolle: Meter aus der gesamten Schauzeit – wächst nur, schrumpft nie (auch wenn Importe gelöscht werden). */
+async function growReel(accountId, secs) {
+  const want = Math.floor((secs / 3600) * METERS_PER_HOUR);
+  const { rows } = await query(`SELECT meters FROM note_ledger WHERE account_id = $1 AND key = 'reel'`, [accountId]);
+  const have = rows[0]?.meters ?? 0;
+  if (want <= have) return 0;
+  await query(
+    `INSERT INTO note_ledger (account_id, key, meters) VALUES ($1, 'reel', $2)
+     ON CONFLICT (account_id, key) WHERE key IS NOT NULL DO UPDATE SET meters = GREATEST(note_ledger.meters, EXCLUDED.meters)`,
+    [accountId, want],
+  );
+  return want - have;
 }
 
 /** Prüft alle Belohnungen und schreibt neue gut. Gibt die frischen Gutschriften zurück. */
@@ -83,6 +104,8 @@ export async function checkRewards(account) {
     query(`SELECT count(*) AS n, count(*) FILTER (WHERE rarity = 'mythic') AS mythic FROM collection WHERE account_id = $1`, [id]),
     stats.progress(id),
   ]);
+  const grown = await growReel(id, ov.secs);
+  if (grown > 0) fresh.push({ key: 'reel', label: 'reel', ...R(grown) });
   if (c[0].n > 0) await give('import', ONCE.import, 'import');
   if (tr.length) await give('trakt', ONCE.trakt, 'trakt');
   if (fr[0].n >= 1) await give('friend-1', ONCE['friend-1'], 'friend');
@@ -105,6 +128,7 @@ function earnList(ledgerKeys, ov) {
   const nextStreak = Object.keys(STREAK_STEPS).map(Number).find((n) => !has(`streak-${n}`));
   const today = localDate();
   return [
+    { id: 'reel', reward: R(METERS_PER_HOUR), repeat: true },
     { id: 'visit', reward: RECURRING.visit, done: has(`visit:${today}`), repeat: true },
     { id: 'import', reward: ONCE.import, done: has('import') },
     { id: 'trakt', reward: ONCE.trakt, done: has('trakt') },
@@ -113,7 +137,7 @@ function earnList(ledgerKeys, ov) {
     nextHours ? { id: 'hours', n: nextHours, have: Math.floor(ov.secs / 3600), reward: HOUR_STEPS[nextHours], done: false } : null,
     nextStreak ? { id: 'streak', n: nextStreak, have: ov.streak.days, reward: STREAK_STEPS[nextStreak], done: false } : null,
     { id: 'complete', reward: RECURRING.complete, repeat: true },
-    { id: 'quiz', reward: R(0, 0, 1), repeat: true, done: has(`screening:${today}`) },
+    { id: 'quiz', reward: R(0, 1), repeat: true, done: has(`screening:${today}`) },
     { id: 'gift', reward: RECURRING.gift, repeat: true, done: has(`gift:${today}`) },
     { id: 'wrapped', reward: RECURRING.wrapped, repeat: true },
   ].filter(Boolean);
@@ -143,7 +167,7 @@ function rollRarity(seed) {
 
 function makeItem(title, format, rarity, seedExtra = '') {
   const table = format === 'poster' ? POSTER_PRICE : PRICE;
-  const [tier, lo, hi] = table[rarity];
+  const [cur, lo, hi] = table[rarity];
   const key = `${title.id}|${format}|${rarity}`;
   return {
     id: `${format}-${title.id}-${rarity}`,
@@ -156,7 +180,7 @@ function makeItem(title, format, rarity, seedExtra = '') {
     year: title.year,
     poster_path: title.poster_path,
     hue: hashInt(`${key}#hue${seedExtra}`) % 360,
-    price: { tier, amount: lo + (hashInt(`${key}#price`) % (hi - lo + 1)) },
+    price: { cur, amount: lo + (hashInt(`${key}#price`) % (hi - lo + 1)) },
   };
 }
 
@@ -189,8 +213,8 @@ async function findShopItem(accountId, itemId) {
   return Object.values(items).flat().find((x) => x.id === itemId) || null;
 }
 
-const canPay = (bal, cost) => TIERS.every((t) => Number(bal[t]) >= (cost[t] || 0));
-const priceToR = (p) => ({ ...R(), [p.tier]: p.amount });
+const canPay = (bal, cost) => CURRENCIES.every((c) => Number(bal[c]) >= (cost[c] || 0));
+const priceToR = (p) => ({ ...R(), [p.cur]: p.amount });
 
 /** Sammlerstück kaufen. */
 export async function buy(account, itemId) {
@@ -201,8 +225,8 @@ export async function buy(account, itemId) {
   const cost = free ? R() : priceToR(it.price);
   await withTransaction(async (db) => {
     await db.query('SELECT pg_advisory_xact_lock($1)', [account.id]);
-    if (!canPay(await balance(account.id, db), cost)) throw new UserError('Nicht genug Noten.', 402, 'shopTooPoor');
-    await db.query('INSERT INTO note_ledger (account_id, bronze, silver, gold, platinum) VALUES ($1, $2, $3, $4, $5)', [account.id, -cost.bronze, -cost.silver, -cost.gold, -cost.platinum]);
+    if (!canPay(await balance(account.id, db), cost)) throw new UserError('Nicht genug Filmmeter oder Tickets.', 402, 'shopTooPoor');
+    await book(db, account.id, cost, -1);
     await db.query(
       `INSERT INTO collection (account_id, item_id, format, rarity, edition, title_id, name, year, poster_path, hue, price) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
       [account.id, it.id, it.format, it.rarity, it.edition, it.title_id, it.name, it.year, it.poster_path, it.hue, JSON.stringify(it.price)],
@@ -212,16 +236,14 @@ export async function buy(account, itemId) {
   return { ok: true, item: { ...it, owned: true }, balance: await balance(account.id), fresh };
 }
 
-/** 4 Noten einer Stufe → 1 Note der nächsten Stufe. */
-export async function exchange(account, from) {
-  const i = TIERS.indexOf(from);
-  if (i < 0 || i >= TIERS.length - 1) throw new UserError('Ungültiger Tausch.', 400, 'invalidSetting');
+/** Kinokasse: Filmmeter gegen Goldtickets tauschen. */
+export async function exchange(account, count = 1) {
+  const n = Math.max(1, Math.min(20, Number.parseInt(count, 10) || 1));
   await withTransaction(async (db) => {
     await db.query('SELECT pg_advisory_xact_lock($1)', [account.id]);
     const bal = await balance(account.id, db);
-    if (Number(bal[from]) < EXCHANGE_RATE) throw new UserError('Nicht genug Noten.', 402, 'shopTooPoor');
-    const row = { ...R(), [from]: -EXCHANGE_RATE, [TIERS[i + 1]]: 1 };
-    await db.query('INSERT INTO note_ledger (account_id, bronze, silver, gold, platinum) VALUES ($1, $2, $3, $4, $5)', [account.id, row.bronze, row.silver, row.gold, row.platinum]);
+    if (Number(bal.meters) < TICKET_PRICE * n) throw new UserError('Nicht genug Filmmeter.', 402, 'shopTooPoor');
+    await book(db, account.id, R(-TICKET_PRICE * n, n));
   });
   return { ok: true, balance: await balance(account.id) };
 }
@@ -236,8 +258,8 @@ export async function refine(account, itemId) {
   const cost = account.free_shop && account.is_admin ? R() : REFINE_COST[next];
   await withTransaction(async (db) => {
     await db.query('SELECT pg_advisory_xact_lock($1)', [account.id]);
-    if (!canPay(await balance(account.id, db), cost)) throw new UserError('Nicht genug Noten.', 402, 'shopTooPoor');
-    await db.query('INSERT INTO note_ledger (account_id, bronze, silver, gold, platinum) VALUES ($1, $2, $3, $4, $5)', [account.id, -cost.bronze, -cost.silver, -cost.gold, -cost.platinum]);
+    if (!canPay(await balance(account.id, db), cost)) throw new UserError('Nicht genug Filmmeter oder Tickets.', 402, 'shopTooPoor');
+    await book(db, account.id, cost, -1);
     await db.query('UPDATE collection SET rarity = $3, edition = $4 WHERE account_id = $1 AND item_id = $2', [account.id, it.item_id, next, EDITIONS[it.format][RARITIES.indexOf(next)]]);
   });
   const fresh = await checkRewards(account);
@@ -250,7 +272,7 @@ export const refineCosts = () => REFINE_COST;
 export async function openGift(account) {
   const day = localDate();
   const roll = hashInt(`${account.id}|gift|${day}`) % 100;
-  const reward = roll < 50 ? R(3) : roll < 80 ? R(0, 1) : roll < 95 ? R(0, 0, 1) : R(0, 0, 0, 1);
+  const reward = roll < 50 ? R(30) : roll < 80 ? R(60) : roll < 95 ? R(0, 1) : R(0, 3);
   if (!(await grant(account.id, `gift:${day}`, reward))) throw new UserError('Das heutige Geschenk hast du schon geöffnet.', 409, 'giftTaken');
   return { ok: true, reward, balance: await balance(account.id) };
 }
@@ -331,7 +353,7 @@ export async function sessionAnswer(account, round, choice) {
   let reward = null;
   if (done && !s.rewarded) {
     const max = s.rounds.length * POINTS[0];
-    reward = s.score >= max * 0.7 ? R(0, 0, 1) : s.score >= max * 0.4 ? R(0, 1) : R(2);
+    reward = s.score >= max * 0.7 ? R(0, 1) : s.score >= max * 0.4 ? R(40) : R(20);
     await grant(account.id, `screening:${s.day}`, reward);
     s.rewarded = true;
   }
@@ -364,9 +386,10 @@ export async function overviewFor(account) {
   ]);
   const keys = new Set(ledger.map((l) => l.key));
   return {
-    balance: bal, fresh, items, shop, earn: earnList(keys, ov), refineCosts: REFINE_COST, exchangeRate: EXCHANGE_RATE,
+    balance: bal, fresh, items, shop, earn: earnList(keys, ov), refineCosts: REFINE_COST, ticketPrice: TICKET_PRICE,
     gift: !keys.has(`gift:${localDate()}`), freeShop: Boolean(account.free_shop && account.is_admin),
     session: publicSession(session), nextDay: nextLocalMidnight(),
+    channels: (await titlePool(account.id)).slice(0, 40).map((x) => ({ id: x.id, kind: x.kind, name: x.name, year: x.year, poster_path: x.poster_path, backdrop_path: x.backdrop_path, views: Number(x.views) })),
   };
 }
 

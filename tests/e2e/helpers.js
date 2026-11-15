@@ -74,11 +74,11 @@ export async function goPanel(page, panel) {
   const mobile = (page.viewportSize()?.width || 1000) < 700;
   if (panel === 'profile') { if (await page.locator('#view-profile:not([hidden])').count()) return; await page.click('#profile-btn'); await page.waitForSelector('#view-profile:not([hidden])'); return; }
   if (!mobile) { await page.click(`#panel-tabs [data-panel="${panel}"]`); return; }
-  if (await page.locator(`#bottom-nav [data-bn="${panel}"]`).count()) { await page.click(`#bottom-nav [data-bn="${panel}"]`); return; }
-  if (panel === 'profile') { if (await page.locator('#view-profile:not([hidden])').count()) return; await page.click('#profile-btn'); return; }
-  await page.click('#bottom-nav [data-bn="more"]');
-  await page.click(`#more-sheet [data-ms="${panel}"]`);
-  await expect(page.locator('#more-sheet')).not.toHaveAttribute('open', '');
+  // Handy: Programmführer über den Zapper öffnen und Kanal wählen
+  await page.click('#zap-display');
+  await expect(page.locator('#guide')).toHaveAttribute('open', '');
+  await page.click(`#guide [data-guide="${panel}"]`);
+  await expect(page.locator('#guide')).not.toHaveAttribute('open', '');
 }
 
 /** Option eines <select> per Teiltext wählen. */
@@ -87,9 +87,8 @@ export async function selectByText(page, selector, text) {
   await page.selectOption(selector, value);
 }
 
-/** Import-Assistent öffnen: Desktop über die Seitenleiste, Handy über den Knopf im Dock. */
+/** Import-Assistent öffnen: Aufnahme-Knopf oben rechts. */
 export async function openImport(page) {
-  if (await page.locator('#import-open').isVisible()) await page.click('#import-open');
-  else await page.click('#bottom-nav [data-bn="import"]');
+  await page.click('#import-open');
   await expect(page.locator('#import-dialog')).toHaveAttribute('open', '');
 }

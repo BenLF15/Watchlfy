@@ -11,7 +11,7 @@ test('Darstellung, Liquid Glass und Sprache werden gespeichert', async ({ page }
   await shot(page, ti, 'profile-light-glass');
   await page.click('#lang-picker [data-lang="en"]');
   await page.waitForSelector('body.ready');
-  await expect(page.locator('#panel-tabs [data-panel="overview"]')).toHaveText('Overview');
+  await expect(page.locator('#panel-tabs [data-panel="overview"] span')).toHaveText('Overview');
   const st = await (await page.request.get('/api/status')).json();
   expect(st.account.theme).toBe('light');
   expect(st.account.glass).toBe(true);
