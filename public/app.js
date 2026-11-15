@@ -111,10 +111,9 @@
   const SERVICES = {
     netflix: { name: 'Netflix', color: '#e50914', icon: 'N' },
     prime: { name: 'Prime Video', color: '#1a98ff', icon: 'P' },
-    max: { name: 'Max', color: '#2c4cff', icon: 'M' },
+    max: { name: 'HBO Max', color: '#2c4cff', icon: 'M' },
     disney: { name: 'Disney+', color: '#0f6ad8', icon: 'D' },
     apple: { name: 'Apple TV+', color: '#6e7378', icon: 'A' },
-    wow: { name: 'WOW', color: '#8e3df5', icon: 'W' },
     other: { name: null, color: '#8a7f8f', icon: '…' },
     trakt: { name: 'Trakt', color: '#ed2224', icon: 'T' },
   };

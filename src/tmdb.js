@@ -121,9 +121,11 @@ export async function upsertTitle(kind, tmdbId, r = {}) {
 }
 
 // Anbieter-Namen von TMDB → eigene Dienst-Schlüssel
+// Verteilt wird nur auf Netflix, Prime Video, Disney+ und HBO Max. HBO-Inhalte laufen in Deutschland auch bei
+// WOW/Sky – die zählen deshalb zu HBO Max. Andere Dienste (Apple TV+, Paramount+ …) werden nicht zugeordnet.
 const PROVIDER_KEYS = [
   [/netflix/i, 'netflix'], [/amazon|prime video/i, 'prime'], [/disney/i, 'disney'],
-  [/hbo|^max\b|\bmax$/i, 'max'], [/^wow\b|sky (go|ticket|x)|^sky$/i, 'wow'], [/apple tv/i, 'apple'],
+  [/hbo|^max\b|\bmax$|^wow\b|sky (go|ticket|x)|^sky$/i, 'max'],
 ];
 /**
  * Wo läuft der Titel im Abo (Flatrate) in der eingestellten Region? Eindeutiger Dienst nur, wenn genau einer

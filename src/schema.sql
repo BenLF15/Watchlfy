@@ -73,7 +73,14 @@ ALTER TABLE titles ADD COLUMN IF NOT EXISTS revenue bigint;
 ALTER TABLE titles ADD COLUMN IF NOT EXISTS stats_at timestamptz;
 -- Wo der Titel im Abo läuft (TMDB, Region TMDB_REGION): alle Anbieter + eindeutiger Dienst für Trakt-Einträge
 ALTER TABLE titles ADD COLUMN IF NOT EXISTS providers text[];
-ALTER TABLE titles ADD COLUMN IF NOT EXISTS provider text;   -- wann Kennzahlen aus den TMDB-Details übernommen wurden
+ALTER TABLE titles ADD COLUMN IF NOT EXISTS provider text;
+-- Anbieter v2: nur noch Netflix, Prime, Disney+, HBO Max (WOW/Sky zählt zu HBO Max) – betroffene Titel neu einordnen
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM app_meta WHERE key = 'providers_v2') THEN
+    UPDATE titles SET providers = NULL WHERE providers IS NOT NULL AND (provider IS NULL OR provider IN ('wow', 'apple'));
+    INSERT INTO app_meta (key, value) VALUES ('providers_v2', 'done') ON CONFLICT (key) DO NOTHING;
+  END IF;
+END $$;   -- wann Kennzahlen aus den TMDB-Details übernommen wurden
 CREATE UNIQUE INDEX IF NOT EXISTS titles_tmdb_uq ON titles (kind, tmdb_id) WHERE tmdb_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS titles_name_idx ON titles (lower(name));
 

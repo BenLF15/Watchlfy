@@ -105,7 +105,7 @@ Ob TMDB und Trakt erkannt wurden, siehst du als Admin unter **Admin → System**
 | `SYNC_INTERVAL_MINUTES` | `30` | Takt für Trakt-Sync und TMDB-Nachladen (min. 5) |
 | `MAX_UPLOAD_MB` | `60` | größte Import-Datei |
 | `TMDB_LANGUAGE` | `de-DE` | Sprache der TMDB-Daten |
-| `TMDB_REGION` | `DE` | Land für „Wo läuft das?“ – ordnet Trakt-Einträge dem Abo-Dienst zu (Netflix, Prime, Disney+, Max, WOW, Apple) |
+| `TMDB_REGION` | `DE` | Land für „Wo läuft das?“ – ordnet Trakt-Einträge dem Abo-Dienst zu (Netflix, Prime Video, Disney+, HBO Max – WOW/Sky zählt zu HBO Max) |
 | `TRAKT_REDIRECT_URI` | aus `RENDER_EXTERNAL_URL` | nur bei eigener Domain nötig |
 | `TRAKT_USER_AGENT` | `Watchlfy/1.0 (self-hosted watch statistics)` | Kennung gegenüber Trakt; ohne eigenen User-Agent blockt Trakt mit 403 |
 | `MUSIC_PREVIEWS` | `true` | Filmmusik im Rückblick (Hörproben über die iTunes-Suche); `false` schaltet sie ab |

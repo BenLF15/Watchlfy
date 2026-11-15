@@ -81,7 +81,10 @@ test('Kinokasse: Filmmeter gegen Goldticket und Verdienst-Liste', async ({ page 
   await expect(page.locator('.bo-wallet')).toBeVisible();
   await page.click('[data-exchange="1"]');
   await expect.poll(async () => Number((await bal(page)).tickets)).toBe(Number(b0.tickets) + 1);
-  expect(Number((await bal(page)).meters)).toBe(Number(b0.meters) - 200);
+  // 200 m gehen weg; nebenbei kann die Filmrolle (nachgeladene Laufzeiten) ein paar Meter gutschreiben
+  const spent = Number(b0.meters) - Number((await bal(page)).meters);
+  expect(spent).toBeLessThanOrEqual(200);
+  expect(spent).toBeGreaterThan(150);
   await shot(page, ti, 'notes');
 });
 
