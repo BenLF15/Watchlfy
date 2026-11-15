@@ -17,8 +17,8 @@ test('Videothek betreten, Stück anheben, zurücklegen, kaufen → im Regal', as
   await setup(page, ti);
   await goPanel(page, 'collection');
   await expect(page.locator('.col-head .balance .coin')).toHaveCount(2);
-  await expect(page.locator('.living .crt-screen')).toBeVisible();
-  await expect(page.locator('.living .cobweb').first()).toBeVisible();
+  await expect(page.locator('.lounge .oled-screen')).toBeVisible();
+  await expect(page.locator('.lounge .holo-slot')).toHaveCount(3);
   await page.click('[data-coltab="store"]');
   await expect(page.locator('.store-front .sf-sign')).toBeVisible();
   await shot(page, ti, 'store-front');
@@ -42,10 +42,10 @@ test('Videothek betreten, Stück anheben, zurücklegen, kaufen → im Regal', as
   await expect(page.locator('#col-body [data-own]')).toHaveCount(1);
   await shot(page, ti, 'shelf');
   // Fernseher: umschalten per Knopf, Bild öffnet die Detailansicht
-  const ch0 = await page.locator('.crt-count').textContent();
+  const ch0 = await page.locator('.oled-count').textContent();
   await page.click('[data-tv-zap="1"]');
-  await expect(page.locator('.crt-count')).not.toHaveText(ch0);
-  await page.click('.crt-screen');
+  await expect(page.locator('.oled-count')).not.toHaveText(ch0);
+  await page.click('.oled-screen');
   await expect(page.locator('#detail-dialog')).toHaveAttribute('open', '');
   await page.keyboard.press('Escape');
   // nochmal kaufen geht nicht

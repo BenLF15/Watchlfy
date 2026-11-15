@@ -1,4 +1,4 @@
-/* Watchlfy – Sammlung: Wohnzimmerwand mit Fernseher, Fernsehschrank und Postern, begehbare Retro-Videothek, Vorführraum, Kinokasse (Filmmeter & Goldtickets), Geschenke. */
+/* Watchlfy – Sammlung: Holo-Lounge mit schwebenden Postern, OLED-Fernseher und gläsernem Medienregal, begehbare Retro-Videothek, Vorführraum, Kinokasse (Filmmeter & Goldtickets), Geschenke. */
 (() => {
   'use strict';
   const W = window.Watchlfy;
@@ -72,68 +72,75 @@
     if (col.tab === 'screening' && col.data.session && !col.data.session.done) bindScreeningImage();
   }
 
-  // ---------------------------------------------------------------- Wohnzimmer: Wand mit Postern, Fernseher, Fernsehschrank
-  const COBWEB = '<svg class="cobweb" viewBox="0 0 100 100" aria-hidden="true"><path d="M0 0 100 100M0 0 50 100M0 0 100 50M0 0 0 100M0 0 100 0M0 0 80 100M0 0 100 80"/><path d="M0 22Q12 13 22 0M0 42Q24 27 42 0M0 64Q38 40 64 0M0 86Q52 54 86 0"/></svg>';
-  const dust = (n = 14) => `<span class="dust" aria-hidden="true">${Array.from({ length: n }, (_, i) => `<i style="--x:${(i * 37) % 100}%;--y:${(i * 53) % 100}%;--d:${6 + (i % 5) * 1.7}s;--dl:${-(i * 0.9)}s;--s:${1 + (i % 3)}px"></i>`).join('')}</span>`;
+  // ---------------------------------------------------------------- Holo-Lounge: schwebende Hologramm-Poster, OLED-Fernseher, gläsernes Medienregal
+  /** Hülle als 3D-Box im Regal (Cover vorn, Rücken seitlich). */
+  const box3d = (it, k) => `<button type="button" class="box3d f-${it.format} r-${it.rarity}" data-own="${esc(it.id)}" style="--hue:${it.hue};--i:${k}" aria-label="${esc(`${it.name} – ${t(`fmt.${it.format}`)}`)}">
+      <span class="box-front">${poster(it.poster_path, it.name, 'w185')}<span class="box-band">${it.format === 'bluray' ? 'BLU-RAY' : 'DVD'}</span>${it.rarity !== 'common' ? '<span class="box-gem" aria-hidden="true"></span>' : ''}</span>
+      <span class="box-side" aria-hidden="true"><span>${esc(it.name)}</span></span>
+      <span class="box-top" aria-hidden="true"></span>
+    </button>`;
 
-  /** Rücken einer DVD/Blu-ray im Fernsehschrank. */
-  const spine = (it, k) => `<button type="button" class="spine f-${it.format} r-${it.rarity}" data-own="${esc(it.id)}" style="--hue:${it.hue};--i:${k};--h:${it.format === 'bluray' ? 86 : 96}px" aria-label="${esc(`${it.name} – ${t(`fmt.${it.format}`)}`)}">
-      <span class="spine-band">${it.format === 'bluray' ? 'BD' : 'DVD'}</span><span class="spine-name">${esc(it.name)}</span>${it.rarity !== 'common' ? '<span class="spine-gem" aria-hidden="true"></span>' : ''}</button>`;
+  /** Leerer Platz: Hologramm im Standby (Drahtgitter, Scan-Strahl). */
+  const holoSlot = (k, label = '') => `<span class="holo-slot" style="--i:${k}" aria-hidden="true"><i class="slot-scan"></i><b>+</b>${label ? `<small>${esc(label)}</small>` : ''}</span>`;
 
   function tvHtml(channels) {
     if (!channels.length) {
-      return `<div class="crt off"><div class="crt-screen"><div class="crt-snow" aria-hidden="true"></div><p class="crt-nosignal">${esc(t('tv.noSignal'))}</p></div>${tvControls(0)}</div>`;
+      return `<div class="oled standby" data-tv>
+        <div class="oled-panel"><div class="oled-screen"><span class="standby-ring" aria-hidden="true"></span><p class="oled-standby">${esc(t('tv.noSignal'))}</p></div></div>
+        ${tvControls(0)}<span class="oled-stand" aria-hidden="true"></span></div>`;
     }
     const i = ((col.ch % channels.length) + channels.length) % channels.length;
     const c = channels[i];
     const img = tmdbImg(c.backdrop_path, 'w780') || tmdbImg(c.poster_path, 'w500');
-    return `<div class="crt" data-tv>
-      <div class="crt-screen" data-title-id="${c.id}" role="button" tabindex="0" aria-label="${esc(t('tv.open', { n: c.name }))}">
-        ${img ? `<img class="poster-img crt-img" src="${img}" alt="" decoding="async" data-ph="${esc(c.name)}" />` : ''}
-        <span class="crt-osd"><b>CH ${String(i + 1).padStart(2, '0')}</b><span>${esc(t(c.kind === 'movie' ? 'kind.movie' : 'kind.tv'))}</span></span>
-        <span class="crt-title"><b>${esc(c.name)}</b>${c.year ? `<small>${c.year}</small>` : ''}</span>
-        <span class="crt-glass" aria-hidden="true"></span>
+    return `<div class="oled" data-tv>
+      <div class="oled-ambi" aria-hidden="true">${img ? `<img src="${img}" alt="" decoding="async" />` : ''}</div>
+      <div class="oled-panel">
+        <div class="oled-screen" data-title-id="${c.id}" role="button" tabindex="0" aria-label="${esc(t('tv.open', { n: c.name }))}">
+          ${img ? `<img class="poster-img oled-img" src="${img}" alt="" decoding="async" data-ph="${esc(c.name)}" />` : ''}
+          <span class="oled-hud"><b>CH ${String(i + 1).padStart(2, '0')}</b><span>${esc(t(c.kind === 'movie' ? 'kind.movie' : 'kind.tv'))}</span></span>
+          <span class="oled-title"><b>${esc(c.name)}</b>${c.year ? `<small>${c.year}</small>` : ''}</span>
+          <span class="oled-progress" aria-hidden="true"><i style="width:${((i + 1) / channels.length) * 100}%"></i></span>
+        </div>
       </div>
       ${tvControls(channels.length, i)}
+      <span class="oled-stand" aria-hidden="true"></span>
     </div>`;
   }
-  const tvControls = (n, i = 0) => `<div class="crt-panel">
-      <span class="crt-brand" aria-hidden="true">WATCHLFY</span>
-      <button type="button" class="knob" data-tv-zap="-1" ${n > 1 ? '' : 'disabled'} aria-label="${esc(t('nav.prev'))}"><span>‹</span></button>
-      <span class="crt-count" aria-live="polite">${n ? `${i + 1}/${n}` : '–'}</span>
-      <button type="button" class="knob" data-tv-zap="1" ${n > 1 ? '' : 'disabled'} aria-label="${esc(t('nav.next'))}"><span>›</span></button>
-      <span class="crt-led${n ? ' on' : ''}" aria-hidden="true"></span>
+  const tvControls = (n, i = 0) => `<div class="oled-ctrl">
+      <button type="button" class="oled-btn" data-tv-zap="-1" ${n > 1 ? '' : 'disabled'} aria-label="${esc(t('nav.prev'))}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg></button>
+      <span class="oled-count" aria-live="polite">${n ? `${String(i + 1).padStart(2, '0')} / ${String(n).padStart(2, '0')}` : '— / —'}</span>
+      <button type="button" class="oled-btn" data-tv-zap="1" ${n > 1 ? '' : 'disabled'} aria-label="${esc(t('nav.next'))}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button>
     </div>`;
 
   function shelfHtml(items, { readonly = false, channels = [] } = {}) {
     const discs = items.filter((i) => i.format !== 'poster');
     const posters = items.filter((i) => i.format === 'poster');
-    const shelves = [];
-    for (let i = 0; i < discs.length; i += 14) shelves.push(discs.slice(i, i + 14));
-    while (shelves.length < 2) shelves.push([]);
-    const wall = posters.length
-      ? `<div class="wall-posters">${posters.map((it, k) => `<div class="hang" style="--i:${k};--tilt:${((it.hue % 9) - 4) * 0.7}deg"><span class="nail" aria-hidden="true"></span>${caseHtml(it, { tag: 'button', attrs: `type="button" data-own="${esc(it.id)}" aria-label="${esc(it.name)}"` })}</div>`).join('')}</div>`
-      : `<div class="wall-empty">${COBWEB}<span class="ghost-frame" aria-hidden="true"></span><span class="ghost-frame b" aria-hidden="true"></span><p>${esc(t(readonly ? 'col.friendEmpty' : 'col.noPosters'))}</p></div>`;
-    return `<section class="living${items.length ? '' : ' is-empty'}">
-      <div class="wallpaper" aria-hidden="true"></div>
-      <span class="lamp" aria-hidden="true"></span>
-      ${posters.length ? '' : dust(18)}
+    const n = posters.length;
+    const wall = n
+      ? `<div class="holo-wall">${posters.map((it, k) => {
+          const pos = n > 1 ? (k / (n - 1)) * 2 - 1 : 0; // −1 … 1 von links nach rechts → gebogene Wand
+          return `<div class="holo" style="--i:${k};--pos:${pos.toFixed(3)}"><span class="holo-beam" aria-hidden="true"></span>${caseHtml(it, { tag: 'button', attrs: `type="button" data-own="${esc(it.id)}" aria-label="${esc(it.name)}"` })}</div>`;
+        }).join('')}</div>`
+      : `<div class="holo-wall is-empty">${[0, 1, 2].map((k) => holoSlot(k, k === 1 ? t(readonly ? 'col.friendEmpty' : 'col.noPosters') : '')).join('')}</div>`;
+    const rows = [];
+    for (let i = 0; i < discs.length; i += 12) rows.push(discs.slice(i, i + 12));
+    return `<section class="lounge${items.length ? '' : ' is-empty'}" data-lounge>
+      <span class="lounge-sky" aria-hidden="true"></span>
+      <span class="lounge-led" aria-hidden="true"></span>
+      <span class="lounge-floor" aria-hidden="true"></span>
       <h3 class="sr-only">${esc(t('col.gallery'))}</h3>
       ${wall}
-      <div class="tv-unit">
+      <div class="media-unit">
         ${readonly ? '' : tvHtml(channels)}
-        <div class="cabinet${discs.length ? '' : ' is-empty'}">
+        <div class="rack${discs.length ? '' : ' is-empty'}">
           <h3 class="sr-only">${esc(t('col.wall'))}</h3>
-          <span class="cab-top" aria-hidden="true"></span>
-          ${shelves.map((row, r) => `<div class="cab-shelf">${row.map((it, k) => spine(it, k + r * 14)).join('')}${row.length ? '' : `${r === 0 ? COBWEB : ''}${dust(6)}`}</div>`).join('')}
-          ${discs.length ? '' : `<p class="cab-empty">${esc(t(readonly ? 'col.friendEmpty' : 'col.noDiscs'))}</p>`}
-          <span class="cab-glass" aria-hidden="true"></span>
-          <span class="cab-feet" aria-hidden="true"><i></i><i></i></span>
+          ${discs.length ? rows.map((r, ri) => `<div class="rack-row">${r.map((it, k) => box3d(it, k + ri * 12)).join('')}</div>`).join('')
+            : `<div class="rack-row">${[0, 1, 2, 3].map((k) => '<span class="box-ghost" style="--i:' + k + '" aria-hidden="true"></span>').join('')}<p class="rack-empty">${esc(t(readonly ? 'col.friendEmpty' : 'col.noDiscs'))}</p></div>`}
+          <span class="rack-glass" aria-hidden="true"></span>
         </div>
       </div>
-      <div class="floor" aria-hidden="true"></div>
-      <p class="living-sum">${esc(tn('col.wallSub', discs.length, { n: discs.length }))} · ${esc(tn('col.gallerySub', posters.length, { n: posters.length }))}</p>
-      ${!readonly && !items.length ? `<div class="living-cta"><p class="muted">${esc(t('col.emptyText'))}</p><button type="button" class="btn btn-primary" data-coltab-go="store">🏪 ${esc(t('col.toStore'))}</button></div>` : ''}
+      <p class="lounge-sum">${esc(tn('col.wallSub', discs.length, { n: discs.length }))} · ${esc(tn('col.gallerySub', posters.length, { n: posters.length }))}</p>
+      ${!readonly && !items.length ? `<div class="lounge-cta"><p class="muted">${esc(t('col.emptyText'))}</p><button type="button" class="btn btn-primary" data-coltab-go="store">${esc(t('col.toStore'))}</button></div>` : ''}
     </section>`;
   }
 
@@ -146,8 +153,17 @@
     if (!tv) return;
     tv.outerHTML = tvHtml(ch);
     const fresh = $('[data-tv]');
-    if (fresh && !reduceMotion) fresh.classList.add('zap');
+    if (fresh && !reduceMotion) { fresh.classList.add('zap'); fresh.style.setProperty('--dir', dir > 0 ? '1' : '-1'); }
   }
+
+  // Zeiger bewegt die gebogene Hologramm-Wand leicht im Raum (Parallaxe)
+  document.addEventListener('pointermove', (e) => {
+    const l = e.target.closest?.('[data-lounge]');
+    if (!l || reduceMotion || e.pointerType === 'touch') return;
+    const r = l.getBoundingClientRect();
+    l.style.setProperty('--px', (((e.clientX - r.left) / r.width) * 2 - 1).toFixed(3));
+    l.style.setProperty('--py', (((e.clientY - r.top) / r.height) * 2 - 1).toFixed(3));
+  }, { passive: true });
 
   function openOwned(id, list = col.data.items, readonly = false) {
     const it = list.find((x) => x.id === id);
@@ -456,7 +472,7 @@
   // Am Fernseher wischen oder scrollen schaltet um
   let tvX = null;
   let wheelAt = 0;
-  document.addEventListener('touchstart', (e) => { tvX = e.target.closest?.('.crt-screen') ? e.touches[0].clientX : null; }, { passive: true });
+  document.addEventListener('touchstart', (e) => { tvX = e.target.closest?.('.oled-screen') ? e.touches[0].clientX : null; }, { passive: true });
   document.addEventListener('touchend', (e) => {
     if (tvX === null) return;
     const dx = (e.changedTouches[0]?.clientX ?? tvX) - tvX;
@@ -464,7 +480,7 @@
     if (Math.abs(dx) > 40) zapTv(dx < 0 ? 1 : -1);
   }, { passive: true });
   document.addEventListener('wheel', (e) => {
-    if (!e.target.closest?.('.crt-screen')) return;
+    if (!e.target.closest?.('.oled-screen')) return;
     e.preventDefault();
     const now = Date.now();
     if (now - wheelAt < 350) return;
@@ -472,7 +488,7 @@
     zapTv((Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY) > 0 ? 1 : -1);
   }, { passive: false });
   document.addEventListener('keydown', (e) => {
-    if (!e.target.closest?.('.crt-screen')) return;
+    if (!e.target.closest?.('.oled-screen')) return;
     if (e.key === 'ArrowRight') zapTv(1);
     if (e.key === 'ArrowLeft') zapTv(-1);
   });

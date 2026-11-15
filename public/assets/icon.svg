@@ -1,26 +1,34 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <!-- Watchlfy: Röhrenfernseher mit Antenne, auf dem Bildschirm die VHS-Streifen -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-2 -2 68 68">
+  <!-- Watchlfy: gläserne 3D-Bildschirmkachel mit Play-Prisma und Orbit-Ring -->
   <defs>
-    <linearGradient id="body" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff7448"/><stop offset="1" stop-color="#e2401a"/></linearGradient>
-    <radialGradient id="scr" cx="45%" cy="35%" r="80%"><stop offset="0" stop-color="#1f2b25"/><stop offset="1" stop-color="#070b09"/></radialGradient>
-    <clipPath id="clip"><rect x="92" y="196" width="250" height="196" rx="34"/></clipPath>
+    <linearGradient id="face" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3ee8ff"/><stop offset=".5" stop-color="#7c5cff"/><stop offset="1" stop-color="#ff3d9a"/></linearGradient>
+    <radialGradient id="scr" cx="30%" cy="20%" r="95%"><stop offset="0" stop-color="#1d2152"/><stop offset="1" stop-color="#05060f"/></radialGradient>
+    <linearGradient id="pf" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#bfefff"/></linearGradient>
+    <linearGradient id="ps" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7c5cff"/><stop offset="1" stop-color="#3a1f9e"/></linearGradient>
+    <linearGradient id="rim" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".9"/><stop offset=".35" stop-color="#fff" stop-opacity="0"/></linearGradient>
+    <linearGradient id="ring" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#ff3d9a"/><stop offset=".5" stop-color="#3ee8ff"/><stop offset="1" stop-color="#7c5cff"/></linearGradient>
+    <radialGradient id="halo"><stop offset="0" stop-color="#7c5cff" stop-opacity=".9"/><stop offset="1" stop-color="#7c5cff" stop-opacity="0"/></radialGradient>
+    <clipPath id="fc"><rect x="13" y="13" width="38" height="38" rx="11"/></clipPath>
   </defs>
-  <rect width="512" height="512" rx="112" fill="#12100d"/>
-  <path d="M256 168 190 82M256 168l86-104" stroke="#f4ead8" stroke-width="16" stroke-linecap="round"/>
-  <circle cx="190" cy="82" r="16" fill="#f4ead8"/><circle cx="342" cy="64" r="16" fill="#f4ead8"/>
-  <rect x="56" y="160" width="400" height="268" rx="54" fill="url(#body)"/>
-  <rect x="56" y="160" width="400" height="268" rx="54" fill="none" stroke="#160803" stroke-opacity=".25" stroke-width="6"/>
-  <rect x="92" y="196" width="250" height="196" rx="34" fill="url(#scr)"/>
-  <g clip-path="url(#clip)" transform="rotate(-24 217 294)">
-    <rect x="40" y="300" width="400" height="20" fill="#ff5a2c"/>
-    <rect x="40" y="320" width="400" height="20" fill="#ff9a1f"/>
-    <rect x="40" y="340" width="400" height="20" fill="#ffc83a"/>
-    <rect x="40" y="360" width="400" height="20" fill="#2ec4b6"/>
+  <rect x="-2" y="-2" width="68" height="68" rx="15" fill="#07080f"/>
+  <ellipse cx="33" cy="60.5" rx="19" ry="2.4" fill="#000" opacity=".5"></ellipse>
+  <circle cx="32" cy="32" r="30" fill="url(#halo)" opacity=".5"></circle>
+  <g>
+    <g transform="rotate(-18 32 32)">
+      <path d="M3 32a29 9 0 0 1 58 0" fill="none" stroke="url(#ring)" stroke-width="1.4" stroke-linecap="round" opacity="0.45"/>
+      
+    </g>
+    <g transform="translate(2.6 2.4) translate(32 32) skewY(-7) scale(.92 1) translate(-32 -32)"><rect x="13" y="13" width="38" height="38" rx="11" fill="#120a30"/></g><g transform="translate(1.95 1.8) translate(32 32) skewY(-7) scale(.92 1) translate(-32 -32)"><rect x="13" y="13" width="38" height="38" rx="11" fill="#1d1150"/></g><g transform="translate(1.3 1.2) translate(32 32) skewY(-7) scale(.92 1) translate(-32 -32)"><rect x="13" y="13" width="38" height="38" rx="11" fill="#28176c"/></g><g transform="translate(0.65 0.6) translate(32 32) skewY(-7) scale(.92 1) translate(-32 -32)"><rect x="13" y="13" width="38" height="38" rx="11" fill="#331d86"/></g>
+    <g transform="translate(0.0 0.0) translate(32 32) skewY(-7) scale(.92 1) translate(-32 -32)"><rect x="13" y="13" width="38" height="38" rx="11" fill="url(#face)"/>
+      <rect x="16.5" y="16.5" width="31" height="31" rx="8" fill="url(#scr)"/>
+      <g clip-path="url(#fc)" opacity=".55"><path d="M16 25h32M16 32h32M16 39h32M24 16v32M32 16v32M40 16v32" stroke="#7c5cff" stroke-width=".35"/></g>
+      <g clip-path="url(#fc)"><rect x="10" y="6" width="8" height="52" fill="#fff" opacity=".2" transform="skewX(-20)"></rect></g>
+      <rect x="13.5" y="13.5" width="37" height="37" rx="10.5" fill="none" stroke="url(#rim)" stroke-width="1"/>
+      <path d="M29 25.6 40.6 32.5 29 39.4z" fill="url(#ps)" transform="translate(1.3 1.5)"/>
+      <path d="M27.6 24v16.6l12.7-8.3z" fill="url(#pf)"/></g>
+    <g transform="rotate(-18 32 32)">
+      <path d="M61 32a29 9 0 0 1-58 0" fill="none" stroke="url(#ring)" stroke-width="2.2" stroke-linecap="round" opacity="1"/>
+      <path d="M61 32a29 9 0 0 1-58 0" fill="none" stroke="#fff" stroke-width="1.2" stroke-linecap="round" stroke-dasharray="6 54" opacity=".9"></path>
+    </g>
   </g>
-  <path d="M168 238v74l60-37z" fill="#f4ead8"/>
-  <rect x="92" y="196" width="250" height="196" rx="34" fill="none" stroke="#000" stroke-opacity=".5" stroke-width="8"/>
-  <circle cx="400" cy="230" r="22" fill="#160803" fill-opacity=".85"/><circle cx="400" cy="230" r="8" fill="#ffc83a"/>
-  <circle cx="400" cy="292" r="22" fill="#160803" fill-opacity=".85"/><circle cx="406" cy="286" r="7" fill="#f4ead8"/>
-  <rect x="376" y="336" width="48" height="8" rx="4" fill="#160803" fill-opacity=".6"/><rect x="376" y="354" width="48" height="8" rx="4" fill="#160803" fill-opacity=".6"/>
-  <rect x="120" y="428" width="44" height="22" rx="6" fill="#e2401a"/><rect x="348" y="428" width="44" height="22" rx="6" fill="#e2401a"/>
 </svg>

@@ -931,20 +931,25 @@
       if (!dlg.open) dlg.showModal();
     };
     // Geteiltes Element: das angetippte Poster gleitet in die Detailansicht
+    let skeletonDone = Promise.resolve();
     if (srcImg && canVT && !reduceMotion && !dlg.open) {
       srcImg.style.viewTransitionName = 'vt-poster';
       document.documentElement.dataset.vtDir = 'detail';
       try {
         const vt = document.startViewTransition(() => { srcImg.style.viewTransitionName = ''; skeleton(); });
-        vt.ready.catch(() => {}); vt.updateCallbackDone.catch(() => {});
+        vt.ready.catch(() => {});
+        // Daten erst einsetzen, wenn das Skelett steht – sonst überschreibt es die fertige Ansicht
+        skeletonDone = vt.updateCallbackDone.catch(() => {});
         vt.finished.catch(() => {}).finally(() => { delete document.documentElement.dataset.vtDir; srcImg.style.viewTransitionName = ''; });
       } catch { srcImg.style.viewTransitionName = ''; skeleton(); }
     } else skeleton();
     try {
       const d = await api(`/api/title?${id ? `id=${encodeURIComponent(id)}` : `key=${encodeURIComponent(key)}`}`);
+      await skeletonDone;
       renderDetail(d);
       $('#detail-body')?.classList.remove('fresh'); void $('#detail-body')?.offsetWidth; $('#detail-body')?.classList.add('fresh');
     } catch (err) {
+      await skeletonDone;
       $('#detail-body').innerHTML = `${CLOSE_BTN()}<p class="empty">${esc(errMsg(err))}</p>`;
     }
   }

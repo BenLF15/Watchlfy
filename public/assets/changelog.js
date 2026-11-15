@@ -7,18 +7,34 @@
    Danach den Cache-Parameter ?v=… in public/*.html hochzählen. */
 window.WatchlfyNews = [
   {
+    id: '2026-11-15c',
+    date: '2026-11-15',
+    items: [
+      {
+        icon: '🪐', go: 'overview',
+        t: ['Orbit: futuristisches Design', 'Orbit: a futuristic look', 'Orbit : un look futuriste', 'Orbit: diseño futurista', 'Orbit: design futuristico', 'Orbit: futuristisk design', 'Orbit: futuristisk design'],
+        d: ['Glas, Neonlicht, Raster am Horizont und ein animiertes 3D-Logo mit Orbit-Ring.', 'Glass, neon light, a horizon grid and an animated 3D logo with an orbit ring.', 'Verre, néons, grille à l’horizon et logo 3D animé avec anneau orbital.', 'Cristal, neón, cuadrícula en el horizonte y un logo 3D animado con anillo orbital.', 'Vetro, neon, griglia all’orizzonte e un logo 3D animato con anello orbitale.', 'Glas, neonljus, rutnät mot horisonten och en animerad 3D-logga med omloppsring.', 'Glas, neonlys, gitter mod horisonten og et animeret 3D-logo med kredsløbsring.'],
+      },
+      {
+        icon: '🛸', go: 'collection',
+        t: ['Holo-Lounge für deine Sammlung', 'Holo lounge for your collection', 'Holo-salon pour ta collection', 'Holo-salón para tu colección', 'Holo-lounge per la tua collezione', 'Holo-lounge för din samling', 'Holo-lounge til din samling'],
+        d: ['Poster materialisieren als Hologramme, Hüllen stehen in 3D im Glasregal, der OLED-Fernseher leuchtet mit Ambilight.', 'Posters materialise as holograms, cases stand in 3D on a glass rack, the OLED TV glows with ambient light.', 'Les affiches apparaissent en hologrammes, les boîtiers en 3D sur une étagère en verre, la TV OLED rayonne.', 'Los pósters se materializan como hologramas, las cajas en 3D en una estantería de cristal y la tele OLED brilla.', 'I poster si materializzano come ologrammi, le custodie in 3D su uno scaffale di vetro, la TV OLED si illumina.', 'Affischer blir hologram, fodral står i 3D på en glashylla och OLED-tv:n lyser.', 'Plakater bliver til hologrammer, covers står i 3D på en glashylde, og OLED-tv’et lyser.'],
+      },
+    ],
+  },
+  {
     id: '2026-11-15b',
     date: '2026-11-15',
     items: [
       {
         icon: '📺', go: 'overview',
-        t: ['Neues Gesicht: Kanal-Design', 'New look: channel design', 'Nouveau look : design chaînes', 'Nuevo aspecto: diseño de canales', 'Nuovo look: design a canali', 'Ny look: kanaldesign', 'Nyt look: kanaldesign'],
-        d: ['Neues Logo, Röhrenfernseher, Fernbedienung zum Umschalten (Tasten 1–9) und am Handy ein Zapper mit Programmführer.', 'New logo, a tube TV, a remote to switch channels (keys 1–9) and a zapper with TV guide on your phone.', 'Nouveau logo, téléviseur cathodique, télécommande (touches 1–9) et zappeur avec programme sur mobile.', 'Nuevo logo, televisor de tubo, mando para cambiar de canal (teclas 1–9) y zapeador con guía en el móvil.', 'Nuovo logo, TV a tubo, telecomando per cambiare canale (tasti 1–9) e zapper con guida sul telefono.', 'Ny logga, tjock-tv, fjärrkontroll för att byta kanal (tangent 1–9) och zapper med tablå på mobilen.', 'Nyt logo, billedrørs-tv, fjernbetjening til at skifte kanal (tast 1–9) og zapper med programoversigt på mobilen.'],
+        t: ['Umschalten wie am Fernseher', 'Switch like on a TV', 'Zapper comme à la télé', 'Cambia como en la tele', 'Cambia come in TV', 'Byt som på tv:n', 'Skift som på tv’et'],
+        d: ['Kanaltasten (auch 1–9 auf der Tastatur) und am Handy ein Zapper mit Programmführer.', 'Channel keys (also 1–9 on the keyboard) and a zapper with TV guide on your phone.', 'Touches de chaîne (aussi 1–9 au clavier) et un zappeur avec programme sur mobile.', 'Teclas de canal (también 1–9 en el teclado) y un zapeador con guía en el móvil.', 'Tasti canale (anche 1–9 da tastiera) e uno zapper con guida sul telefono.', 'Kanalknappar (även 1–9 på tangentbordet) och en zapper med tablå på mobilen.', 'Kanaltaster (også 1–9 på tastaturet) og en zapper med programoversigt på mobilen.'],
       },
       {
         icon: '🎞️', go: 'collection',
-        t: ['Wohnzimmer & neue Währung', 'Living room & new currency', 'Salon & nouvelle monnaie', 'Salón y nueva moneda', 'Soggiorno e nuova valuta', 'Vardagsrum & ny valuta', 'Stue & ny valuta'],
-        d: ['Poster an der Wand, Hüllen im Fernsehschrank, zappen am Fernseher. Bezahlt wird mit Filmmetern und Goldtickets.', 'Posters on the wall, cases in the TV cabinet, zap through the TV. You pay with film metres and golden tickets.', 'Affiches au mur, boîtiers dans le meuble TV, zapping sur le téléviseur. On paie en mètres de pellicule et tickets dorés.', 'Pósters en la pared, cajas en el mueble de la tele y zapeo en el televisor. Se paga con metros de película y entradas doradas.', 'Poster al muro, custodie nel mobile TV, zapping sulla TV. Si paga con metri di pellicola e biglietti d’oro.', 'Affischer på väggen, fodral i tv-bänken, zappa på tv:n. Du betalar med filmmeter och guldbiljetter.', 'Plakater på væggen, covers i tv-skabet, zap på tv’et. Du betaler med filmmeter og guldbilletter.'],
+        t: ['Neue Währung', 'New currency', 'Nouvelle monnaie', 'Nueva moneda', 'Nuova valuta', 'Ny valuta', 'Ny valuta'],
+        d: ['Bezahlt wird jetzt mit Filmmetern (wachsen mit jeder geschauten Stunde) und Goldtickets.', 'You now pay with film metres (they grow with every hour watched) and golden tickets.', 'On paie désormais en mètres de pellicule (ils augmentent à chaque heure regardée) et en tickets dorés.', 'Ahora se paga con metros de película (crecen con cada hora vista) y entradas doradas.', 'Ora si paga con metri di pellicola (crescono a ogni ora guardata) e biglietti d’oro.', 'Nu betalar du med filmmeter (växer med varje sedd timme) och guldbiljetter.', 'Nu betaler du med filmmeter (vokser med hver set time) og guldbilletter.'],
       },
       {
         icon: '🎵', go: 'wrapped',

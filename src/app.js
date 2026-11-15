@@ -143,7 +143,7 @@ app.get('/vendor/chart.umd.min.js', (_req, res) =>
 );
 // Watchlfy-Schriften: Plakatschrift (Überschriften) und Textschrift – selbst ausgeliefert (CSP: font-src 'self')
 app.use('/vendor/display', express.static(path.join(root, 'node_modules/@fontsource-variable/unbounded/files'), { maxAge: '30d' }));
-app.use('/vendor/osd', express.static(path.join(root, 'node_modules/@fontsource/vt323/files'), { maxAge: '30d' }));
+app.use('/vendor/osd', express.static(path.join(root, 'node_modules/@fontsource-variable/jetbrains-mono/files'), { maxAge: '30d' }));
 app.use('/vendor/text', express.static(path.join(root, 'node_modules/@fontsource-variable/manrope/files'), { maxAge: '30d' }));
 // Optional: externer Trigger (z. B. cron-job.org), falls der interne Zeitplan nicht reicht.
 // Aufruf: GET /cron/run?key=<CRON_SECRET>
