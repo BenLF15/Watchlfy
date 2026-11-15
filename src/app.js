@@ -435,7 +435,6 @@ api.get('/top', wrap(async (req, res) => {
   const kind = ['series', 'movies', 'genres', 'actors', 'countries'].includes(req.query.kind) ? req.query.kind : 'series';
   res.json({ kind, items: await stats.top(req.account.id, rangeDays(req), kind, 50) });
 }));
-api.get('/times', wrap(async (req, res) => res.json(await stats.times(req.account.id, rangeDays(req)))));
 api.get('/progress', wrap(async (req, res) => res.json(await stats.progress(req.account.id))));
 api.get('/history', wrap(async (req, res) => {
   const before = req.query.before && !Number.isNaN(Date.parse(req.query.before)) ? new Date(req.query.before).toISOString() : null;

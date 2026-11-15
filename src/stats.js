@@ -164,24 +164,7 @@ export async function top(accountId, days, kind = 'series', limit = 50) {
   }
 }
 
-// ---------------------------------------------------------------- Schauzeiten & Binges
-export async function times(accountId, days) {
-  const [grid, untimed, rows] = await Promise.all([
-    run(
-      `SELECT (extract(isodow FROM local_at)::int - 1) AS dow, extract(hour FROM local_at)::int AS hour, sum(secs) AS secs, count(*) AS views
-         FROM v WHERE time_known GROUP BY 1, 2`,
-      accountId, days,
-    ),
-    run(`SELECT count(*) AS n FROM v WHERE NOT time_known`, accountId, days),
-    run(
-      `SELECT tkey, name, poster_path, kind, ep_key, watched_at, time_known, secs, local_at::date AS day
-         FROM v WHERE kind = 'tv' ORDER BY watched_at`,
-      accountId, days,
-    ),
-  ]);
-  return { grid, untimed: untimed[0].n, binges: findBinges(rows) };
-}
-
+// ---------------------------------------------------------------- Binges (für den Rückblick)
 /** Binge = ≥ 3 verschiedene Folgen derselben Serie am Stück (Pause < 30 Min.) bzw. am selben Tag ohne Uhrzeit. */
 export function findBinges(rows, min = 3) {
   const out = [];

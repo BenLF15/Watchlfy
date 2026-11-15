@@ -32,16 +32,6 @@ test.describe('Statistik', () => {
     expect(errors).toEqual([]);
   });
 
-  test('Schauzeiten: Heatmap und Binge-Erkennung', async ({ page }, ti) => {
-    await goPanel(page, 'times');
-    await expect(page.locator('#heatmap .heat-cell')).toHaveCount(168);
-    await expect(page.locator('#heatmap .heat-cell.peak')).toHaveCount(1);
-    const binge = page.locator('#binge-list .binge').first();
-    await expect(binge).toContainText('Stranger Things');
-    await expect(binge.locator('.binge-count b')).toHaveText('5');
-    await shot(page, ti, 'times');
-  });
-
   test('Fortschritt, Weiterschauen und Detailansicht', async ({ page }, ti) => {
     await goPanel(page, 'progress');
     const bb = page.locator('#progress-list .prog', { hasText: 'Breaking Bad' });
@@ -188,11 +178,12 @@ test('Kino-Ansicht: Hero-Karussell, gläserne Leiste, Poster gleitet ins Detail'
   // Kanal wechseln: Desktop per Zifferntaste, Handy per Zapper
   if ((page.viewportSize()?.width || 1000) >= 700) {
     await page.keyboard.press('3');
-    await expect(page.locator('#page-title')).toHaveText('Schauzeiten');
-    await expect(page.locator('#panel-tabs [data-panel="times"]')).toHaveAttribute('aria-selected', 'true');
+    await expect(page.locator('#page-title')).toHaveText('Fortschritt');
+    await expect(page.locator('#panel-tabs [data-panel="progress"]')).toHaveAttribute('aria-selected', 'true');
+    await expect(page.locator('#panel-tabs [data-panel="times"]')).toHaveCount(0);
   } else {
     await page.click('#zapper [data-zap="1"]');
     await expect(page.locator('#page-title')).toHaveText('Rückblick');
-    await expect(page.locator('#zap-ch')).toHaveText('06');
+    await expect(page.locator('#zap-ch')).toHaveText('05');
   }
 });

@@ -14,7 +14,6 @@ Dienst selbst gibt.
 | **Import** | Ein Knopf pro Dienst mit Schritt-für-Schritt-Anleitung, Drag & Drop, Vorschau (Einträge, Zeitraum, Profile), Profil-Auswahl, Spalten-Zuordnungs-Dialog als Fallback, ZIP/CSV/JSON, idempotent (erneutes Hochladen erzeugt keine Duplikate), Import rückgängig machen |
 | **Übersicht** | Schauzeit, Ø pro Tag, Folgen, Filme, Serien, längste Serie (Tage am Stück), Lieblingszeit, bester Tag, Dienst-Verteilung, Weiterschauen, Top-Serien/-Filme, Zeitraum 7 T / 30 T / 90 T / 1 J / Alles |
 | **Top-Listen** | Serien, Filme, Genres, Schauspieler, Länder (Podium + Rangliste) |
-| **Schauzeiten** | Heatmap Wochentag × Uhrzeit, nach Stunde/Wochentag, Binge-Erkennung („5 Folgen am Stück“) |
 | **Fortschritt** | Pro Serie gesehene vs. alle Folgen (TMDB, ohne Specials), Staffel-Kacheln, „Weiterschauen“ mit nächster Folge; zuerst die Top 5, Rest aufklappbar |
 | **Verlauf** | Letzte 7 Tage, danach Monate – jeweils aufklappbar (Einträge werden erst dann geladen), darin Tage als kompakte Zusammenfassung zum Aufklappen; im Detail Verlauf je Staffel einklappbar, lange Listen (auch Importe, Anmeldungen) zeigen erst die neuesten Einträge; Suche, Detailansicht mit Poster, Backdrop, Staffel-Raster, Besetzung, Gesamtzeit |
 | **TMDB** | Abgleich im Hintergrund mit Treffer-Sicherheit; unsichere Treffer im Profil (oder im Detail) korrigieren |

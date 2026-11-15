@@ -3,9 +3,20 @@
    - id: eindeutig und aufsteigend (Datum + Buchstabe), date: 'YYYY-MM-DD'
    - items: höchstens 4–5 kurze Punkte, je Icon, Titel (t) und ein knapper Satz (d) in allen 7 Sprachen
      [de, en, fr, es, it, sv, da]; optional go: Bereich zum Ausprobieren
-     ('overview', 'top', 'times', 'progress', 'history', 'wrapped', 'friends', 'collection', 'profile', 'import').
+     ('overview', 'top', 'progress', 'history', 'wrapped', 'friends', 'collection', 'profile', 'import').
    Danach den Cache-Parameter ?v=… in public/*.html hochzählen. */
 window.WatchlfyNews = [
+  {
+    id: '2026-11-15p',
+    date: '2026-11-15',
+    items: [
+      {
+        icon: '🧹', go: 'overview',
+        t: ['Aufgeräumt', 'Tidied up', 'Rangé', 'Más ordenado', 'Riordinato', 'Uppstädat', 'Ryddet op'],
+        d: ['Der Bereich „Schauzeiten“ ist weg – deine Lieblingszeit steht weiter in der Übersicht. Die Kanäle sind neu nummeriert (1–7).', 'The “Watch times” section is gone – your favourite time is still on the overview. Channels are renumbered (1–7).', 'La section « Horaires » a disparu – ton heure préférée reste dans l’aperçu. Chaînes renumérotées (1–7).', 'La sección «Horarios» ya no está; tu hora favorita sigue en el resumen. Canales renumerados (1–7).', 'La sezione «Orari» non c’è più – l’orario preferito resta nella panoramica. Canali rinumerati (1–7).', 'Avsnittet ”Tittartider” är borta – din favorittid finns kvar i översikten. Kanalerna har nya nummer (1–7).', 'Sektionen “Seertider” er væk – dit yndlingstidspunkt står stadig i overblikket. Kanalerne har nye numre (1–7).'],
+      },
+    ],
+  },
   {
     id: '2026-11-15o',
     date: '2026-11-15',
@@ -200,7 +211,7 @@ window.WatchlfyNews = [
         d: ['Komplett neues Design: Leinwand mit Projektorlicht, Kennzahlen als Eintrittskarten, Reihen auf dem Filmstreifen.', 'A brand-new design: a screen with projector light, stats as tickets, rows on a film strip.', 'Design entièrement nouveau : écran et lumière de projecteur, chiffres en tickets, rangées sur pellicule.', 'Diseño totalmente nuevo: pantalla con luz de proyector, cifras como entradas y filas en película.', 'Design tutto nuovo: schermo con luce del proiettore, numeri come biglietti, file su pellicola.', 'Helt ny design: duk med projektorljus, siffror som biljetter, rader på filmremsa.', 'Helt nyt design: lærred med projektorlys, tal som billetter, rækker på filmstrimmel.'],
       },
       {
-        icon: '💺', go: 'times',
+        icon: '💺', go: 'top',
         t: ['Sitzplan & Kinocharts', 'Seating chart & box office', 'Plan de salle & box-office', 'Plano de butacas y taquilla', 'Mappa dei posti e classifica', 'Platskarta & topplista', 'Pladsoversigt & hitliste'],
         d: ['Deine Schauzeiten als Kinosaal, deine Top 10 mit leuchtenden Rangschildern.', 'Your watch times as a cinema hall, your top 10 with glowing rank signs.', 'Tes horaires en salle de cinéma, ton top 10 avec des numéros lumineux.', 'Tus horarios como sala de cine y tu top 10 con números luminosos.', 'I tuoi orari come una sala, la top 10 con numeri luminosi.', 'Dina tittartider som en biosalong, topp 10 med lysande skyltar.', 'Dine seertider som en biografsal, top 10 med lysende skilte.'],
       },

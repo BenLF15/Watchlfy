@@ -29,9 +29,9 @@
     set(k, v) { try { localStorage.setItem(k, v); } catch { /* egal */ } },
   };
 
-  const PANELS = ['overview', 'top', 'times', 'progress', 'history', 'wrapped', 'friends', 'collection', 'admin', 'profile'];
-  const RANGE_PANELS = new Set(['overview', 'top', 'times']);
-  const DATA_PANELS = new Set(['overview', 'top', 'times', 'progress', 'history', 'wrapped']);
+  const PANELS = ['overview', 'top', 'progress', 'history', 'wrapped', 'friends', 'collection', 'admin', 'profile'];
+  const RANGE_PANELS = new Set(['overview', 'top']);
+  const DATA_PANELS = new Set(['overview', 'top', 'progress', 'history', 'wrapped']);
 
   const state = {
     range: store.get('range', '30d'),
@@ -40,7 +40,6 @@
     panel: (() => { const v = session.get('panel'); return PANELS.includes(v) ? v : 'overview'; })(),
     dashboard: null,
     top: null,
-    times: null,
     progress: null,
     account: null,
     status: null,
@@ -307,7 +306,7 @@
       watchTmdb();
     }, 15000);
   }
-  function invalidate() { state.dashboard = null; state.top = null; state.times = null; state.progress = null; hist.items = null; hist.groups = null; hist.lists = {}; prefetch(); }
+  function invalidate() { state.dashboard = null; state.top = null; state.progress = null; hist.items = null; hist.groups = null; hist.lists = {}; prefetch(); }
   /** Daten der übrigen Bereiche im Leerlauf vorladen – der Wechsel ist dann sofort da, ohne Warten und Nachspringen. */
   function prefetch() {
     clearTimeout(prefetch.timer);
@@ -317,7 +316,6 @@
       try {
         if (!state.dashboard) await loadDashboard();
         if (!state.top) await loadTop();
-        if (!state.times) await loadTimes();
         if (!state.progress) await loadProgress();
         if (!hist.groups) await loadHistory(true);
       } catch { /* beim Öffnen wird ohnehin neu geladen */ }
@@ -720,84 +718,7 @@
   }
 
   // ================================================================ Schauzeiten
-  async function loadTimes() { state.times = await api(`/api/times?range=${state.range}`); }
-  function gridOf(rows) {
-    const g = Array.from({ length: 7 }, () => Array(24).fill(0));
-    rows.forEach((r) => { g[r.dow][r.hour] += Math.round(r.secs / 60); });
-    return g;
-  }
-  function renderTimes() {
-    const d = state.times;
-    if (!d) return;
-    const grid = gridOf(d.grid);
-    const hrs = Array(24).fill(0);
-    const days = Array(7).fill(0);
-    grid.forEach((row, di) => row.forEach((v, h) => { hrs[h] += v; days[di] += v; }));
-    const total = hrs.reduce((a, b) => a + b, 0);
-    $('#times-sub').textContent = d.untimed ? t('times.subUntimed', { n: fmt(d.untimed) }) : t('times.sub');
-    if (total) {
-      const peakH = hrs.indexOf(Math.max(...hrs));
-      const peakD = days.indexOf(Math.max(...days));
-      const night = [22, 23, 0, 1, 2, 3, 4].reduce((a, h) => a + hrs[h], 0) / total;
-      const prime = [20, 21, 22].reduce((a, h) => a + hrs[h], 0) / total;
-      const weekend = (days[5] + days[6]) / total;
-      $('#time-insights').innerHTML = [
-        insight('clock', 'insight.peakTime', hourRange(peakH)),
-        insight('calendar', 'insight.favDay', DAYS_LONG[peakD]),
-        night > 0.2 ? insight('moon', 'insight.nightOwl', `${Math.round(night * 100)} %`, t('time.range', { a: '22', b: '5' })) : insight('tv', 'insight.primetime', `${Math.round(prime * 100)} %`, t('time.range', { a: '20', b: '23' })),
-        insight('sun', 'insight.weekend', `${Math.round(weekend * 100)} %`, t('insight.ofTime')),
-      ].join('');
-    } else $('#time-insights').innerHTML = '';
-    renderHeatmap(grid);
-    intensityBars('hours', $('#hours-chart'), hrs.map((_, h) => (h % 3 === 0 ? `${h}` : '')), hrs, (i) => hourRange(i));
-    intensityBars('weekdays', $('#weekday-chart'), DAYS, days, (i) => DAYS_LONG[i]);
-    const b = d.binges.slice(0, 12);
-    $('#binge-list').innerHTML = b.length ? b.map((x, i) => `
-      <li class="binge" ${x.tkey?.startsWith('t') ? `data-title-id="${x.tkey.slice(1)}"` : `data-title-key="${esc(x.tkey)}"`} style="--i:${i}">
-        <div class="cover poster-mini">${poster(x.poster_path, x.name, 'w92')}</div>
-        <div class="binge-main"><b>${esc(x.name)}</b><small>${esc(x.timed ? `${dateFmtYear.format(new Date(x.start))} · ${timeFmt.format(new Date(x.start))}–${timeFmt.format(new Date(x.end))}` : dateFmtYear.format(parseDay(x.start)))}</small></div>
-        <div class="binge-count"><b>${x.episodes}</b><small>${esc(t('binge.inARow'))}</small></div>
-      </li>`).join('') : `<li class="empty">${esc(t('binge.none'))}</li>`;
-    decoratePanel('times');
-  }
-  function renderHeatmap(grid) {
-    const el = $('#heatmap');
-    el.classList.remove('is-ready');
-    const max = Math.max(1, ...grid.flat());
-    let peak = { d: 0, h: 0, v: -1 };
-    grid.forEach((row, d) => row.forEach((v, h) => { if (v > peak.v) peak = { d, h, v }; }));
-    const wide = window.innerWidth >= 700;
-    let html = '<span></span>';
-    for (let h = 0; h < 24; h++) html += `<span class="heat-col-label">${h % (wide ? 3 : 6) === 0 ? h : ''}</span>`;
-    grid.forEach((row, d) => {
-      html += `<span class="heat-row-label">${esc(DAYS[d])}</span>`;
-      row.forEach((v, h) => {
-        const alpha = v === 0 ? 0.04 : 0.1 + 0.9 * Math.pow(v / max, 0.75);
-        html += `<span class="heat-cell${d === peak.d && h === peak.h && v > 0 ? ' peak' : ''}" role="gridcell" tabindex="-1" data-d="${d}" data-h="${h}" data-v="${v}" data-a="${alpha.toFixed(3)}" aria-label="${esc(`${DAYS_LONG[d]} ${t('time.hour', { h })}: ${dur(v * 60)}`)}"></span>`;
-      });
-    });
-    el.innerHTML = html;
-    $$('.heat-cell', el).forEach((c) => {
-      c.style.background = accentA(c.dataset.a);
-      c.style.transitionDelay = reduceMotion ? '0ms' : `${(Number(c.dataset.h) + Number(c.dataset.d) * 2) * 10}ms`;
-    });
-    requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('is-ready')));
-  }
-  function bindHeatTooltip() {
-    const el = $('#heatmap');
-    const tip = $('#heat-tip');
-    const show = (cell) => {
-      tip.innerHTML = `${esc(DAYS_LONG[Number(cell.dataset.d)])}, ${esc(hourRange(Number(cell.dataset.h)))}<br><strong>${esc(dur(Number(cell.dataset.v) * 60))}</strong>`;
-      const r = cell.getBoundingClientRect();
-      tip.style.left = `${Math.min(Math.max(r.left + r.width / 2, 90), window.innerWidth - 90)}px`;
-      tip.style.top = `${r.top}px`;
-      tip.hidden = false;
-    };
-    el.addEventListener('pointerover', (e) => { const c = e.target.closest('.heat-cell'); if (c) show(c); });
-    el.addEventListener('pointerleave', () => { tip.hidden = true; });
-    el.addEventListener('click', (e) => { const c = e.target.closest('.heat-cell'); if (c) show(c); });
-    window.addEventListener('scroll', () => { tip.hidden = true; }, { passive: true });
-  }
+
   function intensityBars(key, canvas, labels, values, tooltipTitle) {
     const max = Math.max(1, ...values);
     upsertChart(key, canvas, {
@@ -1749,9 +1670,6 @@
     if (panel === 'top') {
       const p1 = $('#podium .p1 .pimg-wrap');
       if (p1 && !$('.fest-deco', p1)) p1.insertAdjacentHTML('beforeend', `<span class="fest-deco fest-crown" aria-hidden="true">${f.hat}</span>`);
-    } else if (panel === 'times') {
-      const cell = $('#heatmap .heat-cell.peak');
-      if (cell && !$('.fest-deco', cell)) cell.insertAdjacentHTML('beforeend', `<span class="fest-deco fest-cell" aria-hidden="true">${f.emojis[1]}</span>`);
     } else if (panel === 'history') {
       $$('.day-card').forEach((card) => {
         const evDay = activeEvent(parseDay(card.dataset.day));
@@ -1939,7 +1857,7 @@
     tabs.addEventListener('click', (e) => { const b = e.target.closest('button[data-panel]'); if (b) showPanel(b.dataset.panel); });
     tabs.place = place;
   }
-  const PANEL_TITLE = { overview: 'nav.overview', top: 'nav.top', times: 'nav.times', progress: 'nav.progress', history: 'nav.history', wrapped: 'nav.wrapped', friends: 'nav.friends', collection: 'nav.collection', admin: 'nav.admin', profile: 'nav.profile' };
+  const PANEL_TITLE = { overview: 'nav.overview', top: 'nav.top', progress: 'nav.progress', history: 'nav.history', wrapped: 'nav.wrapped', friends: 'nav.friends', collection: 'nav.collection', admin: 'nav.admin', profile: 'nav.profile' };
   function greeting() {
     const h = new Date().getHours();
     const k = h < 5 ? 'night' : h < 11 ? 'morning' : h < 17 ? 'day' : h < 22 ? 'evening' : 'night';
@@ -2000,7 +1918,6 @@
       if (!hasData()) return;
       if (panel === 'overview') { if (!state.dashboard) await loadDashboard(); return renderOverview(); }
       if (panel === 'top') { if (!state.top || state.top.kind !== state.topKind) await loadTop(); return renderTop(); }
-      if (panel === 'times') { if (!state.times) await loadTimes(); return renderTimes(); }
       if (panel === 'progress') { showSkeleton('#progress-list'); if (!state.progress) await loadProgress(); return renderProgress(); }
       if (panel === 'history') { if (!hist.groups) await loadHistory(true); return renderHistory(); }
     } catch (err) {
@@ -2158,7 +2075,7 @@
     $('#restore-file').addEventListener('change', (e) => restoreFromFile(e.target.files?.[0]));
     segmented($('#range-control'), 'range', state.range, (r) => {
       state.range = r; store.set('range', r);
-      state.dashboard = null; state.top = null; state.times = null;
+      state.dashboard = null; state.top = null;
       renderPanel(state.panel);
       prefetch();
     });
@@ -2214,7 +2131,6 @@
     bindGlobal();
     bindImport();
     bindHistory();
-    bindHeatTooltip();
     bindAvatar();
     bindNews();
     try { await loadStatus(); } catch (err) { toast(errMsg(err), true); return; }

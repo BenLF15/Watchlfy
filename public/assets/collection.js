@@ -422,7 +422,7 @@
     $$('.hidden-gift').forEach((g) => g.remove());
     if (!col.data?.gift || !W.hasData()) return;
     const day = new Date().toISOString().slice(0, 10);
-    const spots = ['#insights', '#timeline-chart', '#overview-series', '#top-list', '#history', '#binge-list', '#progress-list', '#service-split'];
+    const spots = ['#insights', '#timeline-chart', '#overview-series', '#top-list', '#history', '#progress-list', '#service-split'];
     const h = [...`${day}${W.state.account?.id}`].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 1);
     const target = $(spots[h % spots.length])?.closest('.card, .insights');
     if (!target) return;
