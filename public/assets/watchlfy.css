@@ -1747,6 +1747,17 @@ details.day-card[open] .hist-list { animation: fold-in 0.35s var(--ease-out) bot
 .st-face { width: 34px; height: 34px; border-radius: 50%; overflow: hidden; flex: none; box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.7); }
 .st-face img, .st-face .poster-ph { width: 100%; height: 100%; object-fit: cover; object-position: 50% 20%; }
 
+/* ------------------------------------------------------------------ Verlauf ab: Einträge pro Jahr */
+.from-years { display: flex; gap: 6px; overflow-x: auto; padding: 4px 2px 12px; margin-bottom: 8px; scrollbar-width: thin; }
+.from-year { flex: none; width: 64px; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 4px; border: 1px solid var(--line); border-radius: var(--r-sm); background: rgba(255, 255, 255, 0.03); color: var(--text); cursor: pointer; transition: border-color 0.3s, opacity 0.3s; }
+.from-year:hover { border-color: rgba(var(--accent-rgb), 0.6); }
+.from-year.off { opacity: 0.38; }
+.fy-bar { position: relative; width: 22px; height: 54px; display: flex; align-items: flex-end; }
+.fy-bar i { position: absolute; left: 0; right: 0; bottom: 0; border-radius: 4px 4px 1px 1px; background: var(--grad); }
+.fy-bar i.trakt { left: 6px; right: 6px; background: rgba(255, 255, 255, 0.75); }
+.from-year b { font: 700 0.78rem/1 var(--osd); }
+.from-year small { font-size: 0.62rem; color: var(--text-3); text-align: center; line-height: 1.2; }
+
 /* ================================================================== Bewegung reduzieren */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important; }

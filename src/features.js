@@ -21,11 +21,14 @@ export async function exportData(accountId) {
 import { config } from './config.js';
 import { withTransaction } from './db.js';
 import * as stats from './stats.js';
+import { FROM_SQL } from './stats.js';
 import { UserError } from './users.js';
 
 export async function wrappedYears(accountId) {
   const { rows } = await query(
-    `SELECT DISTINCT extract(year FROM watched_at AT TIME ZONE $2)::int AS y FROM views WHERE account_id = $1 ORDER BY y DESC`,
+    `SELECT extract(year FROM v.watched_at AT TIME ZONE $2)::int AS y FROM views v
+      WHERE v.account_id = $1 AND NOT v.superseded AND ${FROM_SQL}
+      GROUP BY 1 HAVING count(*) >= 5 ORDER BY y DESC`,
     [accountId, config.timezone],
   );
   return rows.map((r) => r.y);

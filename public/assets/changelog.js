@@ -7,6 +7,17 @@
    Danach den Cache-Parameter ?v=… in public/*.html hochzählen. */
 window.WatchlfyNews = [
   {
+    id: '2026-11-15o',
+    date: '2026-11-15',
+    items: [
+      {
+        icon: '📅', go: 'profile',
+        t: ['Verlauf ab …', 'History starts …', 'Historique à partir de …', 'Historial desde…', 'Cronologia da…', 'Historik från …', 'Historik fra …'],
+        d: ['Im Profil festlegen, ab wann dein Verlauf zählt – ältere Einträge (z. B. von Trakt mit Erscheinungsdatum) verschwinden überall, auch aus dem Rückblick.', 'Set in your profile when your history starts – older entries (e.g. from Trakt with release dates) disappear everywhere, including your review.', 'Dans le profil, choisis le début de ton historique – les entrées plus anciennes disparaissent partout, rétrospective comprise.', 'En el perfil, elige desde cuándo cuenta tu historial: lo anterior desaparece en todas partes, también del resumen.', 'Nel profilo scegli da quando conta la cronologia – le voci precedenti spariscono ovunque, anche dal riepilogo.', 'Välj i profilen när din historik börjar – äldre poster försvinner överallt, även från återblicken.', 'Vælg i profilen, hvornår din historik starter – ældre poster forsvinder overalt, også fra tilbageblikket.'],
+      },
+    ],
+  },
+  {
     id: '2026-11-15n',
     date: '2026-11-15',
     items: [

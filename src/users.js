@@ -108,7 +108,7 @@ const AVATAR_URL = `CASE WHEN av.updated_at IS NOT NULL THEN '/avatar/' || a.id 
 /** Konto inkl. Einstellungen und Trakt-Status. */
 export async function getAccount(id) {
   const { rows } = await query(
-    `SELECT a.id, a.username, a.is_admin, a.created_at, a.theme, a.lang, a.festive, a.glass, a.free_shop,
+    `SELECT a.id, a.username, a.is_admin, a.created_at, a.theme, a.lang, a.festive, a.glass, a.free_shop, to_char(a.history_from, 'YYYY-MM-DD') AS history_from,
             to_char(a.birthday, 'YYYY-MM-DD') AS birthday, a.privacy_accepted_at,
             ${AVATAR_URL} AS avatar_url, av.updated_at IS NOT NULL AS custom_avatar,
             tt.username AS trakt_username, tt.last_sync_at AS trakt_last_sync, tt.last_error AS trakt_error,
@@ -142,7 +142,7 @@ export const THEMES = ['system', 'dark', 'light', 'season'];
 export const LANGS = ['de', 'en', 'fr', 'es', 'it', 'sv', 'da'];
 
 /** Speichert Einstellungen des Kontos (nur übergebene Felder). */
-export async function updateSettings(accountId, { theme, lang, festive, glass, birthday } = {}) {
+export async function updateSettings(accountId, { theme, lang, festive, glass, birthday, historyFrom } = {}) {
   const sets = [];
   const vals = [accountId];
   const add = (col, v) => { vals.push(v); sets.push(`${col} = $${vals.length}`); };
@@ -158,6 +158,15 @@ export async function updateSettings(accountId, { theme, lang, festive, glass, b
       const d = m && new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]));
       if (!d || d.getUTCMonth() !== +m[2] - 1 || +m[1] < 1900 || d > new Date()) throw bad();
       add('birthday', birthday);
+    }
+  }
+  if (historyFrom !== undefined) {
+    if (historyFrom === null || historyFrom === '') add('history_from', null);
+    else {
+      const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(historyFrom));
+      const d = m && new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]));
+      if (!d || d.getUTCMonth() !== +m[2] - 1 || +m[1] < 1990 || d > new Date()) throw bad();
+      add('history_from', historyFrom);
     }
   }
   if (!sets.length) return;

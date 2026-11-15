@@ -102,3 +102,35 @@ test('Zuordnungen prüfen: Zusammenfassung, erst 3 Titel, Rest aufklappbar', asy
   await expect(list.locator('li:visible:not(.fold-row)')).toHaveCount(5);
   await shot(page, ti, 'review-fold');
 });
+
+test('Verlauf ab: alte Einträge ausblenden, Rückblick-Jahre nur mit genug Einträgen', async ({ page }, ti) => {
+  await newUser(page, ti);
+  const rows = [
+    ...Array.from({ length: 6 }, (_, i) => [`Dark: Staffel 1: Folge ${i + 1}`, `0${i + 1}.03.16`]),
+    ['Inception', '05.05.10'], // einzelner Ausreißer: kein eigener Rückblick
+    ['Oppenheimer', (() => { const d = new Date(Date.now() - 5 * 864e5); return `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getFullYear()).slice(2)}`; })()],
+  ];
+  const csv = `Title,Date\n${rows.map(([a, b]) => `"${a}","${b}"`).join('\n')}\n`;
+  const pv = await (await page.request.post('/api/import/preview?source=netflix', { headers: { 'Content-Type': 'application/octet-stream', 'X-Filename': 'NetflixViewingHistory.csv' }, data: Buffer.from(csv) })).json();
+  expect((await page.request.post('/api/import/commit', { data: { token: pv.token } })).ok()).toBeTruthy();
+  const years = async () => (await (await page.request.get('/api/wrapped')).json()).years;
+  expect(await years()).toContain(2016);
+  expect(await years()).not.toContain(2010);
+  const all = async () => Number((await (await page.request.get('/api/dashboard?range=all')).json()).overview.views);
+  expect(await all()).toBe(8);
+  await page.reload(); await page.waitForSelector('body.ready');
+  await goPanel(page, 'profile');
+  const thisYear = new Date(Date.now() - 5 * 864e5).getFullYear(); // Jahr des neuesten Eintrags
+  await expect(page.locator('#from-years [data-from-year="2016"]')).toBeVisible();
+  await page.click(`#from-years [data-from-year="${thisYear}"]`);
+  await expect(page.locator('#toast')).toContainText('Verlauf beginnt jetzt');
+  await expect(page.locator('#from-input')).toHaveValue(`${thisYear}-01-01`);
+  await expect(page.locator('#from-years [data-from-year="2016"]')).toHaveClass(/off/);
+  await expect(page.locator('#from-hint')).toContainText('7 ältere Einträge sind ausgeblendet');
+  expect(await years()).not.toContain(2016);
+  expect(await all()).toBe(1);
+  await shot(page, ti, 'history-from');
+  await page.click('#from-clear');
+  await expect(page.locator('#from-input')).toHaveValue('');
+  expect(await all()).toBe(8);
+});

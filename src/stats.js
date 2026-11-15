@@ -9,6 +9,8 @@ const TZ = config.timezone;
 
 // Doppelte Zählung vermeiden: views.superseded wird in dedupe.js beim Speichern berechnet (siehe dort).
 const NOT_SUPERSEDED = 'AND NOT v.superseded';
+/** Sichtbarer Zeitraum: ab „Verlauf ab“ des Kontos (Einstellung), sonst ab 1990 – $1 ist immer das Konto. */
+export const FROM_SQL = `v.watched_at >= COALESCE((SELECT history_from FROM accounts WHERE id = $1)::timestamp AT TIME ZONE '${config.timezone}', TIMESTAMPTZ '1990-01-01')`;
 
 /**
  * Basis-CTE „v“: ein Eintrag pro Seh-Ereignis mit aufgelöstem Titel und Sekunden.
@@ -36,6 +38,7 @@ export const BASE_SQL = `
       LEFT JOIN episodes e ON e.title_id = t.id AND e.season = v.season AND e.episode = v.episode
      WHERE v.account_id = $1
        AND ($2::int IS NULL OR v.watched_at >= now() - make_interval(days => $2::int))
+       AND ${FROM_SQL}
        ${NOT_SUPERSEDED}
   )`;
 
@@ -44,9 +47,10 @@ const run = (sql, accountId, days, extra = []) => query(`WITH ${BASE_SQL} ${sql}
 // ---------------------------------------------------------------- Status
 export async function counts(accountId) {
   const { rows } = await query(
-    `SELECT count(*) AS views, min(watched_at) AS first, max(watched_at) AS last,
+    `SELECT count(*) FILTER (WHERE ${FROM_SQL}) AS views, min(watched_at) FILTER (WHERE ${FROM_SQL}) AS first, max(watched_at) AS last,
+            count(*) FILTER (WHERE NOT ${FROM_SQL}) AS hidden,
             COALESCE(array_agg(DISTINCT source) FILTER (WHERE source IS NOT NULL), '{}') AS sources
-       FROM views WHERE account_id = $1`,
+       FROM views v WHERE account_id = $1`,
     [accountId],
   );
   return rows[0];
@@ -77,7 +81,7 @@ export async function overview(accountId, days) {
              LEFT JOIN episodes e ON e.title_id = t.id AND e.season = v.season AND e.episode = v.episode
             WHERE v.account_id = $1 AND v.watched_at >= now() - make_interval(days => $2::int * 2)
               AND v.watched_at < now() - make_interval(days => $2::int)
-              ${NOT_SUPERSEDED}`,
+              ${NOT_SUPERSEDED} AND ${FROM_SQL}`,
           [accountId, days],
         ).then((r) => r.rows[0])
       : Promise.resolve(null),
@@ -330,4 +334,15 @@ export async function titleDetail(accountId, { titleId = null, tkey = null } = {
     views: views.slice(-500).reverse(),
     episodes: eps,
   };
+}
+
+/** Einträge pro Jahr und Quelle (alle, auch ausgeblendete) – hilft beim Festlegen von „Verlauf ab“. */
+export async function yearsOverview(accountId) {
+  const { rows } = await query(
+    `SELECT extract(year FROM watched_at AT TIME ZONE $2)::int AS year, count(*)::int AS n,
+            count(*) FILTER (WHERE source = 'trakt')::int AS trakt
+       FROM views WHERE account_id = $1 AND NOT superseded GROUP BY 1 ORDER BY 1`,
+    [accountId, TZ],
+  );
+  return rows;
 }

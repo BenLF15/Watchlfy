@@ -1307,6 +1307,33 @@
   }
 
   // ================================================================ Profil
+  /** „Verlauf ab“: Einträge pro Jahr (Trakt-Anteil sichtbar) und Startdatum, alles davor wird ausgeblendet. */
+  async function renderFromCard() {
+    const acc = state.status?.account;
+    if (!acc) return;
+    $('#from-input').value = acc.history_from || '';
+    $('#from-input').max = isoDay(new Date());
+    const hidden = Number(state.status.counts?.hidden || 0);
+    $('#from-hint').textContent = acc.history_from
+      ? t('from.active', { d: dateFmtYear.format(parseDay(acc.history_from)), n: fmt(hidden) })
+      : t('from.none');
+    try {
+      const { years } = await api('/api/history/years');
+      const max = Math.max(1, ...years.map((y) => y.n));
+      const from = acc.history_from ? Number(acc.history_from.slice(0, 4)) : null;
+      $('#from-years').innerHTML = years.length ? years.map((y) => `<button type="button" class="from-year${from && y.year < from ? ' off' : ''}" data-from-year="${y.year}" title="${esc(t('from.pick', { y: y.year }))}">
+          <span class="fy-bar"><i style="height:${Math.max(6, (y.n / max) * 100)}%"></i><i class="trakt" style="height:${Math.max(0, (y.trakt / max) * 100)}%"></i></span>
+          <b>${y.year}</b><small>${fmt(y.n)}${y.trakt ? ` · ${esc(t('from.trakt', { n: fmt(y.trakt) }))}` : ''}</small></button>`).join('') : '';
+    } catch { /* Übersicht ist nur eine Hilfe */ }
+  }
+  async function saveFrom(v) {
+    if (!(await saveSettings({ history_from: v || null }))) return;
+    toast(v ? t('from.saved', { d: dateFmtYear.format(parseDay(v)) }) : t('from.cleared'));
+    invalidate();
+    await loadStatus();
+    renderProfile();
+  }
+
   async function renderProfile() {
     const s = state.status;
     if (!s) return;
@@ -1319,6 +1346,7 @@
       ? t('profile.sub', { n: fmt(s.counts.views), d: s.counts.first ? dateFmtYear.format(new Date(s.counts.first)) : '–' })
       : t('profile.subEmpty');
     $('#profile-services').innerHTML = servicesGrid(true);
+    renderFromCard();
     $('#profile-account').innerHTML = `<dt>${esc(t('account.username'))}</dt><dd>${esc(acc.username)}</dd>
       <dt>${esc(t('account.since'))}</dt><dd>${esc(dateFmtYear.format(new Date(acc.created_at)))}</dd>`;
     $('#birthday-input').value = acc.birthday || '';
@@ -2118,6 +2146,9 @@
     $('#privacy-accept').addEventListener('click', async () => { try { await postJSON('/api/me/privacy', {}); state.account.privacy_accepted = true; renderNotices(); } catch (err) { toast(errMsg(err), true); } });
     $('#glass-switch').addEventListener('click', async () => { const on = !T.glass(); smoothSwap(() => T.setGlass(on), 'fade'); renderThemeSettings(); await saveSettings({ glass: on }); });
     $('#festive-switch').addEventListener('click', async () => { state.account.festive = !festOn(); renderThemeSettings(); updateFestive({ burst: true }); await saveSettings({ festive: state.account.festive }); });
+    $('#from-save').addEventListener('click', () => saveFrom($('#from-input').value));
+    $('#from-clear').addEventListener('click', () => saveFrom(null));
+    $('#from-years').addEventListener('click', (e) => { const b = e.target.closest('[data-from-year]'); if (b) saveFrom(`${b.dataset.fromYear}-01-01`); });
     $('#birthday-save').addEventListener('click', async () => { const v = $('#birthday-input').value; if (await saveSettings({ birthday: v || null })) { state.account.birthday = v || null; toast(t('account.birthdaySaved')); updateFestive({ burst: true }); } });
     $('#birthday-clear').addEventListener('click', async () => { if (await saveSettings({ birthday: null })) { state.account.birthday = null; $('#birthday-input').value = ''; updateFestive(); } });
     $('[data-action="password"]').addEventListener('click', changePassword);

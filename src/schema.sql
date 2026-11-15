@@ -288,3 +288,6 @@ CREATE TABLE IF NOT EXISTS shop_days (
   created_at  timestamptz NOT NULL DEFAULT now(),
   PRIMARY KEY (account_id, day)
 );
+
+-- Verlauf ab: Einträge davor (z. B. bei Trakt mit Erscheinungsdatum statt Schaudatum markiert) werden ausgeblendet
+ALTER TABLE accounts ADD COLUMN IF NOT EXISTS history_from date;

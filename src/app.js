@@ -337,6 +337,7 @@ api.get(
         avatar_url: a.avatar_url || null, custom_avatar: Boolean(a.custom_avatar),
         privacy_accepted: Boolean(a.privacy_accepted_at),
         free_shop: Boolean(a.is_admin && a.free_shop),
+        history_from: a.history_from || null,
       },
       counts: c,
       tmdb: { enabled: tmdb.enabled(), loading: tmdb.isEnriching(), pausedUntil: tmdb.tmdbPausedUntil(), ...tm },
@@ -365,8 +366,8 @@ api.delete('/me/avatar', wrap(async (req, res) => {
   res.json({ ok: true, avatar_url: null });
 }));
 api.post('/me/settings', express.json({ limit: '2kb' }), wrap(async (req, res) => {
-  const { theme, lang, festive, glass, birthday } = req.body || {};
-  await users.updateSettings(req.account.id, { theme, lang, festive, glass, birthday });
+  const { theme, lang, festive, glass, birthday, history_from: historyFrom } = req.body || {};
+  await users.updateSettings(req.account.id, { theme, lang, festive, glass, birthday, historyFrom });
   res.json({ ok: true });
 }));
 api.post('/me/privacy', wrap(async (req, res) => {
@@ -440,6 +441,7 @@ api.get('/history', wrap(async (req, res) => {
   const before = req.query.before && !Number.isNaN(Date.parse(req.query.before)) ? new Date(req.query.before).toISOString() : null;
   res.json({ items: await stats.history(req.account.id, { before, q: req.query.q, limit: req.query.limit, group: req.query.group }) });
 }));
+api.get('/history/years', wrap(async (req, res) => res.json({ years: await stats.yearsOverview(req.account.id) })));
 api.get('/history/groups', wrap(async (req, res) => res.json({ groups: await stats.historyGroups(req.account.id, { q: req.query.q }) })));
 api.get('/title', wrap(async (req, res) => {
   const d = await stats.titleDetail(req.account.id, { titleId: req.query.id || null, tkey: req.query.key || null });

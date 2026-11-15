@@ -156,7 +156,7 @@ async function titlePool(accountId) {
        FROM views v
        JOIN title_aliases al ON al.account_id = v.account_id AND al.raw_key = v.raw_key
        JOIN titles t ON t.id = al.title_id
-      WHERE v.account_id = $1 AND t.poster_path IS NOT NULL
+      WHERE v.account_id = $1 AND t.poster_path IS NOT NULL AND ${stats.FROM_SQL}
       GROUP BY t.id ORDER BY views DESC`,
     [accountId],
   );
