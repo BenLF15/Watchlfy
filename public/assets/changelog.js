@@ -7,6 +7,17 @@
    Danach den Cache-Parameter ?v=… in public/*.html hochzählen. */
 window.WatchlfyNews = [
   {
+    id: '2026-11-15d',
+    date: '2026-11-15',
+    items: [
+      {
+        icon: '🗂️', go: 'history',
+        t: ['Kompaktere Verläufe', 'More compact histories', 'Historiques plus compacts', 'Historiales más compactos', 'Cronologie più compatte', 'Kompaktare historik', 'Mere kompakte historik'],
+        d: ['Tage im Monat, Staffeln im Titel, Importe und Anmeldungen klappen jetzt auf – erst das Wichtigste, der Rest auf Tipp.', 'Days in a month, seasons of a title, imports and sign-ins now fold out – the essentials first, the rest on tap.', 'Jours du mois, saisons d’un titre, imports et connexions se déplient : l’essentiel d’abord, le reste d’un geste.', 'Días del mes, temporadas de un título, importaciones e inicios de sesión se despliegan: primero lo esencial, el resto con un toque.', 'Giorni del mese, stagioni di un titolo, importazioni e accessi ora si espandono: prima l’essenziale, il resto con un tocco.', 'Dagar i månaden, säsonger, importer och inloggningar fälls nu ut – det viktigaste först, resten med ett tryck.', 'Dage i måneden, sæsoner, importer og logins foldes nu ud – det vigtigste først, resten med et tryk.'],
+      },
+    ],
+  },
+  {
     id: '2026-11-15c',
     date: '2026-11-15',
     items: [

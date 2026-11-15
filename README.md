@@ -16,7 +16,7 @@ Dienst selbst gibt.
 | **Top-Listen** | Serien, Filme, Genres, Schauspieler, Länder (Podium + Rangliste) |
 | **Schauzeiten** | Heatmap Wochentag × Uhrzeit, nach Stunde/Wochentag, Binge-Erkennung („5 Folgen am Stück“) |
 | **Fortschritt** | Pro Serie gesehene vs. alle Folgen (TMDB, ohne Specials), Staffel-Kacheln, „Weiterschauen“ mit nächster Folge; zuerst die Top 5, Rest aufklappbar |
-| **Verlauf** | Letzte 7 Tage, danach Monate – jeweils aufklappbar (Einträge werden erst dann geladen), darin nach Tagen; Suche, Detailansicht mit Poster, Backdrop, Staffel-Raster, Besetzung, Gesamtzeit |
+| **Verlauf** | Letzte 7 Tage, danach Monate – jeweils aufklappbar (Einträge werden erst dann geladen), darin Tage als kompakte Zusammenfassung zum Aufklappen; im Detail Verlauf je Staffel einklappbar, lange Listen (auch Importe, Anmeldungen) zeigen erst die neuesten Einträge; Suche, Detailansicht mit Poster, Backdrop, Staffel-Raster, Besetzung, Gesamtzeit |
 | **TMDB** | Abgleich im Hintergrund mit Treffer-Sicherheit; unsichere Treffer im Profil (oder im Detail) korrigieren |
 | **Trakt.tv** | OAuth, Sync alle 30 Min., „Läuft gerade“ über Trakt-Scrobble, Bewertungen; Doppelungen mit Importen werden übersprungen |
 | **Rückblick** | „Dein Jahr in Serien“ als Vollbild-Story mit Übergängen, Wischen schließt, Teilen; zu jeder passenden Folie läuft die Filmmusik (30-s-Hörprobe über die iTunes-Suche, weich überblendet, stummschaltbar, Taste M) |

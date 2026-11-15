@@ -87,11 +87,38 @@ test.describe('Statistik', () => {
     await expect(month.locator('.hg-title')).not.toHaveText('');
     await month.locator('.hg-head').click();
     await expect(month).toHaveClass(/open/);
-    await expect(month.locator('.hist').first()).toBeVisible();
+    // Tage im Monat sind kompakt zusammengefasst und klappen einzeln auf
+    const day = month.locator('details.day-card').first();
+    await expect(day).not.toHaveAttribute('open', '');
+    await expect(day.locator('.day-names')).not.toHaveText('');
+    await expect(month.locator('.hist').first()).toBeHidden();
+    await day.locator('summary').click();
+    await expect(day.locator('.hist').first()).toBeVisible();
     expect(await month.locator('.hist').count()).toBe(groups[1].n);
     await shot(page, ti, 'history-groups');
     await month.locator('.hg-head').click();
     await expect(month).not.toHaveClass(/open/);
+  });
+
+  test('Detail: Verlauf je Staffel einklappbar, lange Listen gekürzt', async ({ page }, ti) => {
+    const day = (n) => { const d = new Date(Date.now() - n * 864e5); return `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getFullYear()).slice(2)}`; };
+    const rows = [...Array.from({ length: 10 }, (_, i) => [`Dark: Staffel 1: Folge ${i + 1}`, day(40 - i)]), ['Dark: Staffel 2: Folge 1', day(2)]];
+    const csv = `Title,Date\n${rows.map(([a, b]) => `"${a}","${b}"`).join('\n')}\n`;
+    const pv = await (await page.request.post('/api/import/preview?source=netflix', { headers: { 'Content-Type': 'application/octet-stream', 'X-Filename': 'NetflixViewingHistory.csv' }, data: Buffer.from(csv) })).json();
+    expect((await page.request.post('/api/import/commit', { data: { token: pv.token } })).ok()).toBeTruthy();
+    await waitTmdb(page);
+    const id = (await (await page.request.get('/api/history?q=dark')).json()).items[0].title_id;
+    await page.evaluate((x) => window.Watchlfy.openDetail({ id: x }), id);
+    const seasons = page.locator('#detail-dialog .dv-season');
+    await expect(seasons).toHaveCount(2);
+    await expect(seasons.first()).toHaveAttribute('open', '');
+    await expect(seasons.nth(1)).not.toHaveAttribute('open', '');
+    await seasons.nth(1).locator('summary').click();
+    const s1 = seasons.nth(1).locator('.detail-views');
+    await expect(s1.locator('li:visible:not(.fold-row)')).toHaveCount(8);
+    await s1.locator('[data-fold]').click();
+    await expect(s1.locator('li:visible:not(.fold-row)')).toHaveCount(10);
+    await shot(page, ti, 'detail-seasons');
   });
 
   test('Verlauf mit Suche', async ({ page }, ti) => {

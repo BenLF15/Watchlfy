@@ -1663,6 +1663,49 @@ img.poster-img.is-loaded { opacity: 1; filter: none; transform: none; }
 .curtain { width: 12%; background: repeating-linear-gradient(90deg, rgba(var(--cyan-rgb), 0.5) 0 1px, transparent 1px 9px), linear-gradient(90deg, rgba(var(--accent-rgb), 0.35), transparent); box-shadow: none; animation: light-curtain 3s ease-in-out infinite; }
 @keyframes light-curtain { 50% { opacity: 0.55; } }
 
+/* ------------------------------------------------------------------ Einklappbare Listen (überall gleich) */
+[data-fold-extra] { display: none !important; }
+.fold-open > [data-fold-extra] { display: revert !important; animation: fold-in 0.4s var(--ease-out) both; }
+.detail-views.fold-open > li[data-fold-extra], .import-history.fold-open > li[data-fold-extra], .login-log.fold-open > li[data-fold-extra] { display: grid !important; }
+.import-history.fold-open > li[data-fold-extra] { display: flex !important; }
+@keyframes fold-in { from { opacity: 0; transform: translateY(-6px); } }
+.fold-row { list-style: none; display: flex !important; justify-content: center; padding: 10px 0 2px !important; border-top: 1px dashed var(--line); grid-template-columns: none !important; }
+.fold-btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 999px; border: 1px solid var(--line-strong); background: rgba(255, 255, 255, 0.04); color: var(--text-2); font: 700 0.78rem/1 var(--text-font); cursor: pointer; transition: border-color 0.3s, color 0.3s; }
+.fold-btn:hover { color: var(--text); border-color: rgba(var(--accent-rgb), 0.6); }
+.fold-btn svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.4s var(--ease-spring); }
+.fold-btn[aria-expanded='true'] svg { transform: rotate(180deg); }
+/* Detail: Verlauf je Staffel */
+.detail-h small { font: 600 0.7rem/1 var(--osd); letter-spacing: 0.06em; margin-left: 6px; }
+.dv-seasons { display: flex; flex-direction: column; gap: 6px; }
+.dv-season { border: 1px solid var(--line); border-radius: var(--r-sm); background: rgba(255, 255, 255, 0.02); overflow: hidden; }
+.dv-season > summary { list-style: none; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; padding: 10px 12px; cursor: pointer; }
+.dv-season > summary::-webkit-details-marker { display: none; }
+.dv-season > summary svg, .day-chev { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; color: var(--text-3); transition: transform 0.4s var(--ease-spring); }
+.dv-season[open] > summary svg, .day-card[open] .day-chev { transform: rotate(180deg); color: var(--cyan); }
+.dv-season[open] > summary { border-bottom: 1px dashed var(--line); }
+.dv-season .detail-views { padding: 0 12px; }
+.dv-season .detail-views li:first-child { border-top: 0; }
+/* Verlauf: Tage als einklappbare Zeilen, Einträge kompakt */
+details.day-card > summary { list-style: none; cursor: pointer; display: grid; grid-template-columns: auto 1fr auto; align-items: baseline; gap: 4px 12px; }
+details.day-card > summary::-webkit-details-marker { display: none; }
+details.day-card > summary .muted { text-align: right; }
+.day-names { grid-column: 1 / 3; font-size: 0.78rem; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+details.day-card[open] .day-names { display: none; }
+.day-chev { grid-column: 3; grid-row: 1 / span 2; align-self: center; }
+details.day-card[open] > summary { grid-template-rows: auto; }
+details.day-card:not([open]) { padding-bottom: 10px; }
+details.day-card[open] .hist-list { animation: fold-in 0.35s var(--ease-out) both; }
+.hist-list { margin: 4px 0 0; padding: 0; list-style: none; }
+.hist { gap: 10px; padding: 5px 8px; }
+.hist .cover.poster-mini { width: 30px; height: 45px; border-radius: 6px; flex: none; }
+.hist-main b { font-size: 0.9rem; }
+.hist-main small { font-size: 0.74rem; }
+.hist-meta { gap: 6px; }
+.hist-meta .svc-dot { width: 18px; height: 18px; font-size: 0.6rem; }
+.hist-meta small { font-size: 0.7rem; }
+.day-card { padding-top: 10px; }
+.day-title { font-size: 0.72rem; }
+
 /* ================================================================== Bewegung reduzieren */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important; }

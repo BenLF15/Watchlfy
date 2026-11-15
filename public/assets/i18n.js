@@ -779,6 +779,10 @@
     'range.long.all': ['aller Zeiten', 'all time', 'de tous les temps', 'de todos los tiempos', 'di sempre', 'genom tiderna', 'nogensinde'],
 
     // ------------------------------------------------------------ Kanal-Design, Verlauf, Musik, Wohnzimmer
+    'fold.more.one': ['1 weiteren anzeigen', 'Show 1 more', 'Afficher 1 de plus', 'Mostrar 1 más', 'Mostra 1 altro', 'Visa 1 till', 'Vis 1 mere'],
+    'fold.more.other': ['{n} weitere anzeigen', 'Show {n} more', 'Afficher {n} de plus', 'Mostrar {n} más', 'Mostra altri {n}', 'Visa {n} till', 'Vis {n} mere'],
+    'progress.seasonShort': ['Staffel {s}', 'Season {s}', 'Saison {s}', 'Temporada {s}', 'Stagione {s}', 'Säsong {s}', 'Sæson {s}'],
+    'detail.other': ['Ohne Staffel', 'No season', 'Sans saison', 'Sin temporada', 'Senza stagione', 'Utan säsong', 'Uden sæson'],
     'nav.prev': ['Kanal zurück', 'Previous channel', 'Chaîne précédente', 'Canal anterior', 'Canale precedente', 'Föregående kanal', 'Forrige kanal'],
     'nav.next': ['Kanal weiter', 'Next channel', 'Chaîne suivante', 'Canal siguiente', 'Canale successivo', 'Nästa kanal', 'Næste kanal'],
     'nav.guide': ['Programm', 'Guide', 'Programme', 'Guía', 'Guida', 'Programguide', 'Programoversigt'],

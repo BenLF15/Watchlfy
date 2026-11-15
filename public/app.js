@@ -816,6 +816,25 @@
     growBars($('#progress-list'), '.prog-bar span');
   }
 
+  // ================================================================ Einklappbare Listen (überall gleich)
+  /** Liste mit den ersten n Einträgen; der Rest liegt eingeklappt dahinter und klappt per Knopf auf. */
+  function foldList(items, n, { tag = 'li', cls = '' } = {}) {
+    if (items.length <= n) return items.join('');
+    const rest = items.length - n;
+    return items.slice(0, n).join('') + items.slice(n).map((x) => x.replace(/^(\s*<\w+)(\s|>)/, '$1 data-fold-extra$2')).join('')
+      + `<${tag} class="fold-row ${cls}"><button type="button" class="fold-btn" data-fold aria-expanded="false" data-more="${esc(tn('fold.more', rest, { n: rest }))}" data-less="${esc(t('progress.less'))}">`
+      + `<span>${esc(tn('fold.more', rest, { n: rest }))}</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button></${tag}>`;
+  }
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-fold]');
+    if (!b) return;
+    const list = b.closest('.fold-row').parentElement;
+    const open = b.getAttribute('aria-expanded') !== 'true';
+    b.setAttribute('aria-expanded', String(open));
+    list.classList.toggle('fold-open', open);
+    $('span', b).textContent = open ? b.dataset.less : b.dataset.more;
+  });
+
   // ================================================================ Verlauf
   // Zusammengefasst: „Letzte 7 Tage“, danach Kalendermonate. Einträge werden erst beim Aufklappen geladen.
   const hist = { items: null, groups: null, open: new Set(['week']), lists: {}, q: '' };
@@ -846,17 +865,20 @@
       if (!byDay.has(k)) byDay.set(k, []);
       byDay.get(k).push(v);
     }
+    const openDays = grp === 'week' || hist.q;
     return [...byDay].map(([day, items]) => {
       const secs = items.reduce((a, v) => a + v.secs, 0);
-      return `<section class="day-card" data-day="${day}">
-        <header class="day-head"><h4 class="day-title">${esc(longDayFmt.format(parseDay(day)))}</h4><span class="muted small">${esc(dur(secs))} · ${esc(tn('unit.entry', items.length, { n: items.length }))}</span></header>
+      const names = [...new Set(items.map((v) => v.name))];
+      return `<details class="day-card" data-day="${day}"${openDays ? ' open' : ''}>
+        <summary class="day-head"><h4 class="day-title">${esc(longDayFmt.format(parseDay(day)))}</h4><span class="muted small">${esc(dur(secs))} · ${esc(tn('unit.entry', items.length, { n: items.length }))}</span>
+          <span class="day-names">${esc(names.slice(0, 3).join(' · '))}${names.length > 3 ? ` +${names.length - 3}` : ''}</span><svg class="day-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
         <ul class="hist-list">${items.map((v) => `
           <li class="hist" ${v.title_id ? `data-title-id="${v.title_id}"` : `data-title-key="${esc(v.tkey)}"`}>
             <div class="cover poster-mini">${poster(v.poster_path, v.name, 'w92')}</div>
             <div class="hist-main"><b>${esc(v.name)}</b><small>${esc(epLabel(v) || (v.kind === 'movie' ? t('kind.movie') : ''))}</small></div>
             <div class="hist-meta">${serviceDot(v.source)}<small>${v.time_known ? esc(timeFmt.format(new Date(v.watched_at))) : ''}<br>${esc(dur(v.secs))}${v.estimated ? '*' : ''}</small></div>
           </li>`).join('')}</ul>
-      </section>`;
+      </details>`;
     }).join('') + (l.done ? '' : `<button type="button" class="btn btn-ghost btn-xs hg-more" data-hg-more="${esc(grp)}">${esc(t('history.more'))}</button>`);
   }
   function renderHistory() {
@@ -953,6 +975,25 @@
       $('#detail-body').innerHTML = `${CLOSE_BTN()}<p class="empty">${esc(errMsg(err))}</p>`;
     }
   }
+  /** Verlauf eines Titels: Serien je Staffel einklappbar (neueste offen), Filme mit den letzten Einträgen und Rest zum Aufklappen. */
+  function detailViewsHtml(d) {
+    const row = (v) => `<li><span>${esc(v.time_known ? dateTimeFmt.format(new Date(v.watched_at)) : dateFmtYear.format(new Date(v.watched_at)))}</span><b>${esc(epLabel(v) || d.name)}</b><small>${serviceDot(v.source)} ${esc(dur(v.secs))}${v.estimated ? '*' : ''}</small></li>`;
+    const views = d.views; // vom Server schon neueste zuerst
+    const bySeason = new Map();
+    for (const v of views) {
+      const k = d.kind === 'tv' && v.season != null ? v.season : null;
+      if (!bySeason.has(k)) bySeason.set(k, []);
+      bySeason.get(k).push(v);
+    }
+    if (d.kind !== 'tv' || bySeason.size < 2) return `<ul class="detail-views">${foldList(views.map(row), 6)}</ul>`;
+    return `<div class="dv-seasons">${[...bySeason].map(([season, list], i) => {
+      const secs = list.reduce((a, v) => a + v.secs, 0);
+      return `<details class="dv-season"${i === 0 ? ' open' : ''}><summary><b>${esc(season == null ? t('detail.other') : t('progress.seasonShort', { s: season }))}</b>
+        <span class="muted small">${esc(tn('unit.entry', list.length, { n: list.length }))} · ${esc(dur(secs, { short: true }))} · ${esc(relTime(list[0].watched_at))}</span>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+        <ul class="detail-views">${foldList(list.map(row), 8)}</ul></details>`;
+    }).join('')}</div>`;
+  }
   function renderDetail(d) {
     const tt = d.title;
     const back = tmdbImg(tt?.backdrop_path, 'w780');
@@ -991,8 +1032,8 @@
       ${tt?.overview ? `<p class="detail-overview">${esc(tt.overview)}</p>` : ''}
       ${tt?.cast?.length ? `<p class="muted small"><b>${esc(t('detail.cast'))}:</b> ${esc(tt.cast.slice(0, 8).join(', '))}</p>` : ''}
       ${seasonsHtml}
-      <h3 class="detail-h">${esc(t('detail.history'))}</h3>
-      <ul class="detail-views">${d.views.slice(0, 80).map((v) => `<li><span>${esc(v.time_known ? dateTimeFmt.format(new Date(v.watched_at)) : dateFmtYear.format(new Date(v.watched_at)))}</span><b>${esc(epLabel(v) || d.name)}</b><small>${serviceDot(v.source)} ${esc(dur(v.secs))}${v.estimated ? '*' : ''}</small></li>`).join('')}</ul>
+      <h3 class="detail-h">${esc(t('detail.history'))} <small class="muted">${esc(tn('unit.entry', d.views.length, { n: fmt(d.views.length) }))}</small></h3>
+      ${detailViewsHtml(d)}
       ${d.estimated ? `<p class="muted small">* ${esc(t('est.tooltip'))}</p>` : ''}
       ${state.status?.tmdb?.enabled ? `<div class="detail-actions"><button type="button" class="btn btn-ghost btn-xs" data-correct="${esc(d.raw_keys[0])}" data-correct-name="${esc(d.name)}" data-correct-kind="${d.kind}">✎ ${esc(t('match.correct'))}</button></div>` : ''}`;
   }
@@ -1273,9 +1314,9 @@
       const sources = state.status?.counts?.sources || [];
       $('#import-history').innerHTML = r.items.length || sources.length ? `
         <li class="ih-head">${esc(t('imports.title'))}</li>
-        ${r.items.map((x) => `<li><span>${serviceDot(x.source)}</span><div><b>${esc(x.filename || serviceName(x.source))}</b>
+        ${foldList(r.items.map((x) => `<li><span>${serviceDot(x.source)}</span><div><b>${esc(x.filename || serviceName(x.source))}</b>
           <small>${esc(dateTimeFmt.format(new Date(x.created_at)))} · ${esc(t('imports.row', { a: fmt(x.rows_added), t: fmt(x.rows_total) }))}${x.profile ? ` · ${esc(x.profile)}` : ''}</small></div>
-          <button type="button" class="link-btn danger" data-undo-import="${x.id}">${esc(t('imports.undo'))}</button></li>`).join('')}
+          <button type="button" class="link-btn danger" data-undo-import="${x.id}">${esc(t('imports.undo'))}</button></li>`), 3)}
         ${sources.length ? `<li class="ih-sources">${sources.map((src) => `<button type="button" class="btn btn-ghost btn-xs" data-delete-source="${src}">🗑️ ${esc(t('imports.deleteSource', { s: serviceName(src) }))}</button>`).join('')}</li>` : ''}` : '';
     } catch { /* egal */ }
   }
@@ -1936,7 +1977,7 @@
           <button type="button" class="btn btn-ghost btn-xs" data-admin-act="admin" data-id="${u.id}" data-on="${u.is_admin ? 0 : 1}">${esc(t(u.is_admin ? 'admin.revoke' : 'admin.make'))}</button>
           <button type="button" class="btn btn-ghost btn-xs" data-admin-act="reset" data-id="${u.id}">${esc(t('admin.resetPw'))}</button>
           <button type="button" class="btn btn-ghost btn-xs btn-danger" data-admin-act="delete" data-id="${u.id}" data-name="${esc(u.username)}">${esc(t('btn.delete'))}</button>`}</div></li>`).join('');
-      $('#admin-logins').innerHTML = acc.logins.slice(0, 20).map((l) => `<li><b>${esc(l.username)}</b><span>${esc(dateTimeFmt.format(new Date(l.at)))}</span><small class="muted">${esc((l.user_agent || '').slice(0, 60))}</small></li>`).join('') || `<li class="empty">–</li>`;
+      $('#admin-logins').innerHTML = foldList(acc.logins.slice(0, 30).map((l) => `<li><b>${esc(l.username)}</b><span>${esc(dateTimeFmt.format(new Date(l.at)))}</span><small class="muted">${esc((l.user_agent || '').slice(0, 60))}</small></li>`), 5) || `<li class="empty">–</li>`;
       const c = sys.catalog;
       $('#admin-system').innerHTML = [
         ['admin.db', `${sys.database.size} · ${sys.database.version}`], ['admin.catalog', t('admin.catalogLine', { t: fmt(c.titles), e: fmt(c.episodes), p: fmt(c.aliases_pending), u: fmt(c.aliases_unsure) })],
