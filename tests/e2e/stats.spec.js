@@ -21,6 +21,13 @@ test.describe('Statistik', () => {
       await expect(page.locator('#top-title')).not.toBeEmpty();
       await expect(page.locator('main')).toContainText(text);
     }
+    // Schauspieler mit Foto (TMDB-Porträt über den eigenen Server), ohne Foto weiter mit Initialen
+    await page.click('#top-kind [data-kind="actors"]');
+    await expect(page.locator('#podium .podium-item.is-face img.poster-img').first()).toBeVisible();
+    await expect(page.locator('#podium .podium-item.is-face img.poster-img').first()).toHaveAttribute('src', /\/img\/tmdb\/w185\/a-/);
+    await expect(page.locator('#top-list .cover.face img').first()).toBeVisible();
+    await shot(page, ti, 'top-actors');
+    await page.click('#top-kind [data-kind="countries"]');
     await shot(page, ti, 'top-countries');
     expect(errors).toEqual([]);
   });

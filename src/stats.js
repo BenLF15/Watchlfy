@@ -138,7 +138,8 @@ export async function top(accountId, days, kind = 'series', limit = 50) {
     case 'actors':
       return run(
         `SELECT c AS name, sum(secs) AS secs, count(DISTINCT tkey) AS titles,
-                (array_agg(DISTINCT name))[1:3] AS examples
+                (array_agg(DISTINCT name))[1:3] AS examples,
+                (SELECT p.profile_path FROM people p WHERE p.name = c) AS profile_path
            FROM v, unnest(cast_names[1:6]) c GROUP BY c ORDER BY secs DESC LIMIT $4`,
         accountId, days, [lim],
       );

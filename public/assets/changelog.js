@@ -7,6 +7,17 @@
    Danach den Cache-Parameter ?v=… in public/*.html hochzählen. */
 window.WatchlfyNews = [
   {
+    id: '2026-11-15n',
+    date: '2026-11-15',
+    items: [
+      {
+        icon: '🎭', go: 'top',
+        t: ['Schauspieler mit Foto', 'Actors with photos', 'Acteurs avec photo', 'Actores con foto', 'Attori con foto', 'Skådespelare med foto', 'Skuespillere med foto'],
+        d: ['In den Top-Listen und im Rückblick siehst du jetzt die Gesichter deiner meistgesehenen Schauspieler.', 'The top lists and your review now show the faces of your most-watched actors.', 'Les classements et la rétrospective montrent désormais les visages de tes acteurs préférés.', 'Las listas y el resumen muestran ahora las caras de tus actores más vistos.', 'Le classifiche e il riepilogo mostrano ora i volti dei tuoi attori più visti.', 'Topplistorna och återblicken visar nu ansiktena på dina mest sedda skådespelare.', 'Toplisterne og tilbageblikket viser nu ansigterne på dine mest sete skuespillere.'],
+      },
+    ],
+  },
+  {
     id: '2026-11-15m',
     date: '2026-11-15',
     items: [

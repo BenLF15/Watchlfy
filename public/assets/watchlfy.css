@@ -1738,6 +1738,15 @@ details.day-card[open] .hist-list { animation: fold-in 0.35s var(--ease-out) bot
 
 .via-trakt { font: 600 0.56rem/1 var(--osd); letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-3); padding: 3px 5px; border-radius: 5px; border: 1px solid var(--line); white-space: nowrap; }
 
+/* ------------------------------------------------------------------ Schauspieler-Fotos */
+.cover.face { overflow: hidden; background: var(--surface-3); }
+.cover.face img, .cover.face .poster-ph { width: 100%; height: 100%; object-fit: cover; object-position: 50% 20%; }
+.podium-item.is-face .pimg { border-radius: 50%; overflow: hidden; }
+.podium-item.is-face .pimg img, .podium-item.is-face .pimg .poster-ph { width: 100%; height: 100%; object-fit: cover; object-position: 50% 18%; }
+.st-actor { display: inline-flex; align-items: center; gap: 10px; }
+.st-face { width: 34px; height: 34px; border-radius: 50%; overflow: hidden; flex: none; box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.7); }
+.st-face img, .st-face .poster-ph { width: 100%; height: 100%; object-fit: cover; object-position: 50% 20%; }
+
 /* ================================================================== Bewegung reduzieren */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important; }

@@ -45,7 +45,8 @@ export async function wrapped(accountId, year) {
     run(`SELECT tkey, title_id, max(name) AS name, max(poster_path) AS poster_path, max(year) AS year, sum(secs) AS secs, count(*) AS views
            FROM y WHERE kind = 'movie' GROUP BY tkey, title_id ORDER BY views DESC, secs DESC LIMIT 5`),
     run(`SELECT g AS name, sum(secs) AS secs FROM y, unnest(genres) g GROUP BY g ORDER BY secs DESC LIMIT 5`),
-    run(`SELECT c AS name, sum(secs) AS secs, count(DISTINCT tkey) AS titles FROM y, unnest(cast_names[1:6]) c GROUP BY c ORDER BY secs DESC LIMIT 3`),
+    run(`SELECT c AS name, sum(secs) AS secs, count(DISTINCT tkey) AS titles, (SELECT p.profile_path FROM people p WHERE p.name = c) AS profile_path
+           FROM y, unnest(cast_names[1:6]) c GROUP BY c ORDER BY secs DESC LIMIT 3`),
     run(`SELECT extract(month FROM local_at)::int AS m, sum(secs) AS secs FROM y GROUP BY 1 ORDER BY 1`),
     run(`SELECT extract(hour FROM local_at)::int AS h, sum(secs) AS secs FROM y WHERE time_known GROUP BY 1`),
     run(`SELECT to_char(local_at::date, 'YYYY-MM-DD') AS day, sum(secs) AS secs FROM y GROUP BY 1 ORDER BY 1`),

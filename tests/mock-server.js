@@ -56,6 +56,11 @@ function search(list, q, nameOf) {
   return list.filter((x) => nameOf(x).some((name) => { const k = norm(name); return k.includes(n) || n.includes(k) || k.split(' ').some((w) => w.length > 3 && n.includes(w)); }));
 }
 
+/** Porträt-Platzhalter für Schauspieler-Fotos. */
+function face(name) {
+  const h = hue(name);
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="185" height="278" viewBox="0 0 185 278"><rect width="185" height="278" fill="hsl(${h},45%,30%)"/><circle cx="92" cy="100" r="46" fill="hsl(${h},40%,75%)"/><path d="M12 278c8-70 44-104 80-104s72 34 80 104z" fill="hsl(${h},40%,75%)"/><text x="50%" y="262" font-family="sans-serif" font-size="16" fill="#fff" text-anchor="middle">${name.replace(/[<&]/g, '')}</text></svg>`;
+}
 function svg(name, back) {
   const h = hue(name);
   const [w, hh] = back ? [780, 440] : [342, 513];
@@ -111,15 +116,15 @@ http.createServer(async (req, res) => {
       ...tvResult(t), genres: t.genres.map((name, i) => ({ id: i, name })), origin_country: t.country, episode_run_time: [t.runtime],
       number_of_episodes: t.seasons.reduce((a, b) => a + b, 0), status: t.id === 1396 ? 'Ended' : 'Returning Series',
       seasons: [{ season_number: 0, episode_count: 2, name: 'Specials' }, ...t.seasons.map((c, i) => ({ season_number: i + 1, episode_count: c, name: `Staffel ${i + 1}` }))],
-      credits: { cast: t.cast.map((name) => ({ name })) }, 'watch/providers': providers(t.id),
+      credits: { cast: t.cast.map((name, i) => ({ id: 5000 + hue(name), name, profile_path: i < 2 ? `/a-${slug(name)}.svg` : null })) }, 'watch/providers': providers(t.id),
     });
   }
   if ((m = /^\/3\/movie\/(\d+)$/.exec(p))) {
     const x = MOVIES.find((y) => y.id === Number(m[1]));
     if (!x) return send(res, 404, { status_code: 34 });
-    return send(res, 200, { ...movieResult(x), genres: x.genres.map((name, i) => ({ id: i, name })), production_countries: x.country.map((c) => ({ iso_3166_1: c })), runtime: x.runtime, credits: { cast: x.cast.map((name) => ({ name })) }, 'watch/providers': providers(x.id) });
+    return send(res, 200, { ...movieResult(x), genres: x.genres.map((name, i) => ({ id: i, name })), production_countries: x.country.map((c) => ({ iso_3166_1: c })), runtime: x.runtime, credits: { cast: x.cast.map((name, i) => ({ id: 5000 + hue(name), name, profile_path: i < 2 ? `/a-${slug(name)}.svg` : null })) }, 'watch/providers': providers(x.id) });
   }
-  if ((m = /^\/t\/p\/\w+\/([pb])-([a-z0-9-]+)\.svg$/.exec(p))) return send(res, 200, svg(m[2].replace(/-/g, ' '), m[1] === 'b'), 'image/svg+xml');
+  if ((m = /^\/t\/p\/\w+\/([pba])-([a-z0-9-]+)\.svg$/.exec(p))) return send(res, 200, m[1] === 'a' ? face(m[2].replace(/-/g, ' ')) : svg(m[2].replace(/-/g, ' '), m[1] === 'b'), 'image/svg+xml');
 
   // ---------------- iTunes-Suche (Filmmusik im Rückblick) + Hörprobe als kurzes WAV
   if (p === '/itunes/search') {

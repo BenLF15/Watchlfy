@@ -74,6 +74,15 @@ ALTER TABLE titles ADD COLUMN IF NOT EXISTS stats_at timestamptz;
 -- Wo der Titel im Abo läuft (TMDB, Region TMDB_REGION): alle Anbieter + eindeutiger Dienst für Trakt-Einträge
 ALTER TABLE titles ADD COLUMN IF NOT EXISTS providers text[];
 ALTER TABLE titles ADD COLUMN IF NOT EXISTS provider text;
+ALTER TABLE titles ADD COLUMN IF NOT EXISTS people_at timestamptz;   -- wann die Fotos der Besetzung übernommen wurden
+
+-- Schauspieler-Fotos (TMDB „profile_path“), über den Namen mit titles.cast_names verbunden
+CREATE TABLE IF NOT EXISTS people (
+  name          text PRIMARY KEY,
+  tmdb_id       integer,
+  profile_path  text,
+  updated_at    timestamptz NOT NULL DEFAULT now()
+);
 -- Anbieter v2: nur noch Netflix, Prime, Disney+, HBO Max (WOW/Sky zählt zu HBO Max) – betroffene Titel neu einordnen
 DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM app_meta WHERE key = 'providers_v2') THEN

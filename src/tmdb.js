@@ -146,11 +146,22 @@ export async function loadDetails(titleId) {
   if (!t?.tmdb_id) return;
   const d = await tmdbGet(`/${t.kind}/${t.tmdb_id}`, { language: LANG, append_to_response: 'credits,watch/providers' }, 30);
   if (!d) {
-    await query(`UPDATE titles SET details_at = now(), stats_at = now(), providers = COALESCE(providers, '{}') WHERE id = $1`, [titleId]);
+    await query(`UPDATE titles SET details_at = now(), stats_at = now(), people_at = now(), providers = COALESCE(providers, '{}') WHERE id = $1`, [titleId]);
     return;
   }
   const prov = providersOf(d);
-  const cast = (d.credits?.cast || []).slice(0, 12).map((c) => c.name);
+  const castList = (d.credits?.cast || []).slice(0, 12);
+  const cast = castList.map((c) => c.name);
+  // Fotos der Besetzung merken (nur wer eins hat; vorhandene Fotos nicht mit leeren überschreiben)
+  const people = castList.filter((c) => c.name && c.profile_path).map((c) => ({ name: c.name, tmdb_id: c.id || null, profile_path: c.profile_path }));
+  if (people.length) {
+    await query(
+      `INSERT INTO people (name, tmdb_id, profile_path, updated_at)
+       SELECT x.name, x.tmdb_id, x.profile_path, now() FROM json_populate_recordset(NULL::people, $1::json) x
+       ON CONFLICT (name) DO UPDATE SET tmdb_id = EXCLUDED.tmdb_id, profile_path = EXCLUDED.profile_path, updated_at = now()`,
+      [JSON.stringify(people)],
+    );
+  }
   const genres = (d.genres || []).map((g) => g.name);
   const countries = t.kind === 'movie' ? (d.production_countries || []).map((c) => c.iso_3166_1) : d.origin_country || [];
   const seasons = t.kind === 'tv'
@@ -162,7 +173,7 @@ export async function loadDetails(titleId) {
             backdrop_path = COALESCE($7, backdrop_path), genres = $8, countries = $9, cast_names = $10, runtime = $11,
             seasons = $12, episode_count = $13, status = $14, original_language = $15,
             popularity = $16, vote_average = $17, vote_count = $18, revenue = $19, providers = $20, provider = $21,
-            stats_at = now(), details_at = now(), updated_at = now()
+            people_at = now(), stats_at = now(), details_at = now(), updated_at = now()
       WHERE id = $1`,
     [titleId, d.title || d.name, d.original_title || d.original_name || null, yearOf(d.release_date || d.first_air_date), d.overview || null,
       d.poster_path || null, d.backdrop_path || null, genres, countries, cast, runtime,
@@ -272,14 +283,14 @@ export function enrich({ limit = config.tmdb.batch } = {}) {
         }
         const { rows: titles } = await query(
           `SELECT DISTINCT t.id FROM titles t JOIN title_aliases al ON al.title_id = t.id
-            WHERE (t.details_at IS NULL OR t.stats_at IS NULL OR t.providers IS NULL) AND t.tmdb_id IS NOT NULL LIMIT $1`,
+            WHERE (t.details_at IS NULL OR t.stats_at IS NULL OR t.providers IS NULL OR t.people_at IS NULL) AND t.tmdb_id IS NOT NULL LIMIT $1`,
           [limit],
         );
         for (const t of titles) {
           try { await loadDetails(t.id); stats.details++; } catch (err) {
             if (err.code === 'TMDB_PAUSED') throw err;
             stats.errors++;
-            await query(`UPDATE titles SET details_at = now(), stats_at = now(), providers = COALESCE(providers, '{}') WHERE id = $1`, [t.id]);
+            await query(`UPDATE titles SET details_at = now(), stats_at = now(), people_at = now(), providers = COALESCE(providers, '{}') WHERE id = $1`, [t.id]);
           }
         }
         // Staffeln, aus denen etwas gesehen wurde, aber deren Folgen noch fehlen

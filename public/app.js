@@ -657,6 +657,7 @@
     const visual = (x) => {
       if (kind === 'series' || kind === 'movies') return `<div class="cover poster-mini">${poster(x.poster_path, x.name, 'w92')}</div>`;
       if (kind === 'countries') return `<div class="cover round flag">${esc(flag(x.name))}</div>`;
+      if (kind === 'actors' && x.profile_path) return `<div class="cover round face">${poster(x.profile_path, x.name, 'w185')}</div>`;
       return `<div class="cover round"><div class="placeholder" aria-hidden="true">${initials(x.name)}</div></div>`;
     };
     const attrs = (x) => (x.title_id ? `data-title-id="${x.title_id}"` : x.tkey ? `data-title-key="${esc(x.tkey)}"` : '');
@@ -700,9 +701,10 @@
     } else {
       const order = [top3[1], top3[0], top3[2]].map((a, i) => (a ? { a, place: [2, 1, 3][i] } : null)).filter(Boolean);
       const img = (a) => (kind === 'series' || kind === 'movies' ? poster(a.poster_path, a.name, 'w342')
-        : kind === 'countries' ? `<div class="placeholder flag-big">${esc(flag(a.name))}</div>` : `<div class="placeholder" aria-hidden="true">${initials(a.name)}</div>`);
+        : kind === 'countries' ? `<div class="placeholder flag-big">${esc(flag(a.name))}</div>`
+        : kind === 'actors' && a.profile_path ? poster(a.profile_path, a.name, 'w185') : `<div class="placeholder" aria-hidden="true">${initials(a.name)}</div>`);
       el.innerHTML = order.map(({ a, place }) => `
-        <div class="podium-item p${place}${kind === 'series' || kind === 'movies' ? ' is-poster' : ''}" ${a.title_id ? `data-title-id="${a.title_id}"` : a.tkey ? `data-title-key="${esc(a.tkey)}"` : ''}>
+        <div class="podium-item p${place}${kind === 'series' || kind === 'movies' ? ' is-poster' : ''}${kind === 'actors' && a.profile_path ? ' is-face' : ''}" ${a.title_id ? `data-title-id="${a.title_id}"` : a.tkey ? `data-title-key="${esc(a.tkey)}"` : ''}>
           <div class="pimg-wrap"><div class="pimg">${img(a)}</div></div>
           <div class="podium-name" title="${esc(a.name)}">${esc(kind === 'countries' ? regionName(a.name) : a.name)}</div>
           <div class="podium-meta">${esc(dur(a.secs, { short: true }))}</div>
